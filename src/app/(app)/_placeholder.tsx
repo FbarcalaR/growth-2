@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 
+import { TabIcon, type TabKey } from "@/components/icons/tab-icon";
+
 type PlaceholderPageProps = {
+  tab: TabKey;
   title: string;
   description: string;
-  emoji: string;
   /** Optional tag listing the upcoming epic/story. */
   comingIn?: string;
   children?: ReactNode;
@@ -14,18 +16,16 @@ type PlaceholderPageProps = {
  * "coming soon" surface so we don't litter four near-identical files.
  */
 export function PlaceholderPage({
+  tab,
   title,
   description,
-  emoji,
   comingIn,
   children,
 }: PlaceholderPageProps) {
   return (
     <section className="space-y-4 px-6 pt-8 pb-10">
-      <header className="space-y-1">
-        <p className="text-xl" aria-hidden>
-          {emoji}
-        </p>
+      <header className="space-y-2">
+        <TabIcon tab={tab} size={28} className="text-brand-700" />
         <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
         <p className="text-brand-muted text-sm">{description}</p>
       </header>

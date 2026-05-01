@@ -18,7 +18,7 @@ export default function ProfilePage() {
 
   return (
     <PlaceholderPage
-      emoji="👤"
+      tab="profile"
       title="Profile"
       description="Your name, totals, and settings."
       comingIn="Epic 6"
