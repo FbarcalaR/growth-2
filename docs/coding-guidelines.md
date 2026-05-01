@@ -84,3 +84,16 @@ Conventions:
 - Unit tests are the default. Reach for integration tests when behavior spans multiple components plus the store. Reach for e2e only for end-to-end user journeys (login → set priorities → plant a goal → complete a task → see growth).
 - Snapshot tests are banned for components — they encode noise, not intent.
 - Test names describe behavior: `growPlant advances stage when both resources meet requirements`.
+
+## Docs are part of the PR
+
+Code and docs ship together. Every PR that implements a backlog story or makes an architectural decision must update the relevant docs **in the same PR**:
+
+- `docs/product-backlog.md` — tick `[x]` on the implemented sub-tasks and tag the story with the merging PR (`### Story X — Title ✅ (PR #N)`).
+- `docs/domain-model.md` — when entities, invariants, or rules change.
+- `docs/architecture.md` — when you make a decision that contradicts or extends what's already written (e.g. "Tailwind v4 is CSS-first; no `tailwind.config.ts`" or "we picked `lucide-react` as the icon library").
+- `docs/design-system.md` — when tokens are added, removed, or renamed.
+- `docs/coding-guidelines.md` — when a new convention emerges (lint rule, file-layout rule, etc.).
+- `docs/testing-strategy.md` — when the testing approach evolves.
+
+Reviewers should be able to read the doc diff and the code diff side by side. "I'll do the docs in a follow-up" is not allowed — it always slips. If the doc change feels too big for the PR, the PR is too big.
