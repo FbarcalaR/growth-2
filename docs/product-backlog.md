@@ -46,21 +46,24 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 - [x] 0.4.5 Auth guard at `(app)/layout.tsx` redirects to `/login` if no session (dev-stub via `useSyncExternalStore` over `localStorage`; onboarding-modal overlay lands with Story 1.2/1.3)
 - **Bonus:** `BottomNav` and `PlaceholderPage` use `lucide-react` icons (project's chosen icon library) instead of inline SVGs/emojis.
 
-### Story 0.5 — Domain layer scaffold (server-side)
+### Story 0.5 — Domain layer scaffold (server-side) ✅ (PR #6)
 **As a** developer, **I want** the domain types and constants in `src/server/domain/`, **so that** every service speaks the same language.
-- [ ] 0.5.1 Port `WHEEL_AREAS`, `AREA_RESOURCE`, `PLANT_DEFS`, `RESOURCE_INFO`, `STAGE_NAMES`, `STAGE_COLORS`
-- [ ] 0.5.2 Define `Goal`, `Task`, `Routine`, `Plant`, `Resource`, `Area`, `GardenState` types (with `userId` everywhere)
-- [ ] 0.5.3 Pure functions: `growPlant`, `getOverdueCount`, `getHealth`, `applyTaskCompletion`, `applyRoutineCompletion`, `placeDeco`
-- [ ] 0.5.4 Clock injected, never read from `Date.now()` inside domain
-- [ ] 0.5.5 Unit tests for each rule
+- [x] 0.5.1 Port `AREA_RESOURCE`, `AREA_DEFAULT_PLANT`, `PLANT_DEFS`, `STAGE_NAMES` (resource and area display metadata already lives in `src/shared/`)
+- [x] 0.5.2 Define `Goal`, `Task`, `Routine`, `Plant`, `Resource`, `Area`, `GardenState`, `User`, `WheelOfLife` types (every persistent entity scoped by `userId`)
+- [x] 0.5.3 Pure functions: `growPlant`, `getOverdueCount`, `getHealth`, `getHealthState`, `applyTaskCompletion`, `applyRoutineCompletion`, `completeRoutinePermanently`, `replantGoal`, `completeGoal`, `placeDeco`/`unplaceDeco`, `plantGoalOnTile`/`unplantGoalFromTile`, `lockPriorities`
+- [x] 0.5.4 Clock injected via `Clock` interface; `frozenClock(iso)` for tests; `systemClock` for production
+- [x] 0.5.5 Unit tests for each rule (Vitest); 76 specs across plants/health/rewards/goals/garden/wheel/schemas
+- [x] 0.5.6 `DomainError` class with stable error codes (`GOAL_NOT_FOUND`, `TILE_OCCUPIED`, `PRIORITIES_ALREADY_LOCKED`, …) — services let these bubble; HTTP error mapper translates to 4xx in Story 0.7
+- [x] 0.5.7 Zod schemas in `src/server/domain/schemas.ts` for entity validation at the persistence/API boundary
 
-### Story 0.6 — Repository abstraction + in-memory impl
+### Story 0.6 — Repository abstraction + in-memory impl ✅ (PR #6)
 **As a** developer, **I want** repository interfaces with an in-memory implementation, **so that** services have somewhere to read/write that we can later swap for Postgres without touching domain or services.
-- [ ] 0.6.1 Interfaces: `UserRepo`, `GoalRepo`, `GardenRepo`, `ShopRepo`
-- [ ] 0.6.2 In-memory implementations under `src/server/repositories/memory/`
-- [ ] 0.6.3 Composition root `src/server/container.ts` — single place that picks impls
-- [ ] 0.6.4 Every repo method scoped by `userId`
-- [ ] 0.6.5 Unit tests via interface conformance (the same suite will later run against the Prisma impl)
+- [x] 0.6.1 Interfaces: `UserRepo`, `GoalRepo`, `GardenRepo`, `ShopRepo` in `src/server/repositories/types.ts`
+- [x] 0.6.2 In-memory implementations under `src/server/repositories/memory/`
+- [x] 0.6.3 Composition root `src/server/container.ts` — single place that picks impls; `getContainer()` / `resetContainer()`
+- [x] 0.6.4 Every repo method scoped by `userId`; cross-user reads return null / empty
+- [x] 0.6.5 Conformance suite (`__tests__/conformance.ts`) parameterised by a `makeRepos()` factory; `memory.spec.ts` runs it against the in-memory impls. Same suite will run against Prisma in Epic A.
+- [x] 0.6.6 Repos return defensive clones — callers can't mutate the store by holding onto references.
 
 ### Story 0.7 — HTTP boundary (Route Handlers + validation)
 **As a** developer, **I want** the API surface defined and validated, **so that** the frontend has a stable contract.
