@@ -65,13 +65,15 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 - [x] 0.6.5 Conformance suite (`__tests__/conformance.ts`) parameterised by a `makeRepos()` factory; `memory.spec.ts` runs it against the in-memory impls. Same suite will run against Prisma in Epic A.
 - [x] 0.6.6 Repos return defensive clones — callers can't mutate the store by holding onto references.
 
-### Story 0.7 — HTTP boundary (Route Handlers + validation)
+### Story 0.7 — HTTP boundary (Route Handlers + validation) ✅ (PR #7)
 **As a** developer, **I want** the API surface defined and validated, **so that** the frontend has a stable contract.
-- [ ] 0.7.1 Zod schemas in `src/shared/schemas/` for every request and response
-- [ ] 0.7.2 `requireUser(req)` helper (dev stub; ready to swap for Auth.js session)
-- [ ] 0.7.3 Error mapper: `DomainError` → 4xx, unknown → 5xx + log
-- [ ] 0.7.4 Routes: `GET/POST /api/goals`, `PATCH/DELETE /api/goals/[id]`, etc. (skeletons for the rest of the epics)
-- [ ] 0.7.5 Integration tests against the Route Handlers (no HTTP, call the handler directly)
+- [x] 0.7.1 Zod schemas in `src/shared/schemas/{user,goal,garden,shop,common}.ts` for every request and response
+- [x] 0.7.2 `requireUser()` helper (dev-session cookie via `next/headers`; ready to swap for Auth.js session)
+- [x] 0.7.3 Error mapper: `DomainError`/`HttpError` → typed 4xx, unknown → 500 + log; stable JSON shape `{ code, message, issues? }`
+- [x] 0.7.4 Routes: `/api/me` (GET/POST/DELETE), `/api/me/priorities` (PATCH), `/api/goals` (GET/POST), `/api/goals/[id]` (GET/PATCH/DELETE), `/api/goals/[id]/{tasks,routines}` CRUD, `/api/goals/[id]/{complete,replant}`, `/api/goals/[id]/routines/[routineId]/permanent`, `/api/garden` (GET), `/api/garden/tiles` (POST plant), `/api/garden/decos` (POST/DELETE), `/api/shop` (GET), `/api/shop/buy` (POST)
+- [x] 0.7.5 Integration tests (Vitest) call handlers as functions; cover ownership rejection (404), validation (422), idempotency (priorities lock returns 409 on second call), insufficient coins (402), happy paths
+- [x] 0.7.6 Services layer (`src/server/services/`) orchestrates domain + repos; handlers stay thin
+- [x] 0.7.7 DTO mappers — `goalToDto` adds derived `health` + `healthState` (never persisted, computed at read time)
 
 ### Story 0.8 — Frontend data layer (TanStack Query)
 **As a** developer, **I want** typed hooks for every API endpoint, **so that** features just call `useGoals()` and don't worry about loading/error/cache.

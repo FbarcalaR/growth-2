@@ -17,6 +17,21 @@ Read once. Apply always.
 - Tests sit in `__tests__/` next to the code they test, named `*.spec.ts(x)`.
 - Imports ordered: node/builtin → external → `@/` aliases → relative → styles. Enforce with ESLint `import/order`.
 
+## Split files by entity / resource
+
+When a module starts holding code for more than one domain entity (e.g. types, schemas, mappers, services, routes), **split it into one file per entity** — usually inside an entity-named folder.
+
+- Domain types: `src/server/domain/<entity>/types.ts` (one folder per entity).
+- Schemas: `src/server/domain/<entity>/schemas.ts` (server-side validation) and `src/shared/schemas/<entity>.ts` (wire DTOs). One file per entity.
+- Repository interfaces: `src/server/repositories/<entity>-repo.ts` — one file per repo.
+- DTO mappers: `src/server/services/dtos/<entity>.ts` — one file per entity.
+- Services: `src/server/services/<entity>-service.ts` — one file per service.
+- Route handlers: Next.js naturally enforces this via the `app/api/` filesystem.
+
+When you find yourself writing `User`, `Goal`, and `Garden` code in the same file, that's the smell. Even if each section is short today, splitting now keeps grep-by-entity easy and makes future ownership boundaries (per-team, per-package) painless.
+
+Cross-cutting helpers (`clock`, `errors`, generic utilities) stay flat at the root of their layer — they don't belong to any one entity. Use judgement: a single small constant set or one function doesn't need its own folder.
+
 ## React
 
 - Functional components only. No class components.
