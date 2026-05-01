@@ -27,14 +27,14 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 - [ ] 0.2.1 Configure `next/font` for Plus Jakarta Sans
 - [ ] 0.2.2 Add tokens to `tailwind.config.ts` per `design-system.md`
 - [ ] 0.2.3 CSS variables in `globals.css` for tokens that need runtime theming (accent color)
-- [ ] 0.2.4 `/_styleguide` route renders every token (kept for the project's life)
+- [ ] 0.2.4 `/styleguide` route renders every token (kept for the project's life)
 
 ### Story 0.3 — Atomic design primitives
 **As a** developer, **I want** the reusable atoms and a few key molecules in place, **so that** features compose them instead of restyling.
 - [ ] 0.3.1 Atoms: `Button`, `Chip`, `Badge`, `Icon`, `Input`, `ProgressBar`, `Avatar`, `Toggle`, `Modal`
 - [ ] 0.3.2 Molecules: `TaskRow`, `RoutineRow`, `AreaPicker`, `ResourceMeter`, `HealthBadge`
 - [ ] 0.3.3 `cn()` helper, typed `variant` props on atoms (no Tailwind blobs at call sites)
-- [ ] 0.3.4 `/_styleguide` extended to show every atom + molecule with each variant
+- [ ] 0.3.4 `/styleguide` extended to show every atom + molecule with each variant
 - **Acceptance:** A second developer can build a new screen using only atoms/molecules without writing new utility-class soup.
 
 ### Story 0.4 — App shell (no device frame)
