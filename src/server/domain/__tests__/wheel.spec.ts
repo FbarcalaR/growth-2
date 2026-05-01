@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { DomainError } from "../errors";
-import type { User } from "../types";
-import { emptyWheel, lockPriorities, wheelTotal, WHEEL_BUDGET } from "../wheel";
+import type { User } from "../user/types";
+import { emptyWheel, lockPriorities, wheelTotal, WHEEL_BUDGET } from "../user/wheel";
 
 function makeUser(overrides: Partial<User> = {}): User {
   return {

@@ -1,6 +1,7 @@
-import { emptyDecoGrid } from "../../domain/garden";
-import type { GardenState, UserId } from "../../domain/types";
-import type { GardenRepo } from "../types";
+import { emptyDecoGrid } from "../../domain/garden/operations";
+import type { GardenState } from "../../domain/garden/types";
+import type { UserId } from "../../domain/user/types";
+import type { GardenRepo } from "../garden-repo";
 
 function clone(garden: GardenState): GardenState {
   return {

@@ -1,6 +1,7 @@
 import { DomainError } from "../../domain/errors";
-import type { Goal, UserId } from "../../domain/types";
-import type { GoalRepo } from "../types";
+import type { Goal } from "../../domain/goal/types";
+import type { UserId } from "../../domain/user/types";
+import type { GoalRepo } from "../goal-repo";
 
 function clone(goal: Goal): Goal {
   return {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { growPlant, meetsRequirement, PLANT_DEFS } from "../plants";
+import { PLANT_DEFS } from "../plant/definitions";
+import { growPlant, meetsRequirement } from "../plant/growth";
 
 import { makeGoal } from "./fixtures";
 

@@ -1,6 +1,10 @@
-import { AREA_RESOURCE } from "./areas";
-import { PLANT_DEFS } from "./plants";
-import type { Area, CompletionReward, Goal, Resource } from "./types";
+import type { Area } from "@/shared/areas";
+
+import { AREA_RESOURCE } from "../area";
+import { PLANT_DEFS } from "../plant/definitions";
+import type { Resource } from "@/shared/resources";
+
+import type { CompletionReward, Goal } from "./types";
 
 export const TASK_COIN_REWARD = 3;
 export const TASK_RESOURCE_REWARD = 4;

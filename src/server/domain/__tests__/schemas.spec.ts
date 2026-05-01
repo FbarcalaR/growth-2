@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { GardenStateSchema, GoalSchema, UserSchema } from "../schemas";
+import { GardenStateSchema } from "../garden/schemas";
+import { GoalSchema } from "../goal/schemas";
+import { UserSchema } from "../user/schemas";
 
 import { makeGoal } from "./fixtures";
 

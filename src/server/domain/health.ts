@@ -1,7 +1,7 @@
 import type { HealthState } from "@/shared/health";
 
 import { toISODate } from "./clock";
-import type { Goal, ISODate } from "./types";
+import type { Goal, ISODate } from "./goal/types";
 
 const LONG_OVERDUE_DAYS = 7;
 

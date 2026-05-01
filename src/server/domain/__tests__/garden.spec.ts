@@ -8,8 +8,8 @@ import {
   plantGoalOnTile,
   unplaceDeco,
   unplantGoalFromTile,
-} from "../garden";
-import type { GardenState } from "../types";
+} from "../garden/operations";
+import type { GardenState } from "../garden/types";
 
 import { makeGoal } from "./fixtures";
 

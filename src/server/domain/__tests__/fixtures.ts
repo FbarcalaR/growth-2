@@ -1,4 +1,4 @@
-import type { Goal } from "../types";
+import type { Goal } from "../goal/types";
 
 let counter = 0;
 function nextId(prefix = "id"): string {

@@ -9,7 +9,7 @@ import {
   TASK_RESOURCE_REWARD,
   routineCompletionReward,
   taskCompletionReward,
-} from "../rewards";
+} from "../goal/rewards";
 
 import { makeGoal } from "./fixtures";
 

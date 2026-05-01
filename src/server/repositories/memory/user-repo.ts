@@ -1,6 +1,6 @@
-import type { User, UserId, WheelOfLife } from "../../domain/types";
-import { emptyWheel } from "../../domain/wheel";
-import type { UserRepo } from "../types";
+import type { User, UserId, WheelOfLife } from "../../domain/user/types";
+import { emptyWheel } from "../../domain/user/wheel";
+import type { UserRepo } from "../user-repo";
 
 function clone(user: User): User {
   return { ...user, wheelOfLife: { ...user.wheelOfLife } as WheelOfLife };

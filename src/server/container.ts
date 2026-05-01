@@ -2,7 +2,7 @@ import "server-only";
 
 import { systemClock, type Clock } from "./domain/clock";
 import { createInMemoryRepositories } from "./repositories/memory";
-import type { Repositories } from "./repositories/types";
+import type { Repositories } from "./repositories";
 
 /**
  * Composition root. The single place that picks repository implementations and

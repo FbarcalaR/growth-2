@@ -1,4 +1,5 @@
-import type { ISODate } from "./types";
+/** YYYY-MM-DD. Re-exported from `goal/types` for callers that already import it there. */
+export type ISODate = string;
 
 /**
  * Domain clock. Always inject — never read `Date.now()` or `new Date()` inside

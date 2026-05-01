@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { emptyDecoGrid } from "../../domain/garden";
-import type { Goal } from "../../domain/types";
-import type { Repositories } from "../types";
+import { emptyDecoGrid } from "../../domain/garden/operations";
+import type { Goal } from "../../domain/goal/types";
+import type { Repositories } from "..";
 
 /**
  * Interface conformance suite. Any concrete repository implementation

@@ -1,6 +1,7 @@
 import { AREA_KEYS } from "@/shared/areas";
 
-import { DomainError } from "./errors";
+import { DomainError } from "../errors";
+
 import type { User, WheelOfLife } from "./types";
 
 export const WHEEL_BUDGET = 30;

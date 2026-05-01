@@ -1,7 +1,7 @@
 import type { Area } from "@/shared/areas";
 import type { Resource } from "@/shared/resources";
 
-import type { PlantId } from "./types";
+import type { PlantId } from "./plant/types";
 
 /**
  * The primary resource a life area feeds. Completing a task in a given area

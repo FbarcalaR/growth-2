@@ -1,6 +1,7 @@
-import type { ShopRepo } from "../types";
+import type { DecoItem } from "../../domain/garden/types";
+import type { ShopRepo } from "../shop-repo";
 
-const CATALOG = [
+const CATALOG: DecoItem[] = [
   { id: "fountain", name: "Stone Fountain", cost: 30, emoji: "⛲" },
   { id: "bench", name: "Garden Bench", cost: 20, emoji: "🪑" },
   { id: "lantern", name: "Lantern", cost: 15, emoji: "🏮" },

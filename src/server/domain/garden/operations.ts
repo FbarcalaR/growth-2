@@ -1,12 +1,8 @@
-import { DomainError } from "./errors";
-import {
-  GARDEN_COLS,
-  GARDEN_ROWS,
-  type DecoId,
-  type GardenState,
-  type GardenTile,
-  type Goal,
-} from "./types";
+import { DomainError } from "../errors";
+import type { Goal } from "../goal/types";
+
+import type { DecoId, GardenState, GardenTile } from "./types";
+import { GARDEN_COLS, GARDEN_ROWS } from "./types";
 
 export function emptyDecoGrid(): GardenTile[][] {
   return Array.from({ length: GARDEN_COLS }, () => Array(GARDEN_ROWS).fill(null));

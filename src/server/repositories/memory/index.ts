@@ -1,4 +1,4 @@
-import type { Repositories } from "../types";
+import type { Repositories } from "..";
 
 import { createInMemoryGardenRepo } from "./garden-repo";
 import { createInMemoryGoalRepo } from "./goal-repo";

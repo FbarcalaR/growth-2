@@ -5,10 +5,9 @@ import { DomainError } from "../errors";
 import {
   applyRoutineCompletion,
   applyTaskCompletion,
-  completeGoal,
   completeRoutinePermanently,
-  replantGoal,
-} from "../goals";
+} from "../goal/completion";
+import { completeGoal, replantGoal } from "../goal/lifecycle";
 
 import { makeGoal } from "./fixtures";
 
