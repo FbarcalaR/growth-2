@@ -1,6 +1,8 @@
 # Growth — Product Backlog
 
-Written from a PO perspective: stories ordered to maximise demonstrable value early, minimise rework, and make every milestone something we could plausibly ship if we had to stop here. Each story uses **As a / I want / So that** + acceptance criteria. Tasks are the engineering breakdown.
+> Revised after PR #1 review: dropped the iOS-frame story, added backend foundation work, and reordered Epic 0 so the backend goes in alongside the frontend foundation. Stories ordered to maximise demonstrable value early and minimise rework.
+
+Each story uses **As a / I want / So that** + acceptance criteria. Tasks are the engineering breakdown.
 
 Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
 
@@ -8,130 +10,142 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
 
 ## Epic 0 — Foundations
 
-Goal: a runnable Next.js project with tokens, fonts, and the iOS frame, ready to host real screens.
+Goal: a runnable Next.js project with tokens, atomic-design primitives, and a working backend skeleton. After this epic, the next person can pick up a feature without yak-shaving.
 
 ### Story 0.1 — Project bootstrap
-**As a** developer, **I want** a Next.js 15 + TS + Tailwind project initialized, **so that** all later work has a working baseline.
-- [ ] 0.1.1 `create-next-app` with App Router, TS, Tailwind, ESLint
+**As a** developer, **I want** a Next.js + TS + Tailwind project initialized at the latest stable versions, **so that** all later work has a working baseline.
+- [ ] 0.1.1 `create-next-app` (latest stable) with App Router, TS strict, Tailwind, ESLint
 - [ ] 0.1.2 Add Prettier + EditorConfig
 - [ ] 0.1.3 Configure path alias `@/*` → `src/*`
-- [ ] 0.1.4 Add `pnpm` scripts: `dev`, `build`, `lint`, `typecheck`, `test:unit`, `test:e2e`
-- [ ] 0.1.5 GitHub Actions CI: install → typecheck → lint → unit tests
-- **Acceptance:** `pnpm dev` shows a Hello page, CI passes on a noop PR.
+- [ ] 0.1.4 `pnpm` scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test:unit`, `test:e2e`
+- [ ] 0.1.5 ESLint rule preventing `src/server/**` imports from `src/components/**`, `src/features/**`, `src/client/**`
+- [ ] 0.1.6 GitHub Actions CI: install → typecheck → lint → unit tests
+- **Acceptance:** `pnpm dev` shows a Hello page; CI passes on a noop PR.
 
 ### Story 0.2 — Design tokens & fonts
 **As a** designer-developer, **I want** all colors, fonts, and radii encoded once, **so that** components don't drift.
 - [ ] 0.2.1 Configure `next/font` for Plus Jakarta Sans
 - [ ] 0.2.2 Add tokens to `tailwind.config.ts` per `design-system.md`
-- [ ] 0.2.3 Add CSS variables in `globals.css` for tokens that need runtime theming (accent color)
-- [ ] 0.2.4 Build a `/_styleguide` route that renders every token (kept for the project's life)
-- **Acceptance:** `/_styleguide` shows every color, every font weight, every radius.
+- [ ] 0.2.3 CSS variables in `globals.css` for tokens that need runtime theming (accent color)
+- [ ] 0.2.4 `/_styleguide` route renders every token (kept for the project's life)
 
-### Story 0.3 — iOS frame shell
-**As a** user, **I want** the app rendered inside a phone-shaped frame on desktop, **so that** the mobile-first design reads correctly.
-- [ ] 0.3.1 Port `IOSDevice` from prototype to `components/ios-frame/`
-- [ ] 0.3.2 Status bar + home indicator
-- [ ] 0.3.3 Mount in `app/layout.tsx`
-- **Acceptance:** Resizing the window keeps a centered phone; mobile viewports go edge-to-edge.
+### Story 0.3 — Atomic design primitives
+**As a** developer, **I want** the reusable atoms and a few key molecules in place, **so that** features compose them instead of restyling.
+- [ ] 0.3.1 Atoms: `Button`, `Chip`, `Badge`, `Icon`, `Input`, `ProgressBar`, `Avatar`, `Toggle`, `Modal`
+- [ ] 0.3.2 Molecules: `TaskRow`, `RoutineRow`, `AreaPicker`, `ResourceMeter`, `HealthBadge`
+- [ ] 0.3.3 `cn()` helper, typed `variant` props on atoms (no Tailwind blobs at call sites)
+- [ ] 0.3.4 `/_styleguide` extended to show every atom + molecule with each variant
+- **Acceptance:** A second developer can build a new screen using only atoms/molecules without writing new utility-class soup.
 
-### Story 0.4 — Domain layer scaffold
-**As a** developer, **I want** the domain types and constants in one place, **so that** every feature speaks the same language.
-- [ ] 0.4.1 Port `WHEEL_AREAS`, `AREA_RESOURCE`, `PLANT_DEFS`, `RESOURCE_INFO`, `STAGE_NAMES`, `STAGE_COLORS` to `domain/`
-- [ ] 0.4.2 Define `Goal`, `Task`, `Routine`, `Plant`, `Resource`, `Area`, `GardenState` types
-- [ ] 0.4.3 Define Zod schemas mirroring the types
-- [ ] 0.4.4 Unit tests on the schemas (round-trip)
+### Story 0.4 — App shell (no device frame)
+**As a** user, **I want** a clean web app shell with bottom navigation, **so that** I can move between tabs.
+- [ ] 0.4.1 Root layout in `app/layout.tsx`: fonts, globals, providers (Query, Zustand)
+- [ ] 0.4.2 `(app)` route group with bottom-nav layout
+- [ ] 0.4.3 Routes: `/today`, `/garden`, `/history`, `/profile` — each a real page
+- [ ] 0.4.4 Responsive shell: full-width on mobile; centered max-width column on desktop
+- [ ] 0.4.5 Auth/onboarding guard at `(app)/layout.tsx` (uses dev-stub user until Auth.js)
 
-### Story 0.5 — Store + persistence
-**As a** developer, **I want** a Zustand store with persisted state and migrations, **so that** the app survives reloads.
-- [ ] 0.5.1 Create `useGrowthStore` with `persist` middleware, key `growth_v1`
-- [ ] 0.5.2 Implement `INITIAL_STATE` matching prototype seeds (toggleable for testing)
-- [ ] 0.5.3 Implement `migrateState` v0→v1 (port prototype's `migrateState`)
-- [ ] 0.5.4 Validate with Zod on hydrate; fall back to initial on failure
-- [ ] 0.5.5 Unit tests for migration cases (grid resize, off-board planted goals, default `prioritiesLocked`)
+### Story 0.5 — Domain layer scaffold (server-side)
+**As a** developer, **I want** the domain types and constants in `src/server/domain/`, **so that** every service speaks the same language.
+- [ ] 0.5.1 Port `WHEEL_AREAS`, `AREA_RESOURCE`, `PLANT_DEFS`, `RESOURCE_INFO`, `STAGE_NAMES`, `STAGE_COLORS`
+- [ ] 0.5.2 Define `Goal`, `Task`, `Routine`, `Plant`, `Resource`, `Area`, `GardenState` types (with `userId` everywhere)
+- [ ] 0.5.3 Pure functions: `growPlant`, `getOverdueCount`, `getHealth`, `applyTaskCompletion`, `applyRoutineCompletion`, `placeDeco`
+- [ ] 0.5.4 Clock injected, never read from `Date.now()` inside domain
+- [ ] 0.5.5 Unit tests for each rule
+
+### Story 0.6 — Repository abstraction + in-memory impl
+**As a** developer, **I want** repository interfaces with an in-memory implementation, **so that** services have somewhere to read/write that we can later swap for Postgres without touching domain or services.
+- [ ] 0.6.1 Interfaces: `UserRepo`, `GoalRepo`, `GardenRepo`, `ShopRepo`
+- [ ] 0.6.2 In-memory implementations under `src/server/repositories/memory/`
+- [ ] 0.6.3 Composition root `src/server/container.ts` — single place that picks impls
+- [ ] 0.6.4 Every repo method scoped by `userId`
+- [ ] 0.6.5 Unit tests via interface conformance (the same suite will later run against the Prisma impl)
+
+### Story 0.7 — HTTP boundary (Route Handlers + validation)
+**As a** developer, **I want** the API surface defined and validated, **so that** the frontend has a stable contract.
+- [ ] 0.7.1 Zod schemas in `src/shared/schemas/` for every request and response
+- [ ] 0.7.2 `requireUser(req)` helper (dev stub; ready to swap for Auth.js session)
+- [ ] 0.7.3 Error mapper: `DomainError` → 4xx, unknown → 5xx + log
+- [ ] 0.7.4 Routes: `GET/POST /api/goals`, `PATCH/DELETE /api/goals/[id]`, etc. (skeletons for the rest of the epics)
+- [ ] 0.7.5 Integration tests against the Route Handlers (no HTTP, call the handler directly)
+
+### Story 0.8 — Frontend data layer (TanStack Query)
+**As a** developer, **I want** typed hooks for every API endpoint, **so that** features just call `useGoals()` and don't worry about loading/error/cache.
+- [ ] 0.8.1 Query client provider in root layout
+- [ ] 0.8.2 Typed fetcher per route (uses the shared Zod schemas)
+- [ ] 0.8.3 Hooks: `useGoals`, `useGoal`, `useGarden`, mutation hooks for tasks/routines/goals with optimistic updates and rollback
+- [ ] 0.8.4 Error boundary + toast on mutation failure
 
 ---
 
-## Epic 1 — First-run onboarding (vertical slice 1)
+## Epic 1 — First-run onboarding
 
-Goal: a user can launch the app, log in, set priorities, and land on a Today tab. End-to-end demoable.
+Goal: a user can launch the app, log in (dev stub), set priorities, land on Today.
 
 ### Story 1.1 — Login page
-**As a** new user, **I want** to enter my name, **so that** the app greets me personally.
-- [ ] 1.1.1 Port `LoginPage` to `features/login/`
+- [ ] 1.1.1 `LoginPage` collects name (and email when Auth.js arrives)
 - [ ] 1.1.2 React Hook Form + Zod validation (non-empty)
-- [ ] 1.1.3 `LOGIN` action sets `user.name`
-- [ ] 1.1.4 Integration test: empty submit blocked; valid name advances state
+- [ ] 1.1.3 `POST /api/me` creates the user; sets the dev session cookie
+- [ ] 1.1.4 Integration test: empty submit blocked; valid submit advances
 
 ### Story 1.2 — Set priorities (Wheel of Life)
-**As a** new user, **I want** to allocate priority weights across seven life areas, **so that** the app reflects what matters to me.
-- [ ] 1.2.1 `WheelOfLife` component (slider + budget meter)
+- [ ] 1.2.1 `WheelOfLife` organism (slider + budget meter)
 - [ ] 1.2.2 Enforce total budget ≤ 30 with live remaining indicator
-- [ ] 1.2.3 `LOCK_PRIORITIES` action sets `wheelOfLife` and `prioritiesLocked = true`
-- [ ] 1.2.4 Modal cannot be dismissed except by submitting
-- [ ] 1.2.5 Integration test: budget exceedance disables submit
+- [ ] 1.2.3 `PATCH /api/me/priorities` writes wheel + flips `prioritiesLocked = true`
+- [ ] 1.2.4 Modal cannot be dismissed except by submitting (one-time, locked thereafter)
+- [ ] 1.2.5 Server enforces idempotency — second lock is rejected
 
-### Story 1.3 — App shell + bottom nav
-**As a** user, **I want** four tabs (Today, Garden, History, Profile), **so that** I can navigate the app.
-- [ ] 1.3.1 Routes: `/today`, `/garden`, `/history`, `/profile`
-- [ ] 1.3.2 Layout-level guard: redirect to login if no name; overlay priorities modal if not locked
-- [ ] 1.3.3 `BottomNav` with active-state SVGs from prototype
-- [ ] 1.3.4 E2E test: full first-run flow lands on `/today`
+### Story 1.3 — Authed shell guard
+- [ ] 1.3.1 `(app)/layout.tsx` redirects to `/login` if no session
+- [ ] 1.3.2 Overlays `SetPrioritiesModal` if `prioritiesLocked === false`
+- [ ] 1.3.3 E2E: full first-run flow lands on `/today`
 
 ---
 
-## Epic 2 — Today tab (vertical slice 2)
+## Epic 2 — Today tab
 
 Goal: see and complete today's tasks and routines; resources accrue; plant grows.
 
 ### Story 2.1 — Today list
-**As a** user, **I want** to see today's tasks and routines grouped by goal, **so that** I know what to do.
-- [ ] 2.1.1 Selector `selectTodayItems(state, today)` — tasks due today + active routines
-- [ ] 2.1.2 `TaskRow`, `RoutineRow` components with checkbox, title, area badge
+- [ ] 2.1.1 `GET /api/today` returns today's items grouped by goal (server filters by date + user)
+- [ ] 2.1.2 `TaskRow`/`RoutineRow` molecules render the items with checkbox, title, area badge
 - [ ] 2.1.3 Empty state copy
-- [ ] 2.1.4 Integration test against `midGameState` fixture
 
 ### Story 2.2 — Toggle task / routine
-**As a** user, **I want** to check off tasks and routines, **so that** my plants get fed.
-- [ ] 2.2.1 Domain `applyTaskCompletion`, `applyRoutineCompletion` (pure)
-- [ ] 2.2.2 Store actions `toggleTask`, `toggleRoutine`
-- [ ] 2.2.3 Coin and resource deltas per the rules table
-- [ ] 2.2.4 Resource-fly-to-plant animation (respects reduced motion)
-- [ ] 2.2.5 Unit + integration tests
+- [ ] 2.2.1 Domain functions for completion math (already in 0.5)
+- [ ] 2.2.2 Service `toggleTask`, `toggleRoutine` — applies math, persists, returns updated goal
+- [ ] 2.2.3 `PATCH /api/goals/[id]/tasks/[taskId]` and `/routines/[routineId]`
+- [ ] 2.2.4 Optimistic update in TanStack Query mutation; rollback on error
+- [ ] 2.2.5 Resource-fly-to-plant animation (respects `prefers-reduced-motion`)
 
 ### Story 2.3 — Plant growth on completion
-**As a** user, **I want** my plants to advance stages when I feed them enough resources, **so that** I see my progress.
-- [ ] 2.3.1 Domain `growPlant` (pure, idempotent)
-- [ ] 2.3.2 Hook into completion actions
-- [ ] 2.3.3 Visual: stage transition animation
-- [ ] 2.3.4 Unit tests covering all 4 stage transitions
+- [ ] 2.3.1 Server applies `growPlant` after every resource change; returns new stage
+- [ ] 2.3.2 Stage-transition animation in the goal card
+- [ ] 2.3.3 Tests covering each of the 4 stage transitions
 
 ---
 
 ## Epic 3 — Plans tab
 
-Goal: full CRUD over goals, tasks, and routines.
-
 ### Story 3.1 — Goals list
-- [ ] 3.1.1 `GoalCard` with title, area, plant emoji, progress, health badge
-- [ ] 3.1.2 Filter by area / by status (active/completed/dead)
-- [ ] 3.1.3 Sort by recently updated
+- [ ] 3.1.1 `GET /api/goals` (filters: area, status); sorted by recently updated
+- [ ] 3.1.2 `GoalCard` organism with title, area, plant emoji, progress, health badge
 
 ### Story 3.2 — Create goal
 - [ ] 3.2.1 `GoalEditor` modal: title, area, plant kind (defaults from area)
-- [ ] 3.2.2 Action `addGoal`
-- [ ] 3.2.3 New goals start unplanted (`stage:0`)
+- [ ] 3.2.2 `POST /api/goals`; new goals start unplanted (`stage:0`)
 
 ### Story 3.3 — Edit / delete goal
-- [ ] 3.3.1 Action `editGoal`, `deleteGoal`
+- [ ] 3.3.1 `PATCH /api/goals/[id]`, `DELETE /api/goals/[id]`
 - [ ] 3.3.2 Confirmation dialog on delete (destructive)
-- [ ] 3.3.3 Free the tile on delete
+- [ ] 3.3.3 Delete frees the tile (server handles via service)
 
-### Story 3.4 — Manage tasks within a goal
-- [ ] 3.4.1 Add / edit / delete tasks; due date picker
-- [ ] 3.4.2 Inline checkbox toggles complete (same domain function as Today)
+### Story 3.4 — Tasks within a goal
+- [ ] 3.4.1 Add / edit / delete; due-date picker
+- [ ] 3.4.2 Inline checkbox toggle (same endpoint as Today)
 
-### Story 3.5 — Manage routines within a goal
-- [ ] 3.5.1 Add / edit / delete routines; repeat-day picker
+### Story 3.5 — Routines within a goal
+- [ ] 3.5.1 Add / edit / delete; repeat-day picker
 - [ ] 3.5.2 Mark routine permanently complete
 - [ ] 3.5.3 Streak displays correctly
 
@@ -139,114 +153,119 @@ Goal: full CRUD over goals, tasks, and routines.
 
 ## Epic 4 — Garden tab
 
-Goal: plant goals on tiles, watch them grow, decorate.
-
 ### Story 4.1 — Garden grid render
-- [ ] 4.1.1 `GardenGrid` 8×6 with terrain map (plantable / non-plantable)
+- [ ] 4.1.1 `GardenGrid` 8×6 (locked); terrain map (plantable / non-plantable)
 - [ ] 4.1.2 Render planted goals as `PlantSprite` per stage + health
 - [ ] 4.1.3 Render placed decorations
-- [ ] 4.1.4 Pan/zoom optional v1.5
 
 ### Story 4.2 — Plant a goal on a tile
 - [ ] 4.2.1 Tap empty tile → "Pick a goal to plant" sheet listing unplanted goals
-- [ ] 4.2.2 Action `plantGoal`; rejects occupied tiles
+- [ ] 4.2.2 `POST /api/garden/tiles` with `(col, row, goalId)`; rejects occupied tiles (DB-level uniqueness later)
 - [ ] 4.2.3 Animation: seed → sprout
 
-### Story 4.3 — Replant / remove a dead plant
-- [ ] 4.3.1 Tap a dead plant → modal with Replant / Drop options
-- [ ] 4.3.2 Domain `replantGoal` resets stage and reschedules overdue tasks to today
+### Story 4.3 — Replant / drop a dead plant
+- [ ] 4.3.1 Tap dead plant → modal with Replant / Drop
+- [ ] 4.3.2 Server `replantGoal` resets stage and reschedules overdue tasks to today
 
 ### Story 4.4 — Trophies on goal completion
-- [ ] 4.4.1 Action `completeGoal` awards `+50 coins` and `trophyId`
-- [ ] 4.4.2 Tile is freed; trophy added to `garden.owned`
-- [ ] 4.4.3 Trophy display on the garden (somewhere)
+- [ ] 4.4.1 `POST /api/goals/[id]/complete` awards `+50 coins` and `trophyId`
+- [ ] 4.4.2 Tile freed; trophy added to `garden.owned`
+- [ ] 4.4.3 Trophy display somewhere on the garden
 
 ### Story 4.5 — Decoration shop
-- [ ] 4.5.1 `DECO_CATALOG` ported from prototype
-- [ ] 4.5.2 Buy with coins; rejects insufficient coins or duplicate buy
+- [ ] 4.5.1 `DECO_CATALOG` ported (server-owned)
+- [ ] 4.5.2 `POST /api/shop/buy` rejects insufficient coins / duplicate purchase
 - [ ] 4.5.3 Place owned decoration on a free tile
 
 ---
 
 ## Epic 5 — History tab
-
-Goal: a calendar of completion activity.
-
-### Story 5.1 — History calendar
-- [ ] 5.1.1 Month view; dot density per day reflects completions
-- [ ] 5.1.2 Tap a day → list of completions
-- [ ] 5.1.3 Streak summary at top
+- [ ] 5.1.1 `GET /api/history?month=YYYY-MM` returns completion counts per day
+- [ ] 5.1.2 Month view; dot density per day
+- [ ] 5.1.3 Tap a day → list of completions
+- [ ] 5.1.4 Streak summary at top
 
 ---
 
 ## Epic 6 — Profile tab
-
-Goal: user identity, totals, settings, reset.
-
-### Story 6.1 — Profile basics
 - [ ] 6.1.1 Display name, total coins earned, current streak
 - [ ] 6.1.2 Edit name
-
-### Story 6.2 — Settings
-- [ ] 6.2.1 Toggle resource animations (mirror `tweaks-panel` from prototype)
+- [ ] 6.2.1 Toggle resource animations
 - [ ] 6.2.2 Accent color picker (CSS var)
-
-### Story 6.3 — Danger zone
-- [ ] 6.3.1 Reset all data with double confirmation
-- [ ] 6.3.2 Export state as JSON (download)
-- [ ] 6.3.3 Import state from JSON (validated)
+- [ ] 6.3.1 Reset all data with double confirmation (`POST /api/me/reset`)
+- [ ] 6.3.2 Export state as JSON
+- [ ] 6.3.3 Import state from JSON (validated server-side)
 
 ---
 
 ## Epic 7 — Plant health system
-
-Goal: overdue tasks visibly affect plants and Today copy.
-
-### Story 7.1 — Health calculation
-- [ ] 7.1.1 Domain `getOverdueCount`, `getHealth`, `getHealthState` (pure, clock injected)
-- [ ] 7.1.2 Long-overdue (>7d) doubled; missed routines half-weight (per `domain-model.md`)
-- [ ] 7.1.3 Unit tests at every transition
-
-### Story 7.2 — Visual health states
-- [ ] 7.2.1 Plant sprite swaps per state (healthy / wilting / ill / critical / dead)
+- [ ] 7.1.1 `getOverdueCount`, `getHealth`, `getHealthState` (already drafted in 0.5)
+- [ ] 7.1.2 Long-overdue (>7d) doubled; missed routines half-weight
+- [ ] 7.1.3 Server returns health alongside goals (never persisted)
+- [ ] 7.2.1 Plant sprite swaps per state
 - [ ] 7.2.2 Health badge on `GoalCard`
 - [ ] 7.2.3 Today copy nags appropriately
 
 ---
 
 ## Epic 8 — Polish
-
-Goal: ship-ready details.
-
 - [ ] 8.1 Empty states for every tab
-- [ ] 8.2 Error boundary at the app shell + toast for store hydrate failure
+- [ ] 8.2 Error boundary at the app shell + toast for API failures
 - [ ] 8.3 Reduced-motion compliance pass
-- [ ] 8.4 Accessibility audit (axe; tap-target check)
-- [ ] 8.5 Lighthouse pass (target ≥ 95 PWA-friendly)
-- [ ] 8.6 README with run instructions, screenshots, and `docs/` index
+- [ ] 8.4 Accessibility audit (axe; tap-target check; keyboard nav for the bottom nav)
+- [ ] 8.5 Lighthouse pass
+- [ ] 8.6 README with run instructions, screenshots, `docs/` index
 - [ ] 8.7 First Playwright run in CI green
 
 ---
 
-## Delivery order (recommended)
+## Epic A — Persistence: Postgres + Prisma (replaces in-memory)
+
+Run when the in-memory layer becomes a real bottleneck (data loss on restart starts hurting). The point of repository abstraction is that this is a self-contained epic.
+
+- [ ] A.1 Add `prisma/schema.prisma` modeling `User`, `Goal`, `Task`, `Routine`, `GardenTile`, `OwnedDeco`, `Trophy`, with `userId` foreign keys and `(userId, tileCol, tileRow)` uniqueness
+- [ ] A.2 Implement Prisma-backed repos under `src/server/repositories/prisma/` against the same interfaces
+- [ ] A.3 Run interface conformance tests against the Prisma impl
+- [ ] A.4 Switch `container.ts` binding behind an env flag; rollback by flipping it back
+- [ ] A.5 Provision Postgres (Neon for dev/preview, decide hosted prod target)
+- [ ] A.6 First migration + seed scripts
+
+---
+
+## Epic B — Auth (Auth.js)
+
+Run when product wants real accounts. Designed-for in v1; this epic is the actual rollout.
+
+- [ ] B.1 Install `next-auth` (latest), configure providers (start: email magic link)
+- [ ] B.2 Prisma adapter on the same DB
+- [ ] B.3 Replace `requireUser` dev stub with the Auth.js session subject
+- [ ] B.4 Login UI swaps from "type a name" to "enter your email"
+- [ ] B.5 Migrate dev-stub users (or wipe — TBD by product)
+- [ ] B.6 OAuth providers (Google, Apple) as a follow-up
+
+---
+
+## Delivery order
 
 The order isn't a Gantt chart — it's the sequence that lets us demo something real after each epic:
 
-1. **Epic 0** (foundations) — invisible but unblocks everything.
-2. **Epic 1** (onboarding) — first demoable: name + priorities.
-3. **Epic 2** (Today + completion + growth) — the core loop. After this we have a real game.
-4. **Epic 7** (health) — without this, completion is upside-only and the game has no tension. Slot it here, before Plans, because Today depends on the visual health state.
-5. **Epic 3** (Plans) — gives the user CRUD over their world.
-6. **Epic 4** (Garden) — the visual payoff. Doable earlier in art-only form, but the *interactive* garden depends on Plans.
-7. **Epic 5** (History) — read-only summary of work done; lowest risk.
-8. **Epic 6** (Profile) — settings + reset.
-9. **Epic 8** (Polish) — runs alongside late epics, not after.
+1. **Epic 0** — foundations (frontend + backend skeleton). Most invisible work; everything depends on it.
+2. **Epic 1** — onboarding. First demoable: name + priorities, persisted server-side.
+3. **Epic 2** — Today + completion + growth. The core loop. After this we have a real game.
+4. **Epic 7** — health. Adds tension to the loop. Slot here, before Plans, because Today depends on the visual health state.
+5. **Epic 3** — Plans (CRUD).
+6. **Epic 4** — Garden (visual payoff).
+7. **Epic 5** — History.
+8. **Epic 6** — Profile.
+9. **Epic 8** — Polish, runs alongside the late epics.
+10. **Epic A** — Postgres swap, when needed.
+11. **Epic B** — Auth, when product wants accounts.
 
 ## Definition of Done (every story)
 
 1. Code merged through PR with green CI.
-2. New behavior covered by unit + integration tests as applicable; coverage thresholds met.
-3. Acceptance criteria demoed in PR description (gif or short clip if visual).
+2. New behavior covered by tests proportional to its risk (see `testing-strategy.md`).
+3. Acceptance criteria demoed in PR description.
 4. No new ESLint warnings, no `any`, no `@ts-ignore`.
-5. Updated user-facing copy passes a quick read aloud.
+5. User-facing copy reads aloud cleanly.
 6. Domain rules added to `domain-model.md` if any were introduced.

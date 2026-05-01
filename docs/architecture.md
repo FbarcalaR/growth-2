@@ -1,173 +1,238 @@
 # Growth — Architecture
 
+> Revised after PR #1 review. This supersedes the v1 draft.
+
 ## 1. What we're building
 
-**Growth** is a mobile-first, single-user, gamified life planner. The user defines life priorities across seven areas (the Wheel of Life), creates goals tied to those areas, and each goal is represented by a plant in a garden. Tasks and routines feed resources to the plant; overdue work wilts it; finishing a goal earns a trophy. The whole thing is a single React app rendered inside a simulated iOS frame — there's no real backend, no auth, no multi-user concerns at v1.
+**Growth** is a gamified life planner that runs in the browser. The user defines life priorities across seven areas (the Wheel of Life), creates goals tied to those areas, and each goal is represented by a plant in a garden. Tasks and routines feed resources to the plant; overdue work wilts it; finishing a goal earns a trophy.
 
-This document explains how the codebase is organized, why, and where to push back if a future requirement breaks the assumption.
+The product launches **single-user from a UX standpoint** (each person sees only their own data, no collaboration features), but the **system is multi-user from day 1**: every entity is scoped by `userId`, the backend stores data centrally, and the same account can sign in from any device and see the same garden.
+
+This document is the contract: what the codebase looks like, why, and where to push back if a future requirement breaks the assumption.
 
 ## 2. Stack
 
+We pin versions in `package.json`, not in this document. The numbers below describe what's current at the time of writing — when bumping, prefer the latest stable.
+
 | Concern | Choice | Why |
 |---|---|---|
-| Framework | **Next.js 15 (App Router)** | The user asked for Next.js. App Router gives us file-based routing for the few full-page surfaces we have (login, app shell), RSC where useful, and a clean path to add a real backend later (route handlers / server actions). |
-| Language | **TypeScript (strict)** | The prototype uses dynamic JS and gets away with it because it's small. Once we model goals/tasks/plants/resources as real types, the compiler catches the bugs we'd otherwise hit at runtime (e.g. resource keys, plant stages). |
-| UI | **React 18** | Matches the prototype. |
-| Styling | **Tailwind CSS + CSS variables for tokens** | The prototype uses inline styles tied to a small set of color/spacing tokens. Tailwind keeps colocation and lets us encode the tokens (sage greens, area colors, resource colors) once in `tailwind.config.ts` + `globals.css`. We avoid CSS-in-JS — no runtime cost, simpler SSR. |
-| State | **Zustand** with `persist` middleware | The prototype is one big `useReducer` + `localStorage`. Zustand gives us the same shape (single store, plain actions) without prop-drilling `dispatch`, plays nicely with selectors, and `persist` replaces the hand-rolled `loadState`/`saveState`/`migrateState`. We considered Redux Toolkit (too much ceremony for one user) and React Context + reducer (works but selectors and persistence get awkward). |
-| Forms | **React Hook Form + Zod** | Goal/task creation modals have validation rules (non-empty title, valid date, repeat-day mask). Zod schemas double as the runtime validators at the persistence boundary (see §6). |
-| Tests | **Vitest + React Testing Library + Playwright** | Vitest is fast, ESM-native, and pairs with Next 15. RTL for component behavior; Playwright for the few flows that span tabs (plant a goal, complete a task, watch the plant grow). |
-| Icons / SVG | Inline SVG components | The prototype hand-draws icons inline. We'll lift them to `components/icons/` so they're reusable and themable. |
-| Fonts | Plus Jakarta Sans via `next/font` | Self-hosted, no FOUT, matches the prototype. |
-| Lint/format | ESLint (next config) + Prettier + `tsc --noEmit` in CI | Standard. |
+| Framework | **Next.js (latest stable)** | Asked for by product. App Router gives us file-based routing, Route Handlers for the API in the same repo, RSC where useful, and Server Actions for mutation flows. Single deploy target keeps the v1 surface small. |
+| Language | **TypeScript (latest stable, `strict`)** | Domain types are non-trivial (resources, plant stages, repeat-day masks). The compiler catches the bugs we'd otherwise hit at runtime. |
+| UI runtime | **React (latest stable)** | Comes with Next. |
+| Styling | **Tailwind CSS + Atomic Design** | Tokens encoded once in `tailwind.config.ts` + `globals.css`; small components (chips, badges, info boxes, buttons) are styled **once** as atoms and reused everywhere. This is the explicit anti-duplication policy from the review. See §5. |
+| Forms | **React Hook Form + Zod** | Same Zod schemas validate forms in the browser and request bodies on the server. |
+| Client state | **Zustand** | UI/ephemeral state only (active tab, modal open, animation toggles). Not the source of truth for persisted data — that's the server. |
+| Server state | **TanStack Query (React Query)** | Caches API responses, handles loading/error states, optimistic updates for task toggles. Replaces the prototype's `localStorage` reducer pattern. |
+| Backend | **Next.js Route Handlers** in the same repo, layered over a service / repository / domain stack | Lightest possible surface that still gives us a real backend boundary. We do not build a separate service; if we ever outgrow the same-repo model we extract `src/server/` cleanly. |
+| Database (now) | **In-memory repository** | Keeps v1 simple. Same interface as the production repository — swapping is a code change, not an architectural one. |
+| Database (planned) | **PostgreSQL via Prisma** | Reasons in §6. Postgres because the model is relational (users → goals → tasks/routines, garden tiles, deco grid). Prisma because it gives us type-safe queries, migrations, and adapters for hosted Postgres providers (Neon, Supabase, RDS) without rewriting the data layer. |
+| Auth (planned) | **Auth.js (NextAuth v5)** | First-class Next.js support, OAuth + email magic links + credentials, database adapter for the same Prisma instance. We design the schema and middleware to be auth-ready now (every record carries `userId`); we can flip on the actual provider in one focused PR. |
+| Tests | **Vitest + React Testing Library + Playwright** | Vitest for unit/integration; Playwright for end-to-end flows. See `testing-strategy.md`. |
+| Lint/format | ESLint (Next config) + Prettier + `tsc --noEmit` in CI | Standard. |
 
 ### Things we explicitly are not adding (yet)
 
-- A backend, database, or auth — the app is local-only, just like the prototype. We persist to `localStorage` under a versioned key (`growth_v1`).
-- A component library (MUI, shadcn, etc.) — the visual language is specific enough that wrapping a generic library costs more than it saves.
-- Internationalization — single-locale (en-US) until product asks otherwise.
-- Server state libraries (React Query, SWR) — there's no server.
+- A separate backend service or microservices.
+- A component library (MUI, shadcn). The visual language is specific enough that the atomic-design layer we build is cheaper than wrapping a generic library.
+- Internationalization — single locale (en-US) until product asks otherwise.
+- Real-time / websockets — not needed; sync is pull-based via TanStack Query.
 
-When any of those assumptions breaks (we add sync, we add accounts, we add a second locale), revisit this section before adding the dependency.
+When any of those assumptions breaks, revisit this section before adding the dependency.
 
-## 3. Architectural style: light DDD, not full DDD
+## 3. Architectural style: light DDD on the **backend**
 
-Should we implement DDD? **Partially.** Here's the reasoning.
+The domain — Goal, Task, Routine, Plant, Resource, Garden — has non-trivial rules: a plant grows when its accumulated resources cover a stage's requirements; health is derived from the count and age of overdue tasks; completing a goal awards a trophy and frees its tile. **Those rules live on the server**, in pure TypeScript, behind Route Handlers. The frontend never re-implements them.
 
-The app has a real domain — Goal, Task, Routine, Plant, Resource, Garden — with non-trivial rules: a plant grows when it has accumulated enough of its primary and secondary resources; a plant's health is derived from the count and age of overdue tasks; completing a goal awards a trophy and frees its tile. Those rules deserve to live in pure functions that are easy to test in isolation, not be smeared across React components.
+What we **adopt** from DDD (server-side):
 
-What we **adopt** from DDD:
-
-- A **`domain/` layer** of pure TypeScript: entities as types, business rules as pure functions (`growPlant`, `getOverdueCount`, `getHealth`, `applyTaskCompletion`). No React, no localStorage, no `Date.now()` passed in (clock injected). Easy to unit-test.
+- A **`src/server/domain/` layer** of pure functions: business rules, no I/O, no clock side effects (the clock is injected). Easy to unit-test.
 - **Ubiquitous language**: code uses the same words the user sees — `goal`, `task`, `routine`, `plant`, `resource`, `area`, `tile`, `decoration`. No `Item`/`Entity`/`Record` placeholders.
-- **Invariants enforced in one place**: e.g. "you can't plant two goals on the same tile" lives in a domain function, not in the dispatch handler.
+- **Invariants enforced in one place**: e.g. "you can't plant two goals on the same tile" lives in a domain function called by the service, not duplicated in handlers and the UI.
+- **Repositories** as the seam between domain and persistence — see §6.
 
 What we **don't** adopt:
 
-- **No aggregates / repositories / CQRS.** There's one user, one store, one persistence target. Adding a `GoalRepository` interface in front of `localStorage` is ceremony for a problem we don't have.
+- **No aggregate roots, CQRS, or event sourcing.** Single-context app, single store of record.
 - **No bounded contexts.** The whole app is one context.
-- **No domain events / event sourcing.** We mutate a single state tree. Animations driven by "X just happened" can be modeled as transient UI state, not a sourced event log.
+- **No DDD on the frontend.** The frontend renders state and dispatches mutations; rules belong to the server.
 
-If the app gains real persistence (sync server, multi-device), the `domain/` layer is already isolated enough that we can put a repository in front of it without rewriting components. That's the migration we're protecting.
+If the app gains real-time collab, multi-context, or extracted services later, this layering is the migration we're protecting.
 
-## 4. Folder structure
+## 4. Repository structure
 
 ```
 growth-2/
-├── app/                          # Next.js App Router
-│   ├── layout.tsx                # Root layout: fonts, theme, persisted store hydration
-│   ├── page.tsx                  # The single app shell (iOS frame + active tab)
-│   ├── login/                    # If we choose a separate route for login
-│   └── api/                      # (empty for v1; reserved)
+├── app/                              # Next.js App Router (frontend + API routes)
+│   ├── layout.tsx                    # Root layout: fonts, theme, query client provider
+│   ├── page.tsx                      # Redirects to /today
+│   ├── (app)/                        # Authed app shell (route group)
+│   │   ├── layout.tsx                # Bottom nav, auth/onboarding guard
+│   │   ├── today/page.tsx
+│   │   ├── garden/page.tsx
+│   │   ├── history/page.tsx
+│   │   └── profile/page.tsx
+│   ├── login/page.tsx                # Public
+│   └── api/                          # Route Handlers (the backend's HTTP surface)
+│       ├── goals/route.ts            # GET, POST
+│       ├── goals/[id]/route.ts       # PATCH, DELETE
+│       ├── goals/[id]/tasks/route.ts
+│       ├── goals/[id]/routines/route.ts
+│       ├── garden/route.ts
+│       ├── shop/route.ts
+│       └── me/route.ts               # current user, priorities
 │
 ├── src/
-│   ├── domain/                   # Pure TS, no React, no DOM
-│   │   ├── types.ts              # Goal, Task, Routine, Plant, Resource, Area, GardenState
-│   │   ├── areas.ts              # WHEEL_AREAS, AREA_RESOURCE
-│   │   ├── plants.ts             # PLANT_DEFS, STAGE_NAMES, growPlant(), getStage()
-│   │   ├── resources.ts          # RESOURCE_INFO, applyResourceDelta()
-│   │   ├── health.ts             # getOverdueCount(), getHealth(), getHealthState()
-│   │   ├── rewards.ts            # task/routine completion → coins + resources
-│   │   ├── garden.ts             # tile occupancy, placeDeco, isPlantable
-│   │   └── __tests__/            # Vitest specs colocated with the layer they test
+│   ├── server/                       # Backend code. Never imported by client components.
+│   │   ├── domain/                   # Pure TS rules; no I/O, no clock
+│   │   │   ├── types.ts
+│   │   │   ├── areas.ts
+│   │   │   ├── plants.ts
+│   │   │   ├── resources.ts
+│   │   │   ├── health.ts
+│   │   │   ├── rewards.ts
+│   │   │   ├── garden.ts
+│   │   │   └── __tests__/
+│   │   ├── services/                 # Use-cases that orchestrate domain + repos
+│   │   │   ├── goals.ts
+│   │   │   ├── tasks.ts
+│   │   │   ├── routines.ts
+│   │   │   ├── garden.ts
+│   │   │   └── shop.ts
+│   │   ├── repositories/             # Persistence interfaces + implementations
+│   │   │   ├── types.ts              # GoalRepo, UserRepo, GardenRepo interfaces
+│   │   │   ├── memory/               # In-memory impl (current)
+│   │   │   └── prisma/               # Postgres impl (planned)
+│   │   ├── auth/                     # Auth.js wiring (placeholder until Epic A)
+│   │   ├── http/                     # Request validation, error mapping, response shapers
+│   │   └── container.ts              # Composition root: picks impls, exposes services
 │   │
-│   ├── store/                    # Zustand store + actions (the only mutator)
-│   │   ├── index.ts              # createStore() with persist middleware
-│   │   ├── actions.ts            # Each action calls into domain/ for the math
-│   │   ├── migrations.ts         # Versioned migrations (v1 → v2 → ...)
-│   │   └── selectors.ts          # Reusable selectors (todayItems, plantedGoals, etc.)
+│   ├── components/                   # Atomic Design — see §5
+│   │   ├── atoms/                    # Button, Chip, Badge, Icon, ProgressBar, Input
+│   │   ├── molecules/                # TaskRow, RoutineRow, AreaPicker, ResourceMeter
+│   │   ├── organisms/                # GoalCard, GardenGrid, WheelOfLife, BottomNav
+│   │   └── templates/                # AppShell, ModalShell, OnboardingShell
 │   │
-│   ├── components/               # Presentational + small composite components
-│   │   ├── ios-frame/            # IOSDevice wrapper
-│   │   ├── nav/                  # BottomNav, NavTab
-│   │   ├── plants/               # PlantSprite, PlantHealth badge, GrowthProgress
-│   │   ├── garden/               # GardenGrid, GardenTile, DecoCatalog
-│   │   ├── tasks/                # TaskRow, RoutineRow, AddTaskModal
-│   │   ├── goals/                # GoalCard, GoalEditor, GoalList
-│   │   ├── wheel/                # WheelOfLife (priorities slider)
-│   │   ├── primitives/           # Button, Modal, Sheet, Chip, ProgressBar
-│   │   └── icons/                # SVG icons as components
+│   ├── features/                     # Tab-level compositions; wire data to UI
+│   │   ├── today/
+│   │   ├── garden/
+│   │   ├── plans/
+│   │   ├── history/
+│   │   ├── profile/
+│   │   ├── login/
+│   │   └── onboarding/
 │   │
-│   ├── features/                 # Tab-level compositions; each owns its UX
-│   │   ├── today/                # TodayTab
-│   │   ├── garden/               # GardenTab (the visual garden + shop)
-│   │   ├── plans/                # PlansTab (list of goals + edit)
-│   │   ├── history/              # HistoryTab (calendar + completion log)
-│   │   ├── profile/              # ProfileTab
-│   │   ├── login/                # LoginPage
-│   │   └── onboarding/           # SetPrioritiesModal (Wheel of Life budgeting)
+│   ├── client/                       # Frontend infra
+│   │   ├── api/                      # Generated/typed clients per route, used by hooks
+│   │   ├── hooks/                    # useGoals, useToggleTask — wraps TanStack Query
+│   │   ├── store/                    # Zustand — UI-only state (active tab, modals)
+│   │   └── lib/                      # date, classnames (cn), formatters
 │   │
-│   ├── lib/                      # Cross-cutting helpers (no domain knowledge)
-│   │   ├── date.ts               # toISO, addDays, isoToday — clock-injectable
-│   │   ├── classnames.ts         # cn()
-│   │   └── persist.ts            # storage adapter (swap for SSR-safe)
+│   ├── shared/                       # Code legitimately shared across client/server
+│   │   ├── schemas/                  # Zod — request/response + form validation
+│   │   └── types.ts                  # DTOs (the wire format)
 │   │
 │   └── styles/
-│       └── globals.css           # Tailwind layers + CSS variables for tokens
+│       └── globals.css               # Tailwind layers + CSS variables for tokens
 │
 ├── tests/
-│   └── e2e/                      # Playwright specs
+│   └── e2e/                          # Playwright
 │
-├── docs/                         # This folder
+├── docs/
 └── public/
 ```
 
-### Why split `components/` and `features/`?
+### Key rules
 
-`components/` are reusable building blocks with no knowledge of the store. `features/` are the tab-level screens that wire components to selectors and actions. This keeps the building blocks easy to reuse (and Storybook-able later) and makes it obvious where business orchestration lives.
+- `src/server/**` is **never imported from a client component**. Enforced by ESLint (`no-restricted-imports` + a `'server-only'` import in `src/server/index.ts`).
+- The frontend talks to the backend **only** through `src/client/api/*` clients. No direct DB access from RSC, no calling services from components.
+- `src/shared/**` is the only place both sides import from; it must be I/O-free.
 
-### Why a top-level `src/`?
+## 5. Atomic design + Tailwind
 
-Next.js convention; keeps `app/` thin (route entries that import from `src/`).
+The review's directive: small components styled once, reused everywhere. We adopt the four practical layers of atomic design:
 
-## 5. State management contract
+- **Atoms** — `Button`, `Chip`, `Badge`, `Icon`, `Input`, `ProgressBar`, `Avatar`, `Toggle`. Each owns its Tailwind class composition for every variant. The rest of the app **must not** restyle these — variants are added inside the atom.
+- **Molecules** — small functional groupings: `TaskRow`, `RoutineRow`, `AreaPicker`, `ResourceMeter`, `HealthBadge`. Made of atoms, no business logic.
+- **Organisms** — domain-aware blocks: `GoalCard`, `GardenGrid`, `WheelOfLife`, `BottomNav`. May read from the store or accept structured props.
+- **Templates** — page skeletons (`AppShell`, `OnboardingShell`).
 
-- **Single store.** `useGrowthStore` is the only place state lives. No Context-based duplicates.
-- **Selectors over destructuring the whole store.** Components subscribe to the slice they need so unrelated updates don't re-render them.
-- **Actions are thin.** They call domain functions and write the result back. Example:
-  ```ts
-  toggleTask: (goalId, taskId) => set((s) => ({
-    ...applyTaskCompletion(s, { goalId, taskId, now: clock.now() }),
-  }))
-  ```
-- **The clock is injected** into domain functions (`now: Date`). Tests pass a fixed date; production passes `new Date()`. Without this, "overdue" calculations are non-deterministic in tests.
-- **Persistence is a side effect of the store.** Domain functions never touch storage.
+Pages live in `app/`; they compose templates and organisms.
 
-## 6. Persistence and migrations
+Conventions:
+- Tokens (color, radius, spacing, motion) come from `tailwind.config.ts`. **No hex values inside components.**
+- `cn()` for conditional class composition.
+- Variants on atoms are typed (`size: 'sm'|'md'|'lg'`), not string-untyped Tailwind blobs at the call site.
+- A `/_styleguide` route renders every atom + molecule for review.
 
-- Storage key: `growth_v1`. The version is part of the key, not a field, so a botched migration can't read malformed data into the new store.
-- A migration is a pure function `migrate(prev: unknown, fromVersion: number): GrowthState`. We keep every migration; we don't edit old ones.
-- The persisted blob is **validated with Zod on load**. If validation fails, we fall back to `INITIAL_STATE` and surface a one-time toast. No silent corruption.
-- Domain types and the Zod schema live next to each other (`domain/types.ts` + `domain/schema.ts`) and are kept in sync via `z.infer`.
+## 6. Backend, persistence, and the swap-to-Postgres plan
 
-## 7. Rendering and routing
+### Now: in-memory repositories
 
-The app is essentially one screen with internal tabs (Today/Garden/History/Profile), gated by login + priorities-set. Two reasonable shapes:
+Each repository is an interface (`GoalRepo`, `UserRepo`, `GardenRepo`, etc.) with a current in-memory implementation. The composition root in `src/server/container.ts` instantiates them and hands them to services. Process restarts wipe the data — that's acceptable for v1 dev, and tests don't depend on persistence.
 
-- **A) Single route, tab state in the store.** Closest to the prototype, simplest. Browser back doesn't change tabs.
-- **B) Routes per tab (`/today`, `/garden`, …).** Browser back works, deep links work. Slightly more wiring (one layout, four route segments).
+In-memory data is keyed by `userId` from day 1. Until Auth.js lands, requests carry a stub user header (`X-Dev-User`) in development; production builds reject requests without a real session.
 
-We pick **B**. The cost is small, the UX win is real, and it lets us code-split per tab if any one gets heavy (the garden's deco catalog likely will).
+### Planned: PostgreSQL via Prisma
 
-The login + priorities flow runs as **a layout-level guard**: if `user.name` is empty, render `<LoginPage/>`; if `prioritiesLocked` is false, render the Set-Priorities modal over the active tab. We do not redirect — the prototype sets these as overlays and the design depends on that.
+When we promote storage:
 
-## 8. Performance notes (cheap things, do them now)
+1. Add `prisma/schema.prisma` modeling `User`, `Goal`, `Task`, `Routine`, `GardenTile`, `OwnedDeco`, `Trophy`. Foreign keys on `userId`.
+2. Implement `src/server/repositories/prisma/*.ts` against the same interfaces.
+3. Switch the binding in `container.ts`. **No service or domain code changes.**
+4. Provision Postgres (Neon or Supabase to start; migration to managed Postgres later is trivial).
 
-- Code-split the garden tab (`next/dynamic`) — the deco catalog and SVG plants are the biggest art bundle.
-- Memoize derived data (`useMemo` for `todayItems`, plant health) keyed by the store slice.
-- Avoid storing computed fields in the store (e.g. don't persist `health` — derive it from overdue tasks at read time).
+Reasons we picked Postgres:
+- The data is relational (one-to-many goal→tasks, goal↔tile uniqueness, user↔goal ownership).
+- Strong constraints (unique tile per user) belong at the DB level, not just app level.
+- Prisma's migrations + type generation align with our TS-strict policy.
+
+We considered SQLite (too small for multi-user hosted) and a document store (the model is too relational for that to be a win).
+
+### Sync across devices
+
+Yes — this is what the backend buys us. Same user, multiple browsers/devices, identical data. TanStack Query polls/refocuses to keep the UI fresh. No real-time push at v1.
+
+### Auth: deferred but designed for
+
+- Every record is `userId`-scoped from day 1.
+- Every Route Handler runs through a single `requireUser(req)` helper. Today it returns the dev stub; tomorrow it returns the Auth.js session subject. Handlers don't change.
+- We intentionally don't implement OAuth in v1 — but the schema and middleware are ready for it.
+
+## 7. Routing and navigation
+
+- Public routes: `/login`.
+- Authed routes (route group `(app)`): `/today`, `/garden`, `/history`, `/profile`. Each is a real page so browser back works and tabs are deep-linkable.
+- The `(app)` layout enforces two guards: signed in (today: dev stub; later: real session) and `prioritiesLocked === true`. If priorities aren't locked, the `SetPrioritiesModal` overlays the active tab — it cannot be dismissed except by submitting.
+
+## 8. Performance notes
+
+- Code-split the garden tab — the deco catalog and SVG sprites are the largest art bundle.
+- TanStack Query caches by user — switching tabs doesn't refetch.
+- Memoize derived data (today's items, plant health) in selectors, not in components.
+- Health is **never** persisted; it's derived from overdue tasks at read time on the server and returned alongside goals.
 
 ## 9. Accessibility baseline
 
-- All interactive elements are real `<button>` / `<a>` / form controls. No tappable `<div>`s.
-- Color is never the sole carrier of meaning — plant health states have icons + labels (the prototype already does this; we keep it).
-- Tap targets ≥ 44×44 px (iOS HIG). The bottom nav already meets this; keep it when porting.
-- Reduced-motion preference respected for the resource-flying animations.
+- All interactive elements are real `<button>`/`<a>`/form controls.
+- Color is never the sole carrier of meaning — plant health states have icons + labels.
+- Tap targets ≥ 44×44 px.
+- `prefers-reduced-motion` honored.
+- Bottom nav has visible focus states (now important on the web — keyboard users exist, unlike on the mobile prototype).
 
-## 10. Open questions for the PO
+## 10. Resolved questions (from PR #1 review)
 
-1. Do we ever want this to sync across devices? If yes, plan a server context now.
-2. Do we want Wheel-of-Life priorities to ever be re-opened after lock, or is that one-and-done?
-3. Garden grid is fixed 8×6 in the prototype — is that locked, or should grid size scale with plant count?
+| Question | Decision |
+|---|---|
+| iOS frame in production? | **No.** Render directly in the browser. The frame was prototype-only. |
+| Sync across devices? | **Yes, eventually** — and the backend is the mechanism, designed in from day 1. |
+| Re-open Wheel of Life after lock? | **No, locked one-time.** Out of scope for v1. |
+| Garden grid resize? | **No, locked 8×6.** Out of scope for v1. |
+| Multi-user? | **System: yes, from day 1.** UX: single-user (no collaboration) at v1. |
+| Backend? | **Yes, in this repo, from day 1.** In-memory now → Prisma + Postgres next. |
+| Domain placement? | **Backend.** The frontend never re-implements rules. |
 
-These don't block v1 but should be answered before we cement the persistence schema.
+## 11. Open questions to revisit
+
+1. Do we want Server Actions or Route Handlers as the default mutation surface? (Route Handlers chosen for v1 because TanStack Query and OpenAPI tooling speak HTTP; revisit if we adopt RSC mutations heavily.)
+2. Hosted Postgres provider for production: Neon vs Supabase vs RDS — answer when we provision.
+3. Auth provider: email magic link vs OAuth-first — answer when Epic A starts.

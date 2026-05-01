@@ -2,10 +2,16 @@
 
 This is the canonical reference for the entities and rules of Growth. Anything that disagrees with this document — code, design, or copy — is wrong until this document is updated.
 
+The domain lives **server-side** (`src/server/domain/`); the frontend never re-implements these rules. Every persistent entity is scoped by `userId` — the system is multi-user from day 1, even though v1 has no collaboration UX.
+
 ## Entities
 
 ### User
-- `name: string` — non-empty after login.
+- `id: UserId` — opaque server-generated identifier; foreign key on every other entity.
+- `name: string` — non-empty after onboarding.
+- `createdAt: ISODateTime`.
+
+All entities below carry an implicit `userId: UserId`. Repositories enforce that queries filter by it; services reject cross-user reads.
 
 ### LifeArea (`Area`)
 A fixed enum of seven areas; the user does not create new ones.
@@ -71,7 +77,7 @@ A tile may hold a planted goal **or** a deco item, not both.
 
 ### Wheel of Life onboarding
 - The user is shown after first login. They allocate weights across the seven areas under a fixed budget (default 30).
-- Once submitted, `prioritiesLocked = true`. Re-opening is out of scope for v1.
+- Once submitted, `prioritiesLocked = true`. **One-time only**; re-opening is out of scope for v1.
 
 ### Coins and resources from completion
 | Action | Coins | Resources |
@@ -104,14 +110,16 @@ After every resource change, the goal's plant is checked:
 A dead plant can be replanted: stage resets to 1, `plantRes` clears, and any overdue (incomplete) task's `dueDate` is set to today. The user keeps their work but the clock resets.
 
 ### Garden grid
-- 8 columns × 6 rows.
+- **Locked at 8 columns × 6 rows.** Not configurable at v1.
 - Some tiles may be non-plantable terrain (paths, water). Non-plantable tiles are defined by the garden art; the domain layer rejects placement on them.
 - Plant-or-deco-or-empty per tile.
+- Uniqueness `(userId, tileCol, tileRow)` is enforced by the repository (DB-level constraint when on Postgres).
 
 ### Trophies
 A `trophyId = "trophy_<goalId>"` is added to `garden.owned` when a goal completes. Trophies cannot be sold or removed.
 
 ### Persistence schema versioning
 - v1: this document.
-- Migrations live in `src/store/migrations.ts`. Each migration is pure and tested.
-- Migrations the prototype already encodes (and we should keep): grid resize preservation, unplanting goals on invalid tiles, defaulting `prioritiesLocked` from the sum of the wheel.
+- For the **in-memory** repository, migrations don't apply (process restarts wipe data).
+- For **Postgres**, migrations are managed by Prisma (`prisma/migrations/*`). Each migration is checked into source.
+- Domain functions never read or write storage directly — they take values, return values. Repositories are the only persistence boundary.

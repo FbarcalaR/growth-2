@@ -6,8 +6,9 @@ Read once. Apply always.
 
 - TypeScript `strict: true`, `noUncheckedIndexedAccess: true`. No `any` in committed code; use `unknown` and narrow.
 - Prefer `type` aliases for data shapes; reserve `interface` for things that may be augmented (rare here).
-- All domain types live in `src/domain/types.ts` and are re-exported through a single barrel. Don't redeclare `Goal` in features.
-- Validate at boundaries (storage load, future API responses) with Zod. Don't validate inside components.
+- Domain types live in `src/server/domain/types.ts` (server-side). Wire DTOs and Zod schemas live in `src/shared/schemas/`. Components consume the inferred DTO types, not the server domain types.
+- Validate at boundaries — request bodies on the server, API responses on the client — with Zod. Don't validate inside components or services.
+- `src/server/**` is server-only. Never import it from `app/`, `src/components/`, `src/features/`, or `src/client/`. ESLint enforces this.
 
 ## Files and naming
 
@@ -32,25 +33,23 @@ Read once. Apply always.
 - Avoid inline `style={}` except for dynamic values that can't be expressed as utilities (e.g. an animated transform).
 - One global stylesheet (`globals.css`); per-component CSS files are a smell.
 
-## State (Zustand)
+## State
 
-- One store: `useGrowthStore`. No secondary stores.
-- Components subscribe with selectors:
-  ```ts
-  const goals = useGrowthStore((s) => s.goals);
-  ```
-  Not:
-  ```ts
-  const { goals } = useGrowthStore(); // re-renders on every change
-  ```
-- Actions are defined inside the store factory; they orchestrate, the math lives in `domain/`.
-- Never mutate state outside an action.
+We split state into two:
 
-## Domain layer
+- **Server state** (goals, tasks, garden, coins) — owned by TanStack Query. Use the typed hooks in `src/client/hooks/` (`useGoals`, `useToggleTask`, …). No raw `fetch` in components.
+- **Client/UI state** (active tab, open modals, transient animation flags) — owned by Zustand in `src/client/store/`.
 
-- Pure functions, pure inputs, pure outputs. No `Date.now()`, no `Math.random()`, no `localStorage`. Inject those.
-- Each rule has a unit test. If you can't test it without React, it's in the wrong layer.
-- Functions return new objects; we use immer only inside the store, not in domain.
+Conventions:
+- Subscribe with selectors so components re-render only on the slice they read. Don't destructure the whole store.
+- Mutations go through the typed mutation hooks so optimistic updates and rollback stay consistent.
+
+## Domain layer (server-side)
+
+- Pure functions, pure inputs, pure outputs. No `Date.now()`, no `Math.random()`, no I/O. Inject the clock.
+- Each rule has at least one unit test.
+- Domain functions return new values; mutation happens in services or repositories.
+- Domain functions throw `DomainError` on invariant violations — services translate to HTTP errors at the boundary.
 
 ## Accessibility
 
@@ -69,8 +68,9 @@ Read once. Apply always.
 
 ## Errors
 
-- Domain functions throw `DomainError` for broken invariants — these are programmer errors and we want them loud in dev.
-- The store catches at the boundary and surfaces a toast; it never lets a domain throw bubble into React's render.
+- Domain functions throw `DomainError` for broken invariants.
+- Services let `DomainError` bubble; the HTTP error mapper at the Route Handler boundary translates them to 4xx with a stable error code.
+- The frontend toast layer surfaces non-2xx responses; it never re-implements rules to "predict" errors.
 
 ## Git
 

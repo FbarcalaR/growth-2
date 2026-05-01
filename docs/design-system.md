@@ -76,6 +76,10 @@ Tokens lifted from the prototype. Encode these as Tailwind theme extensions (`ta
 - Resource fly-to-plant animation: 600ms `cubic-bezier(0.22, 1, 0.36, 1)`. Suppressed under `prefers-reduced-motion`.
 - Tab transitions: 200ms cross-fade or none — never slide.
 
-## iOS frame
+## Layout container
 
-The simulated device is the visual container at the page level. Status bar background matches the active tab's `surface-app`; home indicator is `brand-track`. Inside the frame is 54px top padding to clear the notch.
+The app renders directly in the browser — there is **no simulated device frame** in production. The frame in the prototype was for demo purposes only.
+
+For the responsive shell:
+- On mobile widths (< 480px), the app spans full width.
+- On wider viewports, content is centered in a max-width column (~480px) on a soft `surface-frame` page background, so the mobile-first layout stays legible on desktop without faking a phone.
