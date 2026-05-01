@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/__tests__/**/*.spec.ts", "src/**/*.spec.ts"],
+    setupFiles: ["src/test/setup.ts"],
     globals: false,
     coverage: {
       provider: "v8",
@@ -15,6 +16,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": new URL("./src", import.meta.url).pathname,
+      // The `server-only` package throws on import outside Next's server runtime.
+      // Tests run in Node so we stub it to an empty module — production code
+      // still imports the real package and remains protected at build time.
+      "server-only": new URL("./src/test/server-only-stub.ts", import.meta.url).pathname,
     },
   },
 });
