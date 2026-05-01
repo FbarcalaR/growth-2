@@ -62,7 +62,11 @@ Reviewers ask "would I notice if this regressed?" — if the answer is yes and t
 ## Fixtures
 
 - **Unit tests** keep their fixtures module-local (e.g. `src/server/domain/__tests__/fixtures.ts` exports `makeGoal(overrides)` / `makeUser(overrides)`). Override-based factories beat hand-rolled per-spec objects.
-- **Integration tests** (Story 0.7+) will share a `src/test/fixtures/state.ts` exporting whole-state scenarios (`freshState`, `midGameState`, `deadPlantState`, `nearGoalCompletionState`) — that file lands when the first integration test needs more than one of them.
+- **Integration tests** use the shared harness in `src/test/`:
+  - `src/test/render.tsx` — `renderWithQuery(ui)` wraps RTL render with a fresh test `QueryClient` (no retry / refetch / gc).
+  - `src/test/fetch-mock.ts` — `setupFetchMock()` installs a global fetch spy with URL→response mappings + a typed `calls()` accessor.
+  - `src/test/fixtures/state.ts` — `freshUser()`, `lockedUser()`, `seededGoals()` async builders that drive the in-memory backend through the real services (no shadow data path) and return DTO-shaped values. Drop them straight into a fetch-mock body so the wire shape matches what `/api/*` would return.
+  - Canonical pattern: fixture → fetch-mock → `renderWithQuery` → assert. See `src/test/__tests__/harness.spec.tsx` for the worked example.
 - **Clock**: `src/server/domain/clock.ts` exports `frozenClock(iso)` and `systemClock`. Domain functions and tests must inject the clock; reading `new Date()` inside domain code is forbidden.
 
 ## CI
