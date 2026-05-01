@@ -9,12 +9,13 @@ This is the Bloomly design bundle the user mocked up in Claude Design and handed
 | `Bloomly.html` | Entry point — renders the prototype in a browser by importing the JSX files via Babel. |
 | `*.jsx` | The screen and shared modules the user iterated on. Read these alongside `Bloomly.html` to see each screen's visual treatment, layout, microcopy, and the data shape the prototype assumes. |
 | `screenshots/` | Curated final shots per screen state. The fastest way to compare your implementation: drop the relevant `screenshots/<screen>.png` next to a screenshot of your build in the PR. |
-| `chats/` | The 14-chat conversation transcript between the user and Claude Design where the prototype was iteratively shaped. Useful context when something in the prototype looks intentional but isn't obvious from the code alone. |
 
 ## What was trimmed from the original bundle
 
-- `uploads/` — 16 MB of the user's source-material reference images (pasted screenshots from inspiration apps, etc.). Useful to see what inspired a choice; not useful for our fidelity check. If you want them, they're in the original design URL referenced at the top of `Bloomly.html`.
+- `uploads/` — 16 MB of the user's source-material reference images (pasted screenshots from inspiration apps, etc.). Useful to see what inspired a choice; not useful for our fidelity check.
 - `scraps/` — one napkin sketch file. Same reasoning.
+- `chats/` — the 14-chat iteration transcript between the user and Claude Design. Removed because the JSX + screenshots are sufficient for fidelity work; the chat context isn't worth carrying.
+- The originals are all available in the source design URL referenced at the top of `Bloomly.html` if you ever need them.
 
 ## How to use it for a fidelity check
 

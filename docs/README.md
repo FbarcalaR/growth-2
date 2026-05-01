@@ -10,7 +10,7 @@ This `docs/` folder is the source of truth for what we're building and how. Read
 4. [`coding-guidelines.md`](./coding-guidelines.md) — TS/React/Next conventions, accessibility, comments.
 5. [`testing-strategy.md`](./testing-strategy.md) — pyramid, fixtures, coverage policy.
 6. [`product-backlog.md`](./product-backlog.md) — epics → stories → tasks, ordered for delivery.
-7. [`prototype-design/`](./prototype-design/README.md) — the original Bloomly design bundle (HTML + JSX + screenshots + chats). **Authoritative visual reference**; every user-visible PR is reviewed against the matching screen.
+7. [`prototype-design/`](./prototype-design/README.md) — the original Bloomly design bundle (HTML + JSX + screenshots). **Authoritative visual reference**; every user-visible PR is reviewed against the matching screen.
 
 If you're a coding agent or new contributor: read `architecture.md` and `domain-model.md` first, skim the prototype in `prototype-design/`, then pick up the next unchecked story in `product-backlog.md`.
 
