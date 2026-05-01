@@ -6,3 +6,5 @@ coverage
 pnpm-lock.yaml
 public
 *.md
+# Prototype bundle: preserved verbatim as visual reference, not subject to our style rules.
+docs/prototype-design

@@ -34,3 +34,4 @@ Visit `/styleguide` to see every design token.
 | [`docs/coding-guidelines.md`](./docs/coding-guidelines.md) | TS/React/Next conventions |
 | [`docs/testing-strategy.md`](./docs/testing-strategy.md) | Test pyramid + coverage philosophy |
 | [`docs/product-backlog.md`](./docs/product-backlog.md) | Epics → stories → tasks, ordered for delivery |
+| [`docs/prototype-design/`](./docs/prototype-design/README.md) | The original design bundle — authoritative visual reference for every user-visible PR |

@@ -137,7 +137,7 @@ Goal: a user can launch the app, log in (dev stub), set priorities, land on Toda
 - [ ] 1.1.4 Integration test: empty submit blocked; valid submit advances
 - [ ] 1.1.5 **Match the prototype visually** (the current implementation from PR #4 is a functional stub — see Epic 0 review):
   - Soft light-green page background (`linear-gradient(160deg, #F0F7E8 → #E8F5E9 → #F1F8E9)`), not the dark sage `surface-frame` we currently render
-  - Hand-drawn `<GardenIllustration>` SVG (sun + ground + oak tree + cherry blossom + tulip + daisy + mushroom + grass tufts) — port from `prototype/login-page.jsx`
+  - Hand-drawn `<GardenIllustration>` SVG (sun + ground + oak tree + cherry blossom + tulip + daisy + mushroom + grass tufts) — port from `docs/prototype-design/login-page.jsx`
   - Two-step flow: welcome (illustration + tagline + "Start Growing →") → name (input + "Let's go, {firstName}! 🌱")
   - Logo: circular sage badge with the heart-leaf SVG above the title
   - Tagline + privacy note copy ("Grow your best life, one task at a time." / "No account needed · Your data stays on this device")
@@ -323,7 +323,7 @@ The order isn't a Gantt chart — it's the sequence that lets us demo something 
 3. Acceptance criteria demoed in PR description.
 4. No new ESLint warnings, no `any`, no `@ts-ignore`.
 5. User-facing copy reads aloud cleanly.
-6. **Visual fidelity to the prototype.** For any user-visible surface, place a screenshot of the implementation next to the corresponding prototype screen in the PR description and confirm they match: layout, illustrations, palette application, microcopy, flow steps. Drift from the prototype is allowed but it must be a deliberate, noted decision in the PR — not a quiet shortcut. The prototype lives at `prototype/` (decompressed from the design bundle) and is the authoritative reference until the user says otherwise.
+6. **Visual fidelity to the prototype.** For any user-visible surface, place a screenshot of the implementation next to the corresponding prototype screen in the PR description and confirm they match: layout, illustrations, palette application, microcopy, flow steps. Drift from the prototype is allowed but it must be a deliberate, noted decision in the PR — not a quiet shortcut. The prototype lives at [`docs/prototype-design/`](./prototype-design/README.md) and is the authoritative reference until the user says otherwise.
 7. **Docs are kept in sync in the same PR**:
    - This backlog: every implemented sub-task ticked `[x]`; every implemented story tagged with the merging PR (e.g. `### Story X — Title ✅ (PR #N)`).
    - Domain rules added or revised in `domain-model.md` if any were introduced or changed.
@@ -341,7 +341,7 @@ Reviewable items (canonical template):
 4. **Structural sanity check** against `coding-guidelines.md` ("Split files by entity / resource"). Anything mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
 5. **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
 6. **CI sanity check**: typecheck / lint / format / tests / build all green on `main`. No flakes.
-7. **Prototype fidelity check**: take a screenshot of every user-visible screen the epic touched; place it next to the matching prototype screen in `prototype/` and look. Layout, illustrations, palette application, microcopy, flow steps. Any drift that wasn't a deliberate, noted decision earns a follow-up task.
+7. **Prototype fidelity check**: take a screenshot of every user-visible screen the epic touched; place it next to the matching prototype screen in [`docs/prototype-design/`](./prototype-design/README.md) (or the relevant `screenshots/<screen>.png`) and look. Layout, illustrations, palette application, microcopy, flow steps. Any drift that wasn't a deliberate, noted decision earns a follow-up task.
 8. **List 3–5 improvements** that would make the next epic faster or safer (better fixtures, missing helper, ergonomics). File as `chore/` issues or as the first sub-tasks of the next epic.
 9. **Decide**: is the epic done? If not, add missing tasks to the review section and ship them before the next epic starts.
 
