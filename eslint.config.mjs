@@ -40,7 +40,15 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    // The prototype bundle is preserved verbatim as visual reference.
+    // It uses globals (window-mounted React, etc.) and isn't part of the build.
+    "docs/prototype-design/**",
+  ]),
 ]);
 
 export default eslintConfig;

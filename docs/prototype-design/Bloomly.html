@@ -1,0 +1,956 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bloomly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        background: #2c3e2d;
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      #root {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100vh;
+      }
+      ::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
+      input,
+      button,
+      textarea {
+        font-family: "Plus Jakarta Sans", sans-serif;
+      }
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel" src="ios-frame.jsx"></script>
+    <script type="text/babel" src="tweaks-panel.jsx"></script>
+    <script type="text/babel" src="shared.jsx"></script>
+    <script type="text/babel" src="login-page.jsx"></script>
+    <script type="text/babel" src="set-priorities-modal.jsx"></script>
+    <script type="text/babel" src="today-tab.jsx"></script>
+    <script type="text/babel" src="plans-tab.jsx"></script>
+    <script type="text/babel" src="garden-tab.jsx"></script>
+    <script type="text/babel" src="history-tab.jsx"></script>
+    <script type="text/babel" src="profile-tab.jsx"></script>
+
+    <script type="text/babel">
+      // ─── Initial State ─────────────────────────────────────────────────────────
+      const EMPTY_DECO_GRID = () => Array.from({ length: 8 }, () => Array(6).fill(null));
+
+      // Date helpers for seed data
+      const _toISO = (d) => {
+        const y = d.getFullYear(),
+          m = String(d.getMonth() + 1).padStart(2, "0"),
+          day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      };
+      const _addDays = (n) => {
+        const d = new Date();
+        d.setDate(d.getDate() + n);
+        return _toISO(d);
+      };
+      const _TODAY = _toISO(new Date());
+      const _TOMORROW = _addDays(1);
+      const _IN_3DAYS = _addDays(3);
+      const _IN_WEEK = _addDays(7);
+      const _2DAYS_AGO = _addDays(-2);
+      const _10DAYS_AGO = _addDays(-10);
+      const _WEEKDAYS = [true, true, true, true, true, false, false];
+      const _EVERYDAY = [true, true, true, true, true, true, true];
+      const _MWF = [true, false, true, false, true, false, false];
+
+      const INITIAL_STATE = {
+        user: { name: "" },
+        shopCoins: 60,
+        streak: 3,
+        totalCoinsEarned: 60,
+        goals: [
+          {
+            id: 1,
+            title: "Run a 5K race",
+            area: "health",
+            plantType: "herb",
+            stage: 1,
+            planted: true,
+            tileCol: 1,
+            tileRow: 4,
+            plantRes: { water: 3, nutrients: 1 },
+            tasks: [
+              { id: 11, title: "Run 3x per week", completed: true, dueDate: _TODAY },
+              { id: 12, title: "Build up to 5km distance", completed: false, dueDate: _IN_WEEK },
+              { id: 13, title: "Sign up for a local race", completed: false, dueDate: _IN_3DAYS },
+            ],
+            routines: [
+              {
+                id: 14,
+                title: "Morning stretch",
+                completedToday: false,
+                streak: 5,
+                repeatDays: _EVERYDAY,
+              },
+            ],
+          },
+          {
+            id: 2,
+            title: "Get promoted this year",
+            area: "career",
+            plantType: "sunflower",
+            stage: 0,
+            planted: false,
+            tileCol: null,
+            tileRow: null,
+            plantRes: { sunlight: 0, water: 0 },
+            tasks: [
+              { id: 21, title: "Complete leadership course", completed: false, dueDate: _TOMORROW },
+              { id: 22, title: "Lead one project end-to-end", completed: false, dueDate: null },
+            ],
+            routines: [
+              {
+                id: 23,
+                title: "Read industry news (15 min)",
+                completedToday: false,
+                streak: 2,
+                repeatDays: _WEEKDAYS,
+              },
+            ],
+          },
+          {
+            id: 3,
+            title: "Save $5,000 for vacation",
+            area: "finances",
+            plantType: "tomato",
+            stage: 2,
+            planted: true,
+            tileCol: 3,
+            tileRow: 4,
+            plantRes: { water: 5, sunlight: 2 },
+            tasks: [
+              { id: 31, title: "Set up automatic transfer", completed: true, dueDate: _2DAYS_AGO },
+              {
+                id: 32,
+                title: "Cancel unused subscriptions",
+                completed: false,
+                dueDate: _2DAYS_AGO,
+              },
+              { id: 33, title: "Open high-yield savings", completed: false, dueDate: _10DAYS_AGO },
+            ],
+            routines: [
+              {
+                id: 34,
+                title: "Log expenses",
+                completedToday: false,
+                streak: 0,
+                repeatDays: _EVERYDAY,
+              },
+            ],
+          },
+          {
+            id: 4,
+            title: "Learn to play guitar",
+            area: "fun",
+            plantType: "crystal",
+            stage: 1,
+            planted: true,
+            tileCol: 5,
+            tileRow: 5,
+            plantRes: { magic: 2, love: 1 },
+            tasks: [
+              { id: 41, title: "Buy a starter guitar", completed: false, dueDate: _addDays(-30) },
+              { id: 42, title: "Find an online course", completed: false, dueDate: _addDays(-25) },
+              { id: 43, title: "Practice basic chords", completed: false, dueDate: _addDays(-20) },
+              { id: 44, title: "Learn first full song", completed: false, dueDate: _addDays(-14) },
+            ],
+            routines: [
+              {
+                id: 45,
+                title: "Practice 15 min",
+                completedToday: false,
+                streak: 0,
+                repeatDays: _EVERYDAY,
+              },
+              {
+                id: 46,
+                title: "Watch a tutorial",
+                completedToday: false,
+                streak: 0,
+                repeatDays: _WEEKDAYS,
+              },
+            ],
+          },
+        ],
+        wheelOfLife: {
+          health: 0,
+          career: 0,
+          finances: 0,
+          relationships: 0,
+          personal: 0,
+          fun: 0,
+          spirituality: 0,
+        },
+        prioritiesLocked: false,
+        garden: {
+          decoGrid: EMPTY_DECO_GRID(),
+          owned: [],
+        },
+      };
+
+      // ─── Reducer ──────────────────────────────────────────────────────────────────
+      function applyTaskToggle(state, goalId, itemId, isRoutine) {
+        const goal = state.goals.find((g) => g.id === goalId);
+        if (!goal) return state;
+
+        const area = goal.area;
+        const primaryRes = window.AREA_RESOURCE?.[area];
+        const plantDef = (window.PLANT_DEFS || []).find((p) => p.id === goal.plantType);
+        const secondaryRes = plantDef?.secondary;
+
+        let coinsEarned = 0;
+        let resEarned = {};
+
+        let updatedGoal;
+        if (!isRoutine) {
+          const task = (goal.tasks || []).find((t) => t.id === itemId);
+          if (!task) return state;
+          const completing = !task.completed;
+          if (completing) {
+            coinsEarned = 3;
+            if (primaryRes) resEarned[primaryRes] = 4;
+          } else {
+            coinsEarned = -3;
+            if (primaryRes) resEarned[primaryRes] = -4;
+          }
+          updatedGoal = {
+            ...goal,
+            tasks: goal.tasks.map((t) => (t.id === itemId ? { ...t, completed: !t.completed } : t)),
+          };
+        } else {
+          const routine = (goal.routines || []).find((r) => r.id === itemId);
+          if (!routine) return state;
+          const completing = !routine.completedToday;
+          if (completing) {
+            coinsEarned = 2;
+            if (primaryRes) resEarned[primaryRes] = (resEarned[primaryRes] || 0) + 2;
+            if (secondaryRes) resEarned[secondaryRes] = (resEarned[secondaryRes] || 0) + 2;
+          } else {
+            coinsEarned = -2;
+            if (primaryRes) resEarned[primaryRes] = (resEarned[primaryRes] || 0) - 2;
+            if (secondaryRes) resEarned[secondaryRes] = (resEarned[secondaryRes] || 0) - 2;
+          }
+          updatedGoal = {
+            ...goal,
+            routines: goal.routines.map((r) =>
+              r.id === itemId
+                ? {
+                    ...r,
+                    completedToday: !r.completedToday,
+                    streak: !r.completedToday ? r.streak + 1 : Math.max(0, r.streak - 1),
+                  }
+                : r,
+            ),
+          };
+        }
+
+        // Apply resources to plant
+        const newPlantRes = { ...(updatedGoal.plantRes || {}) };
+        Object.entries(resEarned).forEach(([r, amt]) => {
+          newPlantRes[r] = Math.max(0, (newPlantRes[r] || 0) + amt);
+        });
+        updatedGoal = { ...updatedGoal, plantRes: newPlantRes };
+
+        // Check growth
+        if (window.checkAndGrowPlant) {
+          updatedGoal = window.checkAndGrowPlant(updatedGoal);
+        }
+
+        return {
+          ...state,
+          shopCoins: Math.max(0, state.shopCoins + coinsEarned),
+          totalCoinsEarned:
+            coinsEarned > 0 ? (state.totalCoinsEarned || 0) + coinsEarned : state.totalCoinsEarned,
+          goals: state.goals.map((g) => (g.id === goalId ? updatedGoal : g)),
+        };
+      }
+
+      function reducer(state, action) {
+        switch (action.type) {
+          case "LOGIN":
+            return { ...state, user: { ...state.user, name: action.name } };
+
+          case "TOGGLE_TASK_ITEM":
+            return applyTaskToggle(state, action.goalId, action.itemId, false);
+
+          case "TOGGLE_ROUTINE_ITEM":
+            return applyTaskToggle(state, action.goalId, action.itemId, true);
+
+          case "ADD_GOAL":
+            return {
+              ...state,
+              goals: [
+                ...state.goals,
+                { ...action.goal, planted: false, tileCol: null, tileRow: null },
+              ],
+            };
+
+          case "PLANT_GOAL": {
+            // Check tile is free
+            const occupied = state.goals.some(
+              (g) => g.planted && g.tileCol === action.col && g.tileRow === action.row,
+            );
+            if (occupied) return state;
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? { ...g, planted: true, tileCol: action.col, tileRow: action.row, stage: 1 }
+                  : g,
+              ),
+            };
+          }
+
+          case "ADD_TASK_TO_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? {
+                      ...g,
+                      tasks: [
+                        ...(g.tasks || []),
+                        {
+                          id: Date.now(),
+                          title: action.title,
+                          completed: false,
+                          dueDate: action.dueDate || null,
+                        },
+                      ],
+                    }
+                  : g,
+              ),
+            };
+
+          case "ADD_ROUTINE_TO_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? {
+                      ...g,
+                      routines: [
+                        ...(g.routines || []),
+                        {
+                          id: Date.now(),
+                          title: action.title,
+                          completedToday: false,
+                          streak: 0,
+                          repeatDays: action.repeatDays || [
+                            true,
+                            true,
+                            true,
+                            true,
+                            true,
+                            true,
+                            true,
+                          ],
+                        },
+                      ],
+                    }
+                  : g,
+              ),
+            };
+
+          case "DELETE_TASK_FROM_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? { ...g, tasks: (g.tasks || []).filter((t) => t.id !== action.itemId) }
+                  : g,
+              ),
+            };
+
+          case "DELETE_ROUTINE_FROM_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? { ...g, routines: (g.routines || []).filter((r) => r.id !== action.itemId) }
+                  : g,
+              ),
+            };
+
+          case "EDIT_TASK_IN_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? {
+                      ...g,
+                      tasks: (g.tasks || []).map((t) =>
+                        t.id === action.itemId ? { ...t, ...action.changes } : t,
+                      ),
+                    }
+                  : g,
+              ),
+            };
+
+          case "EDIT_ROUTINE_IN_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? {
+                      ...g,
+                      routines: (g.routines || []).map((r) =>
+                        r.id === action.itemId ? { ...r, ...action.changes } : r,
+                      ),
+                    }
+                  : g,
+              ),
+            };
+
+          case "COMPLETE_ROUTINE_PERMANENT":
+            // Mark a routine as permanently done (graduated). Awards small bonus.
+            return {
+              ...state,
+              shopCoins: state.shopCoins + 5,
+              totalCoinsEarned: (state.totalCoinsEarned || 0) + 5,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? {
+                      ...g,
+                      routines: (g.routines || []).map((r) =>
+                        r.id === action.itemId
+                          ? { ...r, permanentlyCompleted: true, completedToday: true }
+                          : r,
+                      ),
+                    }
+                  : g,
+              ),
+            };
+
+          case "EDIT_GOAL":
+            return {
+              ...state,
+              goals: state.goals.map((g) =>
+                g.id === action.goalId ? { ...g, ...action.changes } : g,
+              ),
+            };
+
+          case "DELETE_GOAL":
+            return {
+              ...state,
+              goals: state.goals.filter((g) => g.id !== action.goalId),
+            };
+
+          case "REPLANT_GOAL": {
+            // Bring a dead plant back to life: reset stage to 1, clear plant resources,
+            // and reset overdue tasks (move their due dates to today so health restarts).
+            const today = (() => {
+              const d = new Date();
+              const y = d.getFullYear(),
+                m = String(d.getMonth() + 1).padStart(2, "0"),
+                da = String(d.getDate()).padStart(2, "0");
+              return `${y}-${m}-${da}`;
+            })();
+            return {
+              ...state,
+              goals: state.goals.map((g) => {
+                if (g.id !== action.goalId) return g;
+                return {
+                  ...g,
+                  stage: 1,
+                  plantRes: {},
+                  // Reschedule any overdue (incomplete) tasks to today so the plant
+                  // gets a fresh start. The user keeps the work, but the clock resets.
+                  tasks: (g.tasks || []).map((t) => {
+                    if (t.completed) return t;
+                    if (!t.dueDate) return t;
+                    if (t.dueDate < today) return { ...t, dueDate: today };
+                    return t;
+                  }),
+                };
+              }),
+            };
+          }
+
+          case "COMPLETE_GOAL": {
+            // Award rich bonus + a unique trophy item; remove plant from garden tile.
+            const goal = state.goals.find((g) => g.id === action.goalId);
+            if (!goal) return state;
+            const bonus = 50;
+            const trophyId = `trophy_${goal.id}`;
+            const owned = state.garden.owned || [];
+            const newOwned = owned.includes(trophyId) ? owned : [...owned, trophyId];
+            return {
+              ...state,
+              shopCoins: state.shopCoins + bonus,
+              totalCoinsEarned: (state.totalCoinsEarned || 0) + bonus,
+              garden: { ...state.garden, owned: newOwned },
+              goals: state.goals.map((g) =>
+                g.id === action.goalId
+                  ? { ...g, completed: true, completedAt: Date.now(), stage: 4, trophyId }
+                  : g,
+              ),
+            };
+          }
+
+          case "SET_WHEEL":
+            return { ...state, wheelOfLife: { ...state.wheelOfLife, [action.key]: action.val } };
+
+          case "LOCK_PRIORITIES":
+            return {
+              ...state,
+              wheelOfLife: { ...state.wheelOfLife, ...action.values },
+              prioritiesLocked: true,
+            };
+
+          case "BUY_DECO": {
+            const catalog = window.DECO_CATALOG || [];
+            const item = catalog.find((c) => c.id === action.id);
+            if (!item || state.shopCoins < item.cost) return state;
+            if ((state.garden.owned || []).includes(action.id)) return state;
+            return {
+              ...state,
+              shopCoins: state.shopCoins - item.cost,
+              garden: { ...state.garden, owned: [...(state.garden.owned || []), action.id] },
+            };
+          }
+
+          case "PLACE_DECO": {
+            const newGrid = (state.garden.decoGrid || []).map((col) => [...col]);
+            if (!newGrid[action.col]) return state;
+            newGrid[action.col][action.row] = action.item;
+            return { ...state, garden: { ...state.garden, decoGrid: newGrid } };
+          }
+
+          case "RESET":
+            return {
+              ...INITIAL_STATE,
+              user: { name: "" },
+              shopCoins: 0,
+              streak: 0,
+              totalCoinsEarned: 0,
+              goals: [],
+              garden: { decoGrid: EMPTY_DECO_GRID(), owned: [] },
+              wheelOfLife: {
+                health: 0,
+                career: 0,
+                finances: 0,
+                relationships: 0,
+                personal: 0,
+                fun: 0,
+                spirituality: 0,
+              },
+              prioritiesLocked: false,
+            };
+
+          default:
+            return state;
+        }
+      }
+
+      // ─── Persist ───────────────────────────────────────────────────────────────
+      function migrateState(s) {
+        if (!s.goals) s.goals = [];
+        if (!s.shopCoins && s.xp) {
+          s.shopCoins = s.xp;
+        }
+        if (!s.shopCoins && s.coins) {
+          s.shopCoins = s.coins;
+        }
+        if (!s.shopCoins) s.shopCoins = 0;
+        if (!s.totalCoinsEarned) s.totalCoinsEarned = s.shopCoins;
+        s.goals = s.goals.map((g) => ({
+          plantRes: {},
+          stage: 0,
+          ...g,
+          tasks: Array.isArray(g.tasks) ? g.tasks : [],
+          routines: Array.isArray(g.routines) ? g.routines : [],
+        }));
+        if (!s.garden) s.garden = { decoGrid: EMPTY_DECO_GRID(), owned: [] };
+        if (!s.garden.decoGrid) s.garden.decoGrid = EMPTY_DECO_GRID();
+        // Migrate older / mismatched grid sizes (e.g. 6x5 → 8x6) preserving placed decos that still fit.
+        if (s.garden.decoGrid.length !== 8 || (s.garden.decoGrid[0] || []).length !== 6) {
+          const fresh = EMPTY_DECO_GRID();
+          for (let c = 0; c < s.garden.decoGrid.length && c < 8; c++) {
+            for (let r = 0; r < (s.garden.decoGrid[c] || []).length && r < 6; r++) {
+              if (s.garden.decoGrid[c][r]) fresh[c][r] = s.garden.decoGrid[c][r];
+            }
+          }
+          s.garden.decoGrid = fresh;
+        }
+        if (!s.garden.owned) s.garden.owned = [];
+        // Unplant any goal whose saved tile is now invalid (out of bounds or non-plantable terrain)
+        s.goals.forEach((g) => {
+          if (g.planted && (g.tileCol >= 8 || g.tileRow >= 6 || g.tileCol < 0 || g.tileRow < 0)) {
+            g.planted = false;
+            g.tileCol = null;
+            g.tileRow = null;
+          }
+        });
+        if (!s.wheelOfLife) s.wheelOfLife = INITIAL_STATE.wheelOfLife;
+        // Default the lock flag — anyone with non-zero priorities counts as already onboarded.
+        if (typeof s.prioritiesLocked !== "boolean") {
+          const sum = Object.values(s.wheelOfLife || {}).reduce((a, b) => a + (+b || 0), 0);
+          s.prioritiesLocked = sum > 0;
+        }
+        return s;
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem("bloomly_v3");
+          if (saved) return migrateState(JSON.parse(saved));
+        } catch (e) {}
+        return INITIAL_STATE;
+      }
+
+      function saveState(s) {
+        try {
+          localStorage.setItem("bloomly_v3", JSON.stringify(s));
+        } catch (e) {}
+      }
+
+      // ─── Nav ───────────────────────────────────────────────────────────────────
+      const NAV_TABS = [
+        {
+          id: "today",
+          label: "Today",
+          icon: (active) => (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect
+                x="3"
+                y="4"
+                width="16"
+                height="15"
+                rx="3.5"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                fill={active ? "#F0F7F0" : "none"}
+              />
+              <line
+                x1="7"
+                y1="2"
+                x2="7"
+                y2="6"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <line
+                x1="15"
+                y1="2"
+                x2="15"
+                y2="6"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <polyline
+                points="7,12 9.5,14.5 15,9"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ),
+        },
+        {
+          id: "life",
+          label: "Garden",
+          icon: (active) => (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              {/* stem */}
+              <path
+                d="M11,19 L11,11"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              {/* left leaf */}
+              <path
+                d="M11,12 C8,12 5.5,10 5,7 C8,7 10.5,9 11,12 Z"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+                fill={active ? "#F0F7F0" : "none"}
+              />
+              {/* right leaf */}
+              <path
+                d="M11,10 C14,10 16.5,8 17,5 C14,5 11.5,7 11,10 Z"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+                fill={active ? "#F0F7F0" : "none"}
+              />
+              {/* ground */}
+              <line
+                x1="4"
+                y1="19"
+                x2="18"
+                y2="19"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          ),
+        },
+        {
+          id: "history",
+          label: "History",
+          icon: (active) => (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              {/* calendar body */}
+              <rect
+                x="3"
+                y="5"
+                width="16"
+                height="14"
+                rx="3"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                fill={active ? "#F0F7F0" : "none"}
+              />
+              {/* binding rings */}
+              <line
+                x1="7"
+                y1="3"
+                x2="7"
+                y2="7"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <line
+                x1="15"
+                y1="3"
+                x2="15"
+                y2="7"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              {/* header divider */}
+              <line
+                x1="3"
+                y1="9"
+                x2="19"
+                y2="9"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.4"
+              />
+              {/* day dots — bubble theme */}
+              <circle cx="7" cy="13" r="1.4" fill={active ? "#3A6647" : "#9EB09E"} />
+              <circle cx="11" cy="13" r="1.4" fill={active ? "#66BB6A" : "#9EB09E"} />
+              <circle
+                cx="15"
+                cy="13"
+                r="1.4"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.2"
+                fill="none"
+              />
+              <circle
+                cx="7"
+                cy="16.5"
+                r="1.4"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.2"
+                fill="none"
+              />
+              <circle cx="11" cy="16.5" r="1.4" fill={active ? "#3A6647" : "#9EB09E"} />
+            </svg>
+          ),
+        },
+        {
+          id: "profile",
+          label: "Profile",
+          icon: (active) => (
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle
+                cx="11"
+                cy="8"
+                r="4"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                fill={active ? "#F0F7F0" : "none"}
+              />
+              <path
+                d="M3,19.5 C3,15.5 6.5,13 11,13 C15.5,13 19,15.5 19,19.5"
+                stroke={active ? "#3A6647" : "#9EB09E"}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          ),
+        },
+      ];
+
+      // ─── App ───────────────────────────────────────────────────────────────────
+      function App() {
+        const [state, dispatch] = React.useReducer(reducer, null, loadState);
+        const [activeTab, setActiveTab] = React.useState("today");
+        const [tweaks, setTweaks] = useTweaks({
+          accentColor: "#3A6647",
+          showResourceAnimations: true,
+        });
+
+        React.useEffect(() => {
+          saveState(state);
+        }, [state]);
+
+        const isLoggedIn = !!state.user.name;
+        const needsPriorities = isLoggedIn && !state.prioritiesLocked;
+
+        const phoneContent = (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "#F4F7F0",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              position: "relative",
+              overflow: "hidden",
+              paddingTop: 54,
+            }}
+          >
+            {!isLoggedIn ? (
+              <LoginPage onLogin={(name) => dispatch({ type: "LOGIN", name })} />
+            ) : (
+              <>
+                {needsPriorities && (
+                  <SetPrioritiesModal
+                    totalBudget={30}
+                    initial={state.wheelOfLife}
+                    onSave={(values) => dispatch({ type: "LOCK_PRIORITIES", values })}
+                  />
+                )}
+                <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+                  {activeTab === "today" && <TodayTab state={state} dispatch={dispatch} />}
+                  {activeTab === "life" && <PlansTab state={state} dispatch={dispatch} />}
+                  {activeTab === "history" && <HistoryTab state={state} dispatch={dispatch} />}
+                  {activeTab === "profile" && <ProfileTab state={state} dispatch={dispatch} />}
+                </div>
+
+                {/* Bottom Nav */}
+                <div
+                  style={{
+                    display: "flex",
+                    background: "rgba(255,255,255,0.95)",
+                    backdropFilter: "blur(12px)",
+                    borderTop: "1px solid #E8EDE5",
+                    padding: "8px 0 2px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {NAV_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 2,
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "6px 0",
+                        transition: "transform .1s",
+                      }}
+                      onTouchStart={(e) => (e.currentTarget.style.transform = "scale(0.92)")}
+                      onTouchEnd={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    >
+                      {tab.icon(activeTab === tab.id)}
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: activeTab === tab.id ? 700 : 500,
+                          color: activeTab === tab.id ? "#3A6647" : "#9EB09E",
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        }}
+                      >
+                        {tab.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+
+        return (
+          <>
+            <IOSDevice statusBarColor="#F4F7F0" homeIndicatorColor="#C8D6C8">
+              {phoneContent}
+            </IOSDevice>
+            <TweaksPanel tweaks={tweaks} setTweaks={setTweaks}>
+              <TweakSection title="Theme">
+                <TweakColor id="accentColor" label="Accent Color" />
+              </TweakSection>
+              <TweakSection title="Experience">
+                <TweakToggle id="showResourceAnimations" label="Resource Animations" />
+              </TweakSection>
+            </TweaksPanel>
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

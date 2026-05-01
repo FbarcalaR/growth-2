@@ -1,6 +1,6 @@
 # Growth — Design System
 
-Tokens lifted from the prototype. Encode these as Tailwind theme extensions (`tailwind.config.ts`) and CSS variables (`globals.css`). Do not hardcode hexes in components.
+Tokens lifted from the [prototype](./prototype-design/README.md). Encoded in Tailwind v4's `@theme` block inside `src/app/globals.css` (Tailwind v4 is CSS-first; there is no `tailwind.config.ts`). Do not hardcode hexes in components.
 
 ## Typography
 
