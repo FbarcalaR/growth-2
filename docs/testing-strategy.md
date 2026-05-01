@@ -61,8 +61,9 @@ Reviewers ask "would I notice if this regressed?" — if the answer is yes and t
 
 ## Fixtures
 
-- `src/test/fixtures/state.ts` exports `freshState()`, `midGameState()`, `deadPlantState()`, `nearGoalCompletionState()`. These are the canonical inputs for integration tests; don't roll your own per-spec.
-- `src/test/clock.ts` exports `frozenClock(iso)` and is the only way tests get a `now`.
+- **Unit tests** keep their fixtures module-local (e.g. `src/server/domain/__tests__/fixtures.ts` exports `makeGoal(overrides)` / `makeUser(overrides)`). Override-based factories beat hand-rolled per-spec objects.
+- **Integration tests** (Story 0.7+) will share a `src/test/fixtures/state.ts` exporting whole-state scenarios (`freshState`, `midGameState`, `deadPlantState`, `nearGoalCompletionState`) — that file lands when the first integration test needs more than one of them.
+- **Clock**: `src/server/domain/clock.ts` exports `frozenClock(iso)` and `systemClock`. Domain functions and tests must inject the clock; reading `new Date()` inside domain code is forbidden.
 
 ## CI
 

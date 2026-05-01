@@ -84,13 +84,30 @@ growth-2/
 ├── src/
 │   ├── server/                       # Backend code. Never imported by client components.
 │   │   ├── domain/                   # Pure TS rules; no I/O, no clock
-│   │   │   ├── types.ts
-│   │   │   ├── areas.ts
-│   │   │   ├── plants.ts
-│   │   │   ├── resources.ts
-│   │   │   ├── health.ts
-│   │   │   ├── rewards.ts
-│   │   │   ├── garden.ts
+│   │   │   ├── clock.ts              # Clock interface, frozenClock, ISODate
+│   │   │   ├── errors.ts             # DomainError + error codes
+│   │   │   ├── area.ts               # AREA_RESOURCE, AREA_DEFAULT_PLANT
+│   │   │   ├── health.ts             # getOverdueCount, getHealth, getHealthState
+│   │   │   ├── plant/                # Per-entity folders own their types/schemas/rules
+│   │   │   │   ├── types.ts
+│   │   │   │   ├── schemas.ts
+│   │   │   │   ├── definitions.ts    # PLANT_DEFS, STAGE_NAMES
+│   │   │   │   ├── resources.ts      # applyResourceDelta
+│   │   │   │   └── growth.ts         # growPlant, meetsRequirement
+│   │   │   ├── user/
+│   │   │   │   ├── types.ts          # User, WheelOfLife
+│   │   │   │   ├── schemas.ts
+│   │   │   │   └── wheel.ts          # lockPriorities, emptyWheel, wheelTotal
+│   │   │   ├── goal/
+│   │   │   │   ├── types.ts          # Goal, Task, Routine, ID types
+│   │   │   │   ├── schemas.ts
+│   │   │   │   ├── rewards.ts        # taskCompletionReward, routineCompletionReward
+│   │   │   │   ├── completion.ts     # applyTaskCompletion, applyRoutineCompletion
+│   │   │   │   └── lifecycle.ts      # completeGoal, replantGoal
+│   │   │   ├── garden/
+│   │   │   │   ├── types.ts          # GardenState, GardenTile, DecoItem, GARDEN_COLS/ROWS
+│   │   │   │   ├── schemas.ts
+│   │   │   │   └── operations.ts     # plantGoalOnTile, placeDeco, etc.
 │   │   │   └── __tests__/
 │   │   ├── services/                 # Use-cases that orchestrate domain + repos
 │   │   │   ├── goals.ts
@@ -99,9 +116,13 @@ growth-2/
 │   │   │   ├── garden.ts
 │   │   │   └── shop.ts
 │   │   ├── repositories/             # Persistence interfaces + implementations
-│   │   │   ├── types.ts              # GoalRepo, UserRepo, GardenRepo interfaces
-│   │   │   ├── memory/               # In-memory impl (current)
-│   │   │   └── prisma/               # Postgres impl (planned)
+│   │   │   ├── user-repo.ts          # One file per repo interface
+│   │   │   ├── goal-repo.ts
+│   │   │   ├── garden-repo.ts
+│   │   │   ├── shop-repo.ts
+│   │   │   ├── index.ts              # Repositories aggregate type
+│   │   │   ├── memory/               # In-memory impls (current)
+│   │   │   └── prisma/               # Postgres impls (planned, Epic A)
 │   │   ├── auth/                     # Auth.js wiring (placeholder until Epic A)
 │   │   ├── http/                     # Request validation, error mapping, response shapers
 │   │   └── container.ts              # Composition root: picks impls, exposes services
