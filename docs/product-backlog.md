@@ -75,12 +75,30 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 - [x] 0.7.6 Services layer (`src/server/services/`) orchestrates domain + repos; handlers stay thin
 - [x] 0.7.7 DTO mappers — `goalToDto` adds derived `health` + `healthState` (never persisted, computed at read time)
 
-### Story 0.8 — Frontend data layer (TanStack Query)
+### Story 0.8 — Frontend data layer (TanStack Query) ✅ (PR #8)
 **As a** developer, **I want** typed hooks for every API endpoint, **so that** features just call `useGoals()` and don't worry about loading/error/cache.
-- [ ] 0.8.1 Query client provider in root layout
-- [ ] 0.8.2 Typed fetcher per route (uses the shared Zod schemas)
-- [ ] 0.8.3 Hooks: `useGoals`, `useGoal`, `useGarden`, mutation hooks for tasks/routines/goals with optimistic updates and rollback
-- [ ] 0.8.4 Error boundary + toast on mutation failure
+- [x] 0.8.1 `QueryProvider` (TanStack Query) wired in `src/app/layout.tsx`; sensible defaults (no retry on 4xx, 30s `staleTime`)
+- [x] 0.8.2 Typed fetcher per resource in `src/client/api/{me,goals,garden,shop}.ts`. `apiFetch` parses every response through its shared Zod schema and throws `ApiError { status, code, message, issues? }` on non-2xx
+- [x] 0.8.3 Hooks per resource in `src/client/hooks/`: `useSession`, `useGoals`, `useGoal`, `useCreateGoal` / `useUpdateGoal` / `useDeleteGoal`, `useAddTask` / `useUpdateTask` / `useDeleteTask`, `useAddRoutine` / `useUpdateRoutine` / `useDeleteRoutine` / `useCompleteRoutinePermanent`, `useCompleteGoal` / `useReplantGoal`, `useGarden` / `usePlantOnTile` / `usePlaceDeco` / `useUnplaceDeco`, `useShop` / `useBuyDeco`. Mutations write the canonical server response straight into the cache (`setQueryData`) so downstream components re-render with consistent state.
+- [x] 0.8.4 Central `queryKeys` factory (one place to grep / invalidate)
+- [x] 0.8.5 Replace the dev-stub `useDevSession` (PR #4) with a real `useSession()` backed by `/api/me`. The `(app)/layout`, `/login`, and `/profile` pages now call the real session; **call sites are unchanged in shape** — that was the design from PR #4.
+- [x] 0.8.6 Smoke tests for `useSession` (mocked fetch + `QueryClient`) covering: 401 → "no user" (not error), 200 → user populated, login round-trip, logout clears cache. The bulk of behaviour testing is at the API layer (PR #7), not hook layer.
+- Deferred to Epic 8 (Polish): app-level error boundary + toast for mutation failures (Story 8.2). Components handle errors locally for now.
+
+---
+
+### 🔍 Epic 0 Review — between-epics gate
+
+A short, focused review pass before opening Epic 1. Goal: catch anything the by-the-PR cadence missed and decide whether the epic is genuinely closed.
+
+- [ ] 0.R.1 **Walk the user journey end-to-end in dev**: visit `/`, sign in via `/login`, navigate the four tabs, sign out, sign back in. Confirm no flashes of unauthed UI, no console errors.
+- [ ] 0.R.2 **Re-read each merged doc** (`architecture.md`, `domain-model.md`, `coding-guidelines.md`, `design-system.md`, `testing-strategy.md`) and confirm it still describes the code that landed. File diffs against the doc since the PR; flag anything stale.
+- [ ] 0.R.3 **Re-read the backlog**. Are all checked sub-tasks actually done? Anything that emerged during implementation that should be a follow-up rather than silently dropped?
+- [ ] 0.R.4 **Structural sanity check**: per-entity layout under `src/server/domain/`, `src/server/repositories/`, `src/server/services/dtos/`, `src/shared/schemas/`, `src/client/api/`, `src/client/hooks/`. Anything still mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
+- [ ] 0.R.5 **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
+- [ ] 0.R.6 **CI sanity check**: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test:unit`, `pnpm build` all green on `main`. No flakes.
+- [ ] 0.R.7 **Identify what could be improved**: list 3–5 things that would make the next epic faster or safer (better fixtures, missing helper, ergonomics, etc.). File as `chore/` issues or as a follow-up sub-task on the next epic.
+- [ ] 0.R.8 **Decide**: is the epic done? If not, add the missing tasks to this section as `0.R.x` items and ship them before Epic 1 starts.
 
 ---
 
@@ -278,3 +296,20 @@ The order isn't a Gantt chart — it's the sequence that lets us demo something 
    - This backlog: every implemented sub-task ticked `[x]`; every implemented story tagged with the merging PR (e.g. `### Story X — Title ✅ (PR #N)`).
    - Domain rules added or revised in `domain-model.md` if any were introduced or changed.
    - `architecture.md` / `coding-guidelines.md` / `design-system.md` updated when a decision in the PR contradicts or extends them. Don't ship the code and "do the docs later" — reviewers should be able to read the doc change and the code change side by side.
+
+## Between-epic review (every epic)
+
+Before opening the next epic, run a short review pass to make sure the closing one is genuinely done. Add a `### 🔍 Epic N Review` section to the backlog at the end of every epic with the checklist below — it lives next to the epic so it's hard to skip.
+
+Reviewable items (canonical template):
+
+1. **Walk the user journey end-to-end** in dev for whatever the epic claims to ship.
+2. **Re-read each affected doc** (`architecture.md`, `domain-model.md`, `coding-guidelines.md`, `design-system.md`, `testing-strategy.md`) and confirm reality matches the words.
+3. **Re-read the backlog**: every checked sub-task actually done? Anything that emerged that should be a follow-up rather than silently dropped?
+4. **Structural sanity check** against `coding-guidelines.md` ("Split files by entity / resource"). Anything mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
+5. **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
+6. **CI sanity check**: typecheck / lint / format / tests / build all green on `main`. No flakes.
+7. **List 3–5 improvements** that would make the next epic faster or safer (better fixtures, missing helper, ergonomics). File as `chore/` issues or as the first sub-tasks of the next epic.
+8. **Decide**: is the epic done? If not, add missing tasks to the review section and ship them before the next epic starts.
+
+The point isn't to gold-plate — it's a 30-minute pause to catch what the by-the-PR cadence missed.

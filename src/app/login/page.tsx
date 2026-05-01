@@ -3,24 +3,39 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { useDevSession } from "@/client/dev/use-dev-session";
+import { ApiError } from "@/client/api";
+import { useSession } from "@/client/hooks";
 import { Button, Input } from "@/components/atoms";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useDevSession();
+  const { login } = useSession();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
       setError("Tell us what to call you.");
       return;
     }
-    login(trimmed);
-    router.replace("/today");
+    setSubmitting(true);
+    try {
+      await login(trimmed);
+      router.replace("/today");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -51,6 +66,7 @@ export default function LoginPage() {
             invalid={!!error}
             autoComplete="given-name"
             autoFocus
+            disabled={submitting}
           />
           {error && (
             <p role="alert" className="text-health-critical text-xs font-semibold">
@@ -59,8 +75,8 @@ export default function LoginPage() {
           )}
         </div>
 
-        <Button type="submit" size="lg" className="w-full">
-          Get started
+        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+          {submitting ? "Signing you in…" : "Get started"}
         </Button>
       </form>
     </main>
