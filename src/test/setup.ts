@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 
 /**
  * Test-only stand-in for the Next.js `cookies()` request store. Module-level
@@ -6,6 +6,16 @@ import { vi } from "vitest";
  * Tests drive the auth state through this store via the `cookies-mock`
  * helper module.
  */
+
+// RTL doesn't auto-cleanup with Vitest; do it here so every test starts with
+// an empty document. Imported lazily so node-only specs (no jsdom) don't pay
+// the cost.
+afterEach(async () => {
+  if (typeof document !== "undefined") {
+    const { cleanup } = await import("@testing-library/react");
+    cleanup();
+  }
+});
 
 class TestCookieStore {
   private store = new Map<string, string>();

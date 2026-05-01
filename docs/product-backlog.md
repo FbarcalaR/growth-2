@@ -131,18 +131,19 @@ Goal: a user can launch the app, log in (dev stub), set priorities, land on Toda
 - [x] 1.0.3 `src/test/fixtures/state.ts` — `freshUser()`, `lockedUser()`, `seededGoals()` async builders that drive the in-memory backend through the real services (no shadow data path) and return DTO-shaped values that drop straight into a fetch-mock body.
 - [x] 1.0.4 Smoke test (`src/test/__tests__/harness.spec.tsx`) demonstrates the canonical pattern end-to-end: fixture → fetch-mock → `renderWithQuery` → assert. First real consumer is Story 1.1.
 
-### Story 1.1 — Login page
-- [ ] 1.1.1 `LoginPage` collects name (and email when Auth.js arrives)
-- [ ] 1.1.2 React Hook Form + Zod validation (non-empty)
-- [ ] 1.1.3 `POST /api/me` creates the user; sets the dev session cookie
-- [ ] 1.1.4 Integration test: empty submit blocked; valid submit advances
-- [ ] 1.1.5 **Match the prototype visually** (the current implementation from PR #4 is a functional stub — see Epic 0 review):
-  - Soft light-green page background (`linear-gradient(160deg, #F0F7E8 → #E8F5E9 → #F1F8E9)`), not the dark sage `surface-frame` we currently render
-  - Hand-drawn `<GardenIllustration>` SVG (sun + ground + oak tree + cherry blossom + tulip + daisy + mushroom + grass tufts) — port from `docs/prototype-design/login-page.jsx`
-  - Two-step flow: welcome (illustration + tagline + "Start Growing →") → name (input + "Let's go, {firstName}! 🌱")
-  - Logo: circular sage badge with the heart-leaf SVG above the title
-  - Tagline + privacy note copy ("Grow your best life, one task at a time." / "No account needed · Your data stays on this device")
-  - All values still flow through tokens — extract any new colors found in the prototype to `globals.css` `@theme`
+### Story 1.1 — Login page ✅ (PR #12)
+- [x] 1.1.1 `LoginPage` collects name (email field will be added when Auth.js lands in Epic B)
+- [x] 1.1.2 React Hook Form + Zod validation via `CreateSessionRequestSchema` (non-empty, max 80)
+- [x] 1.1.3 Submission goes through `useSession().login(name)` which `POST`s `/api/me` and sets the dev session cookie
+- [x] 1.1.4 Integration test (`src/app/login/__tests__/page.spec.tsx`): five specs covering welcome step, advance to name, empty-name validation blocks `POST`, valid name POSTs the right body and replaces to `/today`, server-side error surfaces inline. Built on the harness from Story 1.0.
+- [x] 1.1.5 **Match the prototype visually**:
+  - Page background uses the new welcome gradient tokens (`--color-welcome-from / via / to`) at 160deg
+  - `<GardenIllustration>` ported into `src/components/illustrations/garden-illustration.tsx` (sun, ground, oak, cherry blossom, tulip, daisy, mushroom, grass tufts)
+  - `<WelcomeLogo>` with the heart-leaf SVG above the title
+  - Two-step flow: welcome ("Start Growing →") → name (personalised "Let's go, {firstName}! 🌱" once a name is entered)
+  - Tagline + privacy-note copy match the prototype ("Grow your best life, one task at a time." / "No account needed · Your data stays on this device")
+  - New tokens in `globals.css` `@theme`: `--color-ink-strong/soft/faint` for the type hierarchy, `--color-input-border` for the lighter sage input border, plus the welcome gradient stops
+- [x] 1.1.6 Global RTL `cleanup()` registered in `src/test/setup.ts` so feature tests don't accumulate DOM between specs (emerged during 1.1.4 — `react-hook-form` + multi-test files revealed the gap)
 
 ### Story 1.2 — Set priorities (Wheel of Life)
 - [ ] 1.2.1 `WheelOfLife` organism (slider + budget meter)
