@@ -61,6 +61,21 @@
   --color-health-critical-bg: #fbe3e5;
   --color-health-dead-bg: #eaeaea;
 
+  /* Welcome surface — soft three-stop gradient used by the unauthenticated /login flow */
+  --color-welcome-from: #f0f7e8;
+  --color-welcome-via: #e8f5e9;
+  --color-welcome-to: #f1f8e9;
+
+  /* Text — deep "almost black" green for hero titles, then the muted greens
+     used for taglines and faint copy on the welcome surface. Use as
+     `text-ink-strong` / `text-ink-soft` / `text-ink-faint`. */
+  --color-ink-strong: #1c2b20;
+  --color-ink-soft: #6b7f70;
+  --color-ink-faint: #a8bca8;
+
+  /* Input border (light sage). Different from `brand-track`, lifted from the prototype. */
+  --color-input-border: #c8e6c9;
+
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 12px;

@@ -16,6 +16,20 @@ Tokens lifted from the [prototype](./prototype-design/README.md). Encoded in Tai
 | `surface-card` | `#FFFFFF` | Cards, sheets |
 | `surface-muted` | `#E8EDE5` | Dividers, subtle fills |
 | `surface-frame` | `#2C3E2D` | Page (outside the iOS frame) |
+| `welcome-from` | `#F0F7E8` | Welcome gradient stop 1 (top-left) |
+| `welcome-via` | `#E8F5E9` | Welcome gradient stop 2 (60%) |
+| `welcome-to` | `#F1F8E9` | Welcome gradient stop 3 (bottom-right) |
+
+The welcome surface is composed via `linear-gradient(160deg, var(--color-welcome-from) 0%, var(--color-welcome-via) 60%, var(--color-welcome-to) 100%)` — used today on `/login`, expected to reuse for the Set-Priorities modal in Story 1.2.
+
+## Ink (text)
+
+| Token | Value | Use |
+|---|---|---|
+| `ink-strong` | `#1C2B20` | Hero titles on the welcome surface |
+| `ink-soft` | `#6B7F70` | Tagline / secondary copy on the welcome surface |
+| `ink-faint` | `#A8BCA8` | Privacy notes / fine print |
+| `input-border` | `#C8E6C9` | Default input border (lighter sage than `brand-track`) |
 
 ## Brand greens
 
