@@ -19,9 +19,9 @@ We pin versions in `package.json`, not in this document. The numbers below descr
 | Framework | **Next.js (latest stable)** | Asked for by product. App Router gives us file-based routing, Route Handlers for the API in the same repo, RSC where useful, and Server Actions for mutation flows. Single deploy target keeps the v1 surface small. |
 | Language | **TypeScript (latest stable, `strict`)** | Domain types are non-trivial (resources, plant stages, repeat-day masks). The compiler catches the bugs we'd otherwise hit at runtime. |
 | UI runtime | **React (latest stable)** | Comes with Next. |
-| Styling | **Tailwind CSS + Atomic Design** | Tokens encoded once in `tailwind.config.ts` + `globals.css`; small components (chips, badges, info boxes, buttons) are styled **once** as atoms and reused everywhere. This is the explicit anti-duplication policy from the review. See §5. |
+| Styling | **Tailwind CSS v4 + Atomic Design** | Tokens encoded **once** in `src/app/globals.css` under Tailwind v4's `@theme` block (CSS-first; no `tailwind.config.ts`). Small components (chips, badges, info boxes, buttons) are styled once as atoms and reused everywhere. This is the explicit anti-duplication policy from the review. See §5. |
 | Forms | **React Hook Form + Zod** | Same Zod schemas validate forms in the browser and request bodies on the server. |
-| Client state | **Zustand** | UI/ephemeral state only (active tab, modal open, animation toggles). Not the source of truth for persisted data — that's the server. |
+| Client state | **None bundled — add Zustand only when a real UI-state need shows up** | TanStack Query owns server state. Ephemeral UI state (open modal, animation toggles, etc.) is local to components today. We'll introduce Zustand the first time we have UI state that genuinely lives across components — premature otherwise. |
 | Server state | **TanStack Query (React Query)** | Caches API responses, handles loading/error states, optimistic updates for task toggles. Replaces the prototype's `localStorage` reducer pattern. |
 | Backend | **Next.js Route Handlers** in the same repo, layered over a service / repository / domain stack | Lightest possible surface that still gives us a real backend boundary. We do not build a separate service; if we ever outgrow the same-repo model we extract `src/server/` cleanly. |
 | Database (now) | **In-memory repository** | Keeps v1 simple. Same interface as the production repository — swapping is a code change, not an architectural one. |
@@ -142,10 +142,12 @@ growth-2/
 │   │   ├── login/
 │   │   └── onboarding/
 │   │
-│   ├── client/                       # Frontend infra
-│   │   ├── api/                      # Generated/typed clients per route, used by hooks
-│   │   ├── hooks/                    # useGoals, useToggleTask — wraps TanStack Query
-│   │   ├── store/                    # Zustand — UI-only state (active tab, modals)
+│   │   ├── client/                   # Frontend infra
+│   │   │   ├── api/                  # Typed fetchers per resource (Zod-parsed responses)
+│   │   │   ├── hooks/                # useSession, useGoals, useGarden, useShop, … wrap TanStack Query
+│   │   │   ├── providers/            # QueryClientProvider
+│   │   │   └── lib/                  # cn() and cross-cutting client helpers
+│   │   │   # No store/ yet — Zustand will land if/when ephemeral cross-component UI state appears.
 │   │   └── lib/                      # date, classnames (cn), formatters
 │   │
 │   ├── shared/                       # Code legitimately shared across client/server
@@ -180,7 +182,7 @@ The review's directive: small components styled once, reused everywhere. We adop
 Pages live in `app/`; they compose templates and organisms.
 
 Conventions:
-- Tokens (color, radius, spacing, motion) come from `tailwind.config.ts`. **No hex values inside components.**
+- Tokens (color, radius, spacing, motion) come from Tailwind v4's `@theme` block in `src/app/globals.css`. **No hex values inside components.**
 - `cn()` for conditional class composition.
 - Variants on atoms are typed (`size: 'sm'|'md'|'lg'`), not string-untyped Tailwind blobs at the call site.
 - A `/styleguide` route renders every atom + molecule for review.
