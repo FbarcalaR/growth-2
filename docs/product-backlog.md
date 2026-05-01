@@ -12,38 +12,39 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done.
 
 Goal: a runnable Next.js project with tokens, atomic-design primitives, and a working backend skeleton. After this epic, the next person can pick up a feature without yak-shaving.
 
-### Story 0.1 — Project bootstrap
+### Story 0.1 — Project bootstrap ✅ (PR #2)
 **As a** developer, **I want** a Next.js + TS + Tailwind project initialized at the latest stable versions, **so that** all later work has a working baseline.
-- [ ] 0.1.1 `create-next-app` (latest stable) with App Router, TS strict, Tailwind, ESLint
-- [ ] 0.1.2 Add Prettier + EditorConfig
-- [ ] 0.1.3 Configure path alias `@/*` → `src/*`
-- [ ] 0.1.4 `pnpm` scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `test:unit`, `test:e2e`
-- [ ] 0.1.5 ESLint rule preventing `src/server/**` imports from `src/components/**`, `src/features/**`, `src/client/**`
-- [ ] 0.1.6 GitHub Actions CI: install → typecheck → lint → unit tests
-- **Acceptance:** `pnpm dev` shows a Hello page; CI passes on a noop PR.
+- [x] 0.1.1 `create-next-app` (latest stable) with App Router, TS strict, Tailwind, ESLint
+- [x] 0.1.2 Add Prettier + EditorConfig
+- [x] 0.1.3 Configure path alias `@/*` → `src/*`
+- [x] 0.1.4 `pnpm` scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check` (`test:unit`/`test:e2e` land with Story 0.5)
+- [x] 0.1.5 ESLint rule preventing `src/server/**` imports from `src/components/**`, `src/features/**`, `src/client/**`
+- [x] 0.1.6 GitHub Actions CI: install → typecheck → lint → format:check → build
+- **Acceptance:** `pnpm dev` shows a Hello page; CI passes on a noop PR. ✅
 
-### Story 0.2 — Design tokens & fonts
+### Story 0.2 — Design tokens & fonts ✅ (PR #2)
 **As a** designer-developer, **I want** all colors, fonts, and radii encoded once, **so that** components don't drift.
-- [ ] 0.2.1 Configure `next/font` for Plus Jakarta Sans
-- [ ] 0.2.2 Add tokens to `tailwind.config.ts` per `design-system.md`
-- [ ] 0.2.3 CSS variables in `globals.css` for tokens that need runtime theming (accent color)
-- [ ] 0.2.4 `/styleguide` route renders every token (kept for the project's life)
+- [x] 0.2.1 Configure `next/font` for Plus Jakarta Sans
+- [x] 0.2.2 Add tokens to Tailwind v4's `@theme` block in `globals.css` (Tailwind v4 is CSS-first; no `tailwind.config.ts`)
+- [x] 0.2.3 CSS variables in `globals.css` for tokens that need runtime theming (`--accent` reserved for the Profile picker in Story 6.2.2)
+- [x] 0.2.4 `/styleguide` route renders every token (kept for the project's life)
 
-### Story 0.3 — Atomic design primitives
+### Story 0.3 — Atomic design primitives ✅ (PR #3)
 **As a** developer, **I want** the reusable atoms and a few key molecules in place, **so that** features compose them instead of restyling.
-- [ ] 0.3.1 Atoms: `Button`, `Chip`, `Badge`, `Icon`, `Input`, `ProgressBar`, `Avatar`, `Toggle`, `Modal`
-- [ ] 0.3.2 Molecules: `TaskRow`, `RoutineRow`, `AreaPicker`, `ResourceMeter`, `HealthBadge`
-- [ ] 0.3.3 `cn()` helper, typed `variant` props on atoms (no Tailwind blobs at call sites)
-- [ ] 0.3.4 `/styleguide` extended to show every atom + molecule with each variant
-- **Acceptance:** A second developer can build a new screen using only atoms/molecules without writing new utility-class soup.
+- [x] 0.3.1 Atoms: `Button`, `Chip`, `Badge`, `Icon`, `Input`, `ProgressBar`, `Avatar`, `Toggle`, `Checkbox`, `Modal`
+- [x] 0.3.2 Molecules: `AreaChip`, `HealthBadge`, `TaskRow`, `RoutineRow`, `AreaPicker`, `ResourceMeter`
+- [x] 0.3.3 `cn()` helper (`clsx` + `tailwind-merge`), typed `variant`/`tone`/`size` props on atoms (no Tailwind blobs at call sites)
+- [x] 0.3.4 `/styleguide` extended to show every atom + molecule with each variant
+- **Acceptance:** A second developer can build a new screen using only atoms/molecules without writing new utility-class soup. ✅
 
-### Story 0.4 — App shell (no device frame)
+### Story 0.4 — App shell (no device frame) ✅ (PR #4)
 **As a** user, **I want** a clean web app shell with bottom navigation, **so that** I can move between tabs.
-- [ ] 0.4.1 Root layout in `app/layout.tsx`: fonts, globals, providers (Query, Zustand)
-- [ ] 0.4.2 `(app)` route group with bottom-nav layout
-- [ ] 0.4.3 Routes: `/today`, `/garden`, `/history`, `/profile` — each a real page
-- [ ] 0.4.4 Responsive shell: full-width on mobile; centered max-width column on desktop
-- [ ] 0.4.5 Auth/onboarding guard at `(app)/layout.tsx` (uses dev-stub user until Auth.js)
+- [x] 0.4.1 Root layout in `app/layout.tsx`: fonts, globals (TanStack Query + any other providers land in Story 0.8)
+- [x] 0.4.2 `(app)` route group with bottom-nav layout
+- [x] 0.4.3 Routes: `/today`, `/garden`, `/history`, `/profile` — each a real page
+- [x] 0.4.4 Responsive shell: full-width on mobile; centered max-width column on desktop
+- [x] 0.4.5 Auth guard at `(app)/layout.tsx` redirects to `/login` if no session (dev-stub via `useSyncExternalStore` over `localStorage`; onboarding-modal overlay lands with Story 1.2/1.3)
+- **Bonus:** `BottomNav` and `PlaceholderPage` use `lucide-react` icons (project's chosen icon library) instead of inline SVGs/emojis.
 
 ### Story 0.5 — Domain layer scaffold (server-side)
 **As a** developer, **I want** the domain types and constants in `src/server/domain/`, **so that** every service speaks the same language.
@@ -268,4 +269,7 @@ The order isn't a Gantt chart — it's the sequence that lets us demo something 
 3. Acceptance criteria demoed in PR description.
 4. No new ESLint warnings, no `any`, no `@ts-ignore`.
 5. User-facing copy reads aloud cleanly.
-6. Domain rules added to `domain-model.md` if any were introduced.
+6. **Docs are kept in sync in the same PR**:
+   - This backlog: every implemented sub-task ticked `[x]`; every implemented story tagged with the merging PR (e.g. `### Story X — Title ✅ (PR #N)`).
+   - Domain rules added or revised in `domain-model.md` if any were introduced or changed.
+   - `architecture.md` / `coding-guidelines.md` / `design-system.md` updated when a decision in the PR contradicts or extends them. Don't ship the code and "do the docs later" — reviewers should be able to read the doc change and the code change side by side.
