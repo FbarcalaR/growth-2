@@ -54,11 +54,11 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 - [x] 0.5.4 Clock injected via `Clock` interface; `frozenClock(iso)` for tests; `systemClock` for production
 - [x] 0.5.5 Unit tests for each rule (Vitest); 76 specs across plants/health/rewards/goals/garden/wheel/schemas
 - [x] 0.5.6 `DomainError` class with stable error codes (`GOAL_NOT_FOUND`, `TILE_OCCUPIED`, `PRIORITIES_ALREADY_LOCKED`, …) — services let these bubble; HTTP error mapper translates to 4xx in Story 0.7
-- [x] 0.5.7 Zod schemas in `src/server/domain/schemas.ts` for entity validation at the persistence/API boundary
+- [x] 0.5.7 Zod schemas live alongside their entity (`src/server/domain/{user,goal,plant,garden}/schemas.ts`) for validation at the persistence/API boundary
 
 ### Story 0.6 — Repository abstraction + in-memory impl ✅ (PR #6)
 **As a** developer, **I want** repository interfaces with an in-memory implementation, **so that** services have somewhere to read/write that we can later swap for Postgres without touching domain or services.
-- [x] 0.6.1 Interfaces: `UserRepo`, `GoalRepo`, `GardenRepo`, `ShopRepo` in `src/server/repositories/types.ts`
+- [x] 0.6.1 Interfaces split per repo: `src/server/repositories/{user,goal,garden,shop}-repo.ts` + `index.ts` aggregate `Repositories` type
 - [x] 0.6.2 In-memory implementations under `src/server/repositories/memory/`
 - [x] 0.6.3 Composition root `src/server/container.ts` — single place that picks impls; `getContainer()` / `resetContainer()`
 - [x] 0.6.4 Every repo method scoped by `userId`; cross-user reads return null / empty
@@ -91,20 +91,44 @@ Goal: a runnable Next.js project with tokens, atomic-design primitives, and a wo
 
 A short, focused review pass before opening Epic 1. Goal: catch anything the by-the-PR cadence missed and decide whether the epic is genuinely closed.
 
-- [ ] 0.R.1 **Walk the user journey end-to-end in dev**: visit `/`, sign in via `/login`, navigate the four tabs, sign out, sign back in. Confirm no flashes of unauthed UI, no console errors.
-- [ ] 0.R.2 **Re-read each merged doc** (`architecture.md`, `domain-model.md`, `coding-guidelines.md`, `design-system.md`, `testing-strategy.md`) and confirm it still describes the code that landed. File diffs against the doc since the PR; flag anything stale.
-- [ ] 0.R.3 **Re-read the backlog**. Are all checked sub-tasks actually done? Anything that emerged during implementation that should be a follow-up rather than silently dropped?
-- [ ] 0.R.4 **Structural sanity check**: per-entity layout under `src/server/domain/`, `src/server/repositories/`, `src/server/services/dtos/`, `src/shared/schemas/`, `src/client/api/`, `src/client/hooks/`. Anything still mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
-- [ ] 0.R.5 **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
-- [ ] 0.R.6 **CI sanity check**: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test:unit`, `pnpm build` all green on `main`. No flakes.
-- [ ] 0.R.7 **Identify what could be improved**: list 3–5 things that would make the next epic faster or safer (better fixtures, missing helper, ergonomics, etc.). File as `chore/` issues or as a follow-up sub-task on the next epic.
-- [ ] 0.R.8 **Decide**: is the epic done? If not, add the missing tasks to this section as `0.R.x` items and ship them before Epic 1 starts.
+- [x] 0.R.1 **Walk the user journey end-to-end in dev**: visit `/`, sign in via `/login`, navigate the four tabs, sign out, sign back in. Confirm no flashes of unauthed UI, no console errors.
+  - Verified via curl with a cookie jar against `pnpm dev`: `GET /` → 307 → `/today`; unauth `/today` returns null body and the client effect redirects to `/login`; `POST /api/me {name}` → 201 + `Set-Cookie`; authed `/today /garden /history /profile` all 200; `DELETE /api/me` → 204; subsequent `GET /api/me` → 401. No flash of authed UI because `(app)/layout.tsx` returns `null` while `isLoading || !user`.
+- [x] 0.R.2 **Re-read each merged doc** and confirm it still describes the code that landed.
+  - Found 4 stale references and fixed them in this PR:
+    - `architecture.md` and `design-system.md` referenced `tailwind.config.ts` — Tailwind v4 is CSS-first and the file doesn't exist. Replaced with "`@theme` block in `src/app/globals.css`".
+    - `architecture.md` listed Zustand under "Client state" and `src/client/store/` in the folder structure. Zustand was never installed and the folder doesn't exist. Demoted Zustand to "introduce when needed"; updated the folder structure to reflect actual `src/client/{api,hooks,providers,lib}/` layout.
+    - `architecture.md` and `coding-guidelines.md` referred to a `useToggleTask` hook. The actual hook is `useUpdateTask` (we don't have a dedicated toggle endpoint; toggling is `PATCH { completed: true }`). Updated both.
+    - `coding-guidelines.md` "State" section assumed the Zustand store existed. Rewrote to match reality: server state via TanStack Query, UI state local until cross-component need arises.
+- [x] 0.R.3 **Re-read the backlog**. Are all checked sub-tasks actually done? Anything that emerged that should be a follow-up?
+  - All ticked sub-tasks are done. Two tick descriptions had stale paths (0.5.7 said `domain/schemas.ts`; 0.6.1 said `repositories/types.ts` — both now split per entity per the PR-6 review). Updated the descriptions in this PR.
+  - Items that emerged during implementation and were captured properly in their own PRs: `lucide-react` icon library (PR #4 review), per-entity file split convention (PR #6 review → coding-guidelines), `dtos/` folder split (PR #7 review), the "Docs are part of the PR" rule (PR #5), this between-epic review (PR #8). Nothing silently dropped.
+- [x] 0.R.4 **Structural sanity check**.
+  - Per-entity layout is consistent across the codebase: `src/server/domain/{plant,user,goal,garden}/`, `src/server/repositories/{user,goal,garden,shop}-repo.ts`, `src/server/services/dtos/{user,goal,garden}.ts`, `src/shared/schemas/{user,goal,garden,shop,common}.ts`, `src/client/api/{me,goals,garden,shop}.ts`, `src/client/hooks/{use-session,use-goals,use-garden,use-shop}.ts`. Cross-cutting helpers (`clock`, `errors`, `area`, `health`) stay flat per the documented exception.
+  - Two larger files worth watching but not splitting yet: `src/server/services/goal-service.ts` (264 lines, holds goal + task + routine orchestration) and `src/client/hooks/use-goals.ts` (161 lines, same scope on the client). Tasks and routines are children of Goal (not freestanding entities) so co-locating with the aggregate is correct. **Watch list — split if either crosses ~400 lines.**
+- [x] 0.R.5 **Test sanity check**.
+  - 122 specs total: 7 domain unit (`plants`, `health`, `rewards`, `goals`, `garden`, `wheel`, `schemas`), 1 repo conformance, 5 API integration (`me`, `goals`, `tasks`, `garden`, `shop`), 1 client hook smoke (`use-session`).
+  - Coverage by layer: domain rules covered exhaustively; HTTP boundary covered for ownership rejection / validation / idempotency / the most likely error paths; repos covered by the conformance suite. Client hooks have smoke coverage only — bulk of behaviour testing is at the API layer per the strategy doc.
+  - **Gap to fill in Epic 1 onwards: feature-level integration tests** (RTL rendering a feature against a mocked QueryClient seeded with fixtures) — there's nowhere to put them yet because the features don't exist. First example will land with Story 1.2 (Set Priorities).
+- [x] 0.R.6 **CI sanity check**: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test:unit`, `pnpm build` all green on `main` (verified locally on the `main` HEAD, commit `fa8f5f0`). No flakes observed across PRs 2–8.
+- [x] 0.R.7 **Improvements identified for Epic 1**:
+  1. **Shared API+QueryClient test harness** (`src/test/render.tsx`) — wraps RTL `render` with a `QueryClientProvider` + a fetch mock helper. Will be needed the first time we test a feature that mounts hooks; landing it now would save churn in Story 1.1's PR.
+  2. **State fixtures for integration tests** — `src/test/fixtures/state.ts` with `freshUser()`, `lockedUser()`, `seededGoals()` helpers that hit the in-memory backend and return the resulting state. Already mentioned in `testing-strategy.md` as "lands when the first integration test needs more than one of them" — that's now.
+  3. **Toast/error-boundary primitive** (atom or organism). Mutations currently surface errors locally (login form). The `<Toaster>` + `<ErrorBoundary>` primitives are explicitly deferred to Epic 8 (Polish) but the first feature that does anything destructive (delete goal, replant) would benefit from a basic implementation. Suggest landing a stub in Epic 1.
+  4. **`/api/today` aggregate endpoint** — Architecture mentions it; it's not built yet because nothing consumed it. Story 2.1 (Today list) is the consumer; the endpoint should land as part of that story, not retroactively.
+  5. **A11y baseline pass** — focus rings work via `:focus-visible` but we haven't done a full audit (skip-link, landmark roles on the `(app)` shell, page titles per route via `metadata.title`). Worth a small chore PR before Epic 6 (Profile) where settings will need solid keyboard support.
+- [x] 0.R.8 **Decision: Epic 0 is done.** The four foundations are in place (Next/TS/Tailwind tooling, atomic-design primitives, app shell, server domain + repos + HTTP + TanStack Query) and the user journey runs end-to-end. The improvements above are explicitly Epic 1 / Epic 2 work, not gaps in Epic 0.
 
 ---
 
 ## Epic 1 — First-run onboarding
 
 Goal: a user can launch the app, log in (dev stub), set priorities, land on Today.
+
+### Story 1.0 — Test harness + state fixtures (from Epic 0 review)
+**As a** developer, **I want** a shared RTL render helper and reusable state fixtures, **so that** every feature in Epics 1+ can integration-test consistently without bespoke wiring.
+- [ ] 1.0.1 `src/test/render.tsx` — wraps `@testing-library/react`'s `render` with a fresh `QueryClient`, exposes a `setupFetchMock()` helper and a small `signedIn(name)` shortcut.
+- [ ] 1.0.2 `src/test/fixtures/state.ts` — `freshUser()`, `lockedUser()`, `seededGoals()` helpers that drive the in-memory backend through the real services (no shadow data path) and return DTO-shaped values for tests to assert on.
+- [ ] 1.0.3 First consumer is Story 1.1's integration test.
 
 ### Story 1.1 — Login page
 - [ ] 1.1.1 `LoginPage` collects name (and email when Auth.js arrives)

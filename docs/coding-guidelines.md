@@ -32,32 +32,36 @@ When you find yourself writing `User`, `Goal`, and `Garden` code in the same fil
 
 Cross-cutting helpers (`clock`, `errors`, generic utilities) stay flat at the root of their layer — they don't belong to any one entity. Use judgement: a single small constant set or one function doesn't need its own folder.
 
+## Design system
+
+Read [`docs/design-system.md`](./design-system.md) for the full token list. Encode tokens **once** in `src/app/globals.css` under Tailwind v4's `@theme` block — never in `tailwind.config.ts` (Tailwind v4 is CSS-first; the file doesn't exist).
+
 ## React
 
 - Functional components only. No class components.
 - Server components by default in `app/`; mark `'use client'` only when you need state, refs, or effects.
-- Lift state into the store, not into a parent component. Components either read from the store via a selector or accept props from a feature container — don't mix.
-- No `useEffect` for data derivation; use `useMemo` or a selector.
+- Keep ephemeral UI state local to the component that owns it. We don't have a Zustand store today — introduce one only when the same UI state genuinely needs to live across components, and add the rationale to `architecture.md` in the same PR.
+- No `useEffect` for data derivation; use `useMemo` or a selector hook.
 - Keys must be stable IDs, never array indices.
 - Event handlers prefixed `handle*` for local, `on*` for props.
 
 ## Styling
 
 - Tailwind utility classes for layout and most styling. Use `cn()` for conditional class composition.
-- Tokens (colors, radii, motion) referenced through Tailwind theme keys — never raw hex codes inside components.
-- Avoid inline `style={}` except for dynamic values that can't be expressed as utilities (e.g. an animated transform).
+- Tokens (colors, radii, motion) referenced through Tailwind theme utilities (`bg-brand-700`, `rounded-md`) — never raw hex codes inside components.
+- Avoid inline `style={}` except for dynamic values that can't be expressed as utilities (per-area / per-resource colors via `var(--color-*)`).
 - One global stylesheet (`globals.css`); per-component CSS files are a smell.
 
 ## State
 
 We split state into two:
 
-- **Server state** (goals, tasks, garden, coins) — owned by TanStack Query. Use the typed hooks in `src/client/hooks/` (`useGoals`, `useToggleTask`, …). No raw `fetch` in components.
-- **Client/UI state** (active tab, open modals, transient animation flags) — owned by Zustand in `src/client/store/`.
+- **Server state** (goals, tasks, garden, coins, session) — owned by TanStack Query. Use the typed hooks in `src/client/hooks/` (`useGoals`, `useUpdateTask`, `useSession`, …). No raw `fetch` in components.
+- **Client/UI state** (open modal, transient animation flags) — local to components for now. If you need cross-component UI state, introduce a small Zustand store under `src/client/store/<name>.ts` in the same PR; document why in `architecture.md`.
 
 Conventions:
-- Subscribe with selectors so components re-render only on the slice they read. Don't destructure the whole store.
-- Mutations go through the typed mutation hooks so optimistic updates and rollback stay consistent.
+- Mutations go through the typed mutation hooks so cache updates and rollback stay consistent.
+- Don't keep a duplicate copy of server data in component state — read from the query.
 
 ## Domain layer (server-side)
 
@@ -96,7 +100,7 @@ Conventions:
 
 ## Tests
 
-- Unit tests are the default. Reach for integration tests when behavior spans multiple components plus the store. Reach for e2e only for end-to-end user journeys (login → set priorities → plant a goal → complete a task → see growth).
+- Unit tests are the default. Reach for integration tests when behavior spans multiple components plus the API. Reach for e2e only for end-to-end user journeys (login → set priorities → plant a goal → complete a task → see growth).
 - Snapshot tests are banned for components — they encode noise, not intent.
 - Test names describe behavior: `growPlant advances stage when both resources meet requirements`.
 
