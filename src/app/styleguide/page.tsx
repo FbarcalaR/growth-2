@@ -4,6 +4,7 @@ import { AreasSection } from "./sections/areas";
 import { AtomsSection } from "./sections/atoms";
 import { HealthSection } from "./sections/health";
 import { MoleculesSection } from "./sections/molecules";
+import { OnboardingSection } from "./sections/onboarding";
 import { RadiiSection, SpacingSection } from "./sections/radii-spacing";
 import { ResourcesSection } from "./sections/resources";
 import { StagesSection } from "./sections/stages";
@@ -45,6 +46,10 @@ export default function StyleGuide() {
         <hr className="border-surface-muted" />
         <h2 className="text-2xl font-extrabold tracking-tight">Molecules</h2>
         <MoleculesSection />
+
+        <hr className="border-surface-muted" />
+        <h2 className="text-2xl font-extrabold tracking-tight">Onboarding</h2>
+        <OnboardingSection />
       </div>
     </main>
   );

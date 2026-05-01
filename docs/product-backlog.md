@@ -145,12 +145,16 @@ Goal: a user can launch the app, log in (dev stub), set priorities, land on Toda
   - New tokens in `globals.css` `@theme`: `--color-ink-strong/soft/faint` for the type hierarchy, `--color-input-border` for the lighter sage input border, plus the welcome gradient stops
 - [x] 1.1.6 Global RTL `cleanup()` registered in `src/test/setup.ts` so feature tests don't accumulate DOM between specs (emerged during 1.1.4 — `react-hook-form` + multi-test files revealed the gap)
 
-### Story 1.2 — Set priorities (Wheel of Life)
-- [ ] 1.2.1 `WheelOfLife` organism (slider + budget meter)
-- [ ] 1.2.2 Enforce total budget ≤ 30 with live remaining indicator
-- [ ] 1.2.3 `PATCH /api/me/priorities` writes wheel + flips `prioritiesLocked = true`
-- [ ] 1.2.4 Modal cannot be dismissed except by submitting (one-time, locked thereafter)
-- [ ] 1.2.5 Server enforces idempotency — second lock is rejected
+### Story 1.2 — Set priorities (Wheel of Life) ✅ (PR #13)
+- [x] 1.2.1 `WheelOfLife` organism — budget pill + 7 priority rows with ± steppers, info-button disclosure per area, area-tinted icon backgrounds. Lives at `src/components/organisms/wheel-of-life.tsx`.
+- [x] 1.2.2 Total budget enforced ≤ 30 client-side; budget pill turns sage at 0; `+` buttons disable when budget is exhausted; remaining count is `aria-live`.
+- [x] 1.2.3 `SetPrioritiesModal` calls `useSession().lockPriorities(values)` which `PATCH /api/me/priorities`. On success the values are committed via `setQueryData`; the parent `onLocked(wheel)` callback fires.
+- [x] 1.2.4 `BottomSheet` atom passes `dismissable={false}`. Backdrop click and Escape are wired to `onClose` only when dismissable; for this modal they're no-ops.
+- [x] 1.2.5 Already enforced server-side (PR #7); the client surfaces a 409 inline as `role="alert"` ("PRIORITIES_ALREADY_LOCKED") and does not call `onLocked`.
+- [x] 1.2.6 New `BottomSheet` atom (`src/components/atoms/bottom-sheet.tsx`) — bottom-anchored sheet with blurred backdrop, drag handle, dismissable opt-in. First consumer is this modal; future consumers: "Pick a goal to plant" (Epic 4), "Replant or drop" dead-plant modal (Epic 4).
+- [x] 1.2.7 `AREA_DESCRIPTION` copy added to `src/shared/areas.ts` for the per-area info disclosure.
+- [x] 1.2.8 `/styleguide` Onboarding section: inline `WheelOfLife` and the modal trigger.
+- [x] 1.2.9 Integration test (`src/components/organisms/__tests__/set-priorities-modal.spec.tsx`) — 7 specs: render shape, increment/decrement budget, exhausted-budget disables `+`, save CTA flips at 0, PATCH call shape on submit, 409 → inline alert + no `onLocked`, Escape doesn't dismiss.
 
 ### Story 1.3 — Authed shell guard
 - [ ] 1.3.1 `(app)/layout.tsx` redirects to `/login` if no session
