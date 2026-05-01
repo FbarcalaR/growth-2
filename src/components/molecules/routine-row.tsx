@@ -1,5 +1,7 @@
 "use client";
 
+import { Flame } from "lucide-react";
+
 import { Checkbox } from "@/components/atoms";
 import { cn } from "@/client/lib/cn";
 import { type Area } from "@/shared/areas";
@@ -44,10 +46,11 @@ export function RoutineRow({
         >
           {title}
         </p>
-        <p className="text-brand-muted text-xs">
+        <p className="text-brand-muted flex items-center gap-1 text-xs">
           {streak > 0 ? (
             <>
-              <span aria-hidden>🔥</span> {streak}-day streak
+              <Flame size={12} strokeWidth={2} aria-hidden />
+              <span>{streak}-day streak</span>
             </>
           ) : (
             "Starts your streak today"
