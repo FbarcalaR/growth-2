@@ -124,11 +124,12 @@ A short, focused review pass before opening Epic 1. Goal: catch anything the by-
 
 Goal: a user can launch the app, log in (dev stub), set priorities, land on Today.
 
-### Story 1.0 — Test harness + state fixtures (from Epic 0 review)
+### Story 1.0 — Test harness + state fixtures (from Epic 0 review) ✅ (PR #11)
 **As a** developer, **I want** a shared RTL render helper and reusable state fixtures, **so that** every feature in Epics 1+ can integration-test consistently without bespoke wiring.
-- [ ] 1.0.1 `src/test/render.tsx` — wraps `@testing-library/react`'s `render` with a fresh `QueryClient`, exposes a `setupFetchMock()` helper and a small `signedIn(name)` shortcut.
-- [ ] 1.0.2 `src/test/fixtures/state.ts` — `freshUser()`, `lockedUser()`, `seededGoals()` helpers that drive the in-memory backend through the real services (no shadow data path) and return DTO-shaped values for tests to assert on.
-- [ ] 1.0.3 First consumer is Story 1.1's integration test.
+- [x] 1.0.1 `src/test/render.tsx` — `renderWithQuery(ui, { client? })` wraps `@testing-library/react`'s `render` in a fresh `QueryClient` (no retry, no refetch-on-focus, gcTime: 0).
+- [x] 1.0.2 `src/test/fetch-mock.ts` — `setupFetchMock()` installs a global `fetch` spy with URL→response mappings; supports method matching, regex URLs, and a typed `calls()` accessor.
+- [x] 1.0.3 `src/test/fixtures/state.ts` — `freshUser()`, `lockedUser()`, `seededGoals()` async builders that drive the in-memory backend through the real services (no shadow data path) and return DTO-shaped values that drop straight into a fetch-mock body.
+- [x] 1.0.4 Smoke test (`src/test/__tests__/harness.spec.tsx`) demonstrates the canonical pattern end-to-end: fixture → fetch-mock → `renderWithQuery` → assert. First real consumer is Story 1.1.
 
 ### Story 1.1 — Login page
 - [ ] 1.1.1 `LoginPage` collects name (and email when Auth.js arrives)
