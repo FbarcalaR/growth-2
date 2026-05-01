@@ -1,0 +1,72 @@
+# Growth — Testing Strategy
+
+## Pyramid
+
+```
+        ┌──────────┐
+        │  E2E     │   handful    Playwright — golden flows only
+        ├──────────┤
+        │  Integr. │   moderate   Vitest (backend) + RTL (frontend)
+        ├──────────┤
+        │  Unit    │   majority   Vitest — pure domain functions
+        └──────────┘
+```
+
+## What goes where
+
+### Unit (Vitest, server `src/server/**/__tests__`)
+Every rule in `domain-model.md` has at least one unit test. Examples:
+- `growPlant` advances stage iff cumulative `plantRes` ≥ `requirements[stage]` for both primary and secondary.
+- `getOverdueCount` counts long-overdue (>7d) tasks twice.
+- `applyTaskCompletion` floors resources at 0 on uncomplete.
+- `placeDeco` rejects tiles occupied by a planted goal.
+
+### Integration — backend (Vitest)
+Call Route Handlers directly (no HTTP); use the in-memory repositories. Verify request/response contracts and ownership enforcement:
+- `PATCH /api/goals/[id]` returns 404 when the goal belongs to a different user.
+- `POST /api/garden/tiles` returns 409 on a collision.
+- `PATCH /api/me/priorities` is idempotent — second call after lock returns 409.
+
+### Integration — frontend (RTL)
+Render features against a real query client backed by a mock fetch (or MSW handlers wired to the in-memory backend). Verify user-visible behavior:
+- Toggling a task on Today updates the goal's plant resources and the coin count.
+- Set-priorities modal blocks tab content until submitted.
+- Replanting a dead plant resets stage and reschedules overdue tasks to today.
+- Completing a goal awards a trophy and frees the tile.
+
+We do **not** mock the domain layer or services in integration tests. The whole point is to catch wiring bugs.
+
+### End-to-end (Playwright, `tests/e2e`)
+A handful of golden flows, each one click-by-click:
+1. First-run onboarding: enter name → set priorities → land on Today.
+2. Plant a goal: Plans → pick goal → place on garden tile.
+3. Complete the daily routine, see the resource animation, watch the plant advance a stage.
+4. Let a task go overdue (mock clock) → see Wilting badge → complete it → back to Healthy.
+5. Complete a goal → trophy in garden, tile freed.
+6. Reset state → confirm clean slate.
+
+E2E uses a fixed clock (server-side) and a seeded user via the in-memory backend so runs are deterministic.
+
+## Coverage philosophy
+
+We don't enforce a single coverage number with a CI gate — that incentivises writing dumb tests to hit lines. Apply common sense:
+
+- **Domain layer**: every documented rule has at least one test. Branches that encode real business decisions (e.g. long-overdue > 7 days counts double) get explicit cases. If you can't see the rule reflected in a test, it isn't tested enough.
+- **Services**: tests cover the happy path, the auth/ownership rejections, and any branch that maps to a 4xx error.
+- **Route handlers**: integration test for each endpoint's contract (validation + happy path + the most likely error).
+- **Components**: behavior, not lines. A presentational atom with no logic doesn't need a test.
+- **E2E**: a small set of golden flows (see below).
+
+Reviewers ask "would I notice if this regressed?" — if the answer is yes and there's no test catching it, push back. If the code is dead simple and a test would only echo it back, skip it.
+
+## Fixtures
+
+- `src/test/fixtures/state.ts` exports `freshState()`, `midGameState()`, `deadPlantState()`, `nearGoalCompletionState()`. These are the canonical inputs for integration tests; don't roll your own per-spec.
+- `src/test/clock.ts` exports `frozenClock(iso)` and is the only way tests get a `now`.
+
+## CI
+
+- `pnpm test:unit` — Vitest, fast, runs on every PR.
+- `pnpm test:e2e` — Playwright, runs on PRs touching `app/`, `src/features/`, `src/server/`.
+- `pnpm typecheck` and `pnpm lint` always.
+- Coverage is reported as a PR comment so we can see trends. It is **not** a hard merge gate — reviewers use judgment per the philosophy above.
