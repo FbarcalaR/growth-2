@@ -162,7 +162,7 @@ Conventions:
 - Tokens (color, radius, spacing, motion) come from `tailwind.config.ts`. **No hex values inside components.**
 - `cn()` for conditional class composition.
 - Variants on atoms are typed (`size: 'sm'|'md'|'lg'`), not string-untyped Tailwind blobs at the call site.
-- A `/_styleguide` route renders every atom + molecule for review.
+- A `/styleguide` route renders every atom + molecule for review.
 
 ## 6. Backend, persistence, and the swap-to-Postgres plan
 
