@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { ApiError } from "@/client/api";
 import { useSession } from "@/client/hooks";
-import { BottomSheet, Button } from "@/components/atoms";
+import { BottomSheet, Button, Spinner } from "@/components/atoms";
 import { AREA_KEYS } from "@/shared/areas";
 import type { WheelOfLifeDto } from "@/shared/schemas/user";
 
@@ -81,11 +81,21 @@ export function SetPrioritiesModal({ open, initial, onLocked }: SetPrioritiesMod
       {/* Footer */}
       <footer className="bg-surface-app border-surface-muted flex-shrink-0 border-t px-4 pt-3 pb-5">
         <Button type="button" size="lg" className="w-full" disabled={!canSave} onClick={handleSave}>
-          {submitting
-            ? "Saving…"
-            : remaining === 0
-              ? "🔒  Save and lock my priorities"
-              : `Allocate ${remaining} more point${remaining === 1 ? "" : "s"}`}
+          {/* The label flips between "Allocate N more points" → "🔒 Save and lock"
+              as the user spends down the budget. Wrap the changing text in
+              aria-live so screen readers announce the state change without
+              re-announcing the surrounding chrome. */}
+          <span aria-live="polite">
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size="sm" /> Saving…
+              </span>
+            ) : remaining === 0 ? (
+              "🔒  Save and lock my priorities"
+            ) : (
+              `Allocate ${remaining} more point${remaining === 1 ? "" : "s"}`
+            )}
+          </span>
         </Button>
         {error && (
           <p role="alert" className="text-health-critical mt-2 text-center text-xs font-semibold">
