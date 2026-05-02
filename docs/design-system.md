@@ -88,7 +88,10 @@ The welcome surface is composed via `linear-gradient(160deg, var(--color-welcome
 
 - Tap feedback: `transform: scale(0.92)` on touchstart, restore on touchend.
 - Resource fly-to-plant animation: 600ms `cubic-bezier(0.22, 1, 0.36, 1)`. Suppressed under `prefers-reduced-motion`.
+- Plant stage-transition (`plant-grow`): 700ms `cubic-bezier(0.34, 1.56, 0.64, 1)`, transform-origin `center bottom`. Plays on the goal-card sprite when `stage` advances. Suppressed under `prefers-reduced-motion`.
 - Tab transitions: 200ms cross-fade or none — never slide.
+
+Components reading `prefers-reduced-motion` should go through `useReducedMotion()` (`src/client/hooks/use-reduced-motion.ts`) — a `useSyncExternalStore` wrapper that's SSR-safe and reactive to OS-level changes. Backstop with the same media query at the CSS level (`@media (prefers-reduced-motion: reduce) { .anim { animation: none } }`) so anything that bypasses the hook still degrades gracefully.
 
 ## Layout container
 

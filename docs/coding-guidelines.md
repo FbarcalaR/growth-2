@@ -27,6 +27,7 @@ When a module starts holding code for more than one domain entity (e.g. types, s
 - DTO mappers: `src/server/services/dtos/<entity>.ts` — one file per entity.
 - Services: `src/server/services/<entity>-service.ts` — one file per service.
 - Route handlers: Next.js naturally enforces this via the `app/api/` filesystem.
+- Route-private components: a page that grows past one or two component declarations gets a sibling `_components/` folder (the leading underscore is a Next.js App Router convention that prevents the directory from becoming a route). One file per component, e.g. `src/app/(app)/today/_components/{today-header,goal-group,goal-plant,...}.tsx`. The page's `page.tsx` should be left as a thin orchestrator that fetches data and assembles the components.
 
 When you find yourself writing `User`, `Goal`, and `Garden` code in the same file, that's the smell. Even if each section is short today, splitting now keeps grep-by-entity easy and makes future ownership boundaries (per-team, per-package) painless.
 

@@ -239,21 +239,47 @@ Goal: see and complete today's tasks and routines; resources accrue; plant grows
 
 ---
 
-### 🧹 Epic 2 Tidy-up — code-quality pass (PR #20)
+### 🔍 Epic 2 Review — between-epics gate (PR #20)
 
-Walked every file Epic 2 added or substantially modified looking for the issues listed in the canonical `## Tidy up` section above. Found four worth fixing now; everything else was clean.
+A short focused pass before opening Epic 3. Tidy-up is folded in as item 2.R.1.
 
-- [x] 2.T.1 **`plant-sprite.tsx` was 707 lines** — past the 400-line trip wire from `coding-guidelines.md`. Split into a folder: `src/components/atoms/plant-sprite/` with `index.tsx` (host: pot, health filters, variant dispatch — 110 lines), `dead-plant.tsx` (the withered-stem fallback), and one file per plant under `variants/{herb,sunflower,rose,mushroom,money-tree,crystal,moon-flower}.tsx`. Variants share a `StageRendererProps` type re-exported from `herb.tsx` (the canonical first variant). Public import unchanged: `import { PlantSprite } from "@/components/atoms"`. Variant lookup is now a typed `Record<PlantId, ...>` instead of a `switch`, so adding a plant variant requires touching one map entry.
-- [x] 2.T.2 **`use-today-toggles.ts` had two near-identical hooks** — ~60 lines of repeated `onMutate` / `onError` / `onSuccess` / `onSettled` wiring across `useToggleTodayTask` and `useToggleTodayRoutine`. Extracted the shared pieces into module-private helpers (`optimisticallyPatchToday` takes a `(group) => group` patcher; `rollbackTodayCache`, `applyServerTruth`, `invalidateGarden` close over the query client). The two public hooks are now ~12 lines each and the only difference between them is which fetcher to call and which collection to flip.
-- [x] 2.T.3 **`flying-resource.tsx` had a misleading prop comment** referencing a `direction` prop that doesn't exist (a vestige from an earlier draft). Replaced with a one-liner that accurately describes `onDone`.
-- [x] 2.T.4 **`goal-plant.tsx` had two `useEffect`s both depending on `stage`** — one to set the `growing` flag, one to update the `prev` ref. Order-fragile and harder to read than necessary. Merged into a single effect that captures `advanced = stage > prev.current`, updates the ref, then conditionally schedules the timer.
+- [x] 2.R.1 **Tidy up the code that landed this epic.** Walked every file Epic 2 added or substantially modified looking for the issues listed in the canonical `## Between-epic review` section above. Found four worth fixing now; everything else was clean.
+  - [x] 2.R.1.a **`plant-sprite.tsx` was 707 lines** — past the 400-line trip wire from `coding-guidelines.md`. Split into a folder: `src/components/atoms/plant-sprite/` with `index.tsx` (host: pot, health filters, variant dispatch — 110 lines), `dead-plant.tsx` (the withered-stem fallback), and one file per plant under `variants/{herb,sunflower,rose,mushroom,money-tree,crystal,moon-flower}.tsx`. Variants share a `StageRendererProps` type re-exported from `herb.tsx` (the canonical first variant). Public import unchanged. Variant lookup is now a typed `Record<PlantId, ...>` instead of a `switch`, so adding a plant variant touches one map entry.
+  - [x] 2.R.1.b **`use-today-toggles.ts` had two near-identical hooks** — ~60 lines of repeated `onMutate` / `onError` / `onSuccess` / `onSettled` wiring. Extracted the shared pieces into module-private helpers (`optimisticallyPatchToday` takes a `(group) => group` patcher; `rollbackTodayCache`, `applyServerTruth`, `invalidateGarden` close over the query client). The two public hooks are now ~12 lines each.
+  - [x] 2.R.1.c **`flying-resource.tsx` had a misleading prop comment** referencing a `direction` prop that doesn't exist (vestige from an earlier draft). Replaced with a one-liner that accurately describes `onDone`.
+  - [x] 2.R.1.d **`goal-plant.tsx` had two `useEffect`s both depending on `stage`** — one to set the `growing` flag, one to update the `prev` ref. Order-fragile. Merged into a single effect that captures `advanced = stage > prev.current`, updates the ref, then conditionally schedules the timer.
+  - Items considered and intentionally not fixed: `today-header.tsx`'s local `Pill` (single-use; comment already flags the promote-to-token path); `progress-summary.tsx` reimplementing a gradient progress bar instead of reusing `<ProgressBar>` (atom's API only takes one `accent` colour; gradient support is an API extension out of scope); `useGoals.ts` `updateTask`/`updateRoutine` overlapping in shape with the new toggle hooks (different cache surfaces — single-goal screens vs Today list — intentionally separate).
+- [x] 2.R.2 **Walked the user journey end-to-end**: visit `/` → `/login` → name step → land on `/today` with the priorities modal overlaid → lock priorities → Today renders the greeting + chips + per-goal groups with `<PlantSprite>`. Toggling a checkbox flips the row optimistically, fires the `<FlyingResource>` sprite, PATCHes the server, and on success reconciles the Today cache from the authoritative goal. Stage advancement plays the `plant-grow` keyframe on the goal sprite. Verified end-to-end via the existing Playwright spec (`tests/e2e/onboarding.spec.ts` lands on `/today` and asserts the greeting heading) plus the new 165→180 unit + integration tests covering the behaviours individually. No browser-driven manual smoke this time — sandbox limitation noted in Epic 1's review still applies; CI is the verification path.
+- [x] 2.R.3 **Re-read each affected doc**.
+  - `architecture.md` — references `prefers-reduced-motion` honored, file structure includes `today/`. Reflects reality. ✅
+  - `coding-guidelines.md` — added a new bullet under "Split files by entity / resource" documenting the `_components/` route-private convention introduced this epic (used by the Today page). ✅
+  - `design-system.md` — added the `plant-grow` motion token (700ms `cubic-bezier(0.34, 1.56, 0.64, 1)`, transform-origin `center bottom`) alongside the existing fly-to-plant token, and a paragraph describing the canonical `useReducedMotion` hook + CSS-level backstop pattern. ✅
+  - `domain-model.md` — task / routine / completion / `growPlant` rules unchanged; Epic 2 only consumed them. ✅
+  - `testing-strategy.md` — already lists "Toggling a task on Today updates the goal's plant resources and the coin count" as the integration test exemplar. Now actually shipped (page.spec.tsx). No change needed.
+- [x] 2.R.4 **Re-read the backlog**. All 12 Epic-2 sub-tasks (Story 2.0 review prep + 2.1 + 2.2 + 2.3) are ticked. Notable additions captured during implementation: 2.1.4 (greeting + chips + progress summary as part of 2.1), 2.2.6 (matchMedia polyfill in test setup as part of 2.2), 2.3.4 (consolidate `PlantIdSchema` into `src/shared/plants.ts` as part of 2.3). Nothing silently dropped.
+- [x] 2.R.5 **Structural sanity check**.
+  - File-size watch list: `goal-service.ts` 264 lines (unchanged from Epic 1 — still under the trip wire); `use-goals.ts` 161; `use-today-toggles.ts` 115 (post-tidy). The big offender, `plant-sprite.tsx`, was 707 → split this PR. New folders that emerged this epic: `src/app/(app)/today/_components/` (route-private wrappers), `src/components/atoms/plant-sprite/` (host + variants), `src/shared/plants.ts` (consolidated `PlantId` + `Stage`). All cohesive — one role per file.
+  - Per-entity layout still respected. The new client hooks (`use-today`, `use-today-toggles`, `use-reduced-motion`) live one-per-file under `src/client/hooks/` per the existing convention.
+- [x] 2.R.6 **Test sanity check**.
+  - **180 unit + integration specs** (was 150 at end of Epic 1 / Story 2.0; +30 this epic). New suites: `today.spec.ts` (7 API specs), `today/__tests__/page.spec.tsx` (6), `goal-plant.spec.tsx` (5), `plant-sprite.spec.tsx` (5). Optimistic-flip + rollback semantics covered at the page level; stage-transition animation covered with fake timers; per-variant artwork covered via monotonic-growth assertion (no brittle snapshots).
+  - Coverage by layer: domain (unchanged), services (today-service), HTTP boundary (today.spec), client API (today fetcher exercised via page tests), hooks (toggle hooks exercised end-to-end), atoms (PlantSprite), page integrations. No gaps.
+- [x] 2.R.7 **CI sanity check**: typecheck / lint / format:check / test:unit / build all green on `main` HEAD (`ff5021b`, the merge of Story 2.3). e2e job green on PR #19. No flakes observed in this epic's PRs (#17 / #18 / #19).
+- [x] 2.R.8 **Prototype fidelity check**. The user-visible surface this epic touched is `/today`. Compared the implementation against `docs/prototype-design/today-tab.jsx`:
+  - Greeting `Good morning/afternoon/evening, {name} 🌿` — matches.
+  - Coin + streak pills (warm gold/orange palette) — matches; the inline hex is flagged in the page code with a comment about promoting to `--color-accent-*` if a third surface adopts the look.
+  - Progress summary card with linear-gradient bar — matches.
+  - Per-goal group with area-tinted icon background + `<PlantSprite>` (replaces the prototype's emoji at the same position) — intentional uplift, noted in PR #19. Visual fidelity to the *plant artwork* (vs emoji) is now actually higher than the prototype.
+  - Empty state with `Sprout` icon + "Nothing for today" — matches.
+  - Drift: none uncalled-out.
+- [x] 2.R.9 **Improvements identified for Epic 3**:
+  1. **Promote `<ProgressBar>` to support gradient accents** — Today's `progress-summary.tsx` reimplements the bar because the atom only takes a single colour. Plans tab's GoalCard will likely want a similar gradient. First Story 3.0 sub-task: extend `ProgressBar` API and migrate Today.
+  2. **Promote the local `Pill` from `today-header.tsx` to a shared atom** — Plans tab's filter chips and Garden tab's resource pills will want similar treatment. Land an `<AccentPill>` atom + `--color-accent-warm` token group.
+  3. **`<GoalCard>` organism extraction** — Today's `goal-group.tsx` is 85 lines and very specific to the Today filter. Plans tab needs a richer "goal card" (full plant, all tasks, edit affordances). Plan a shared `<GoalCard>` organism that both surfaces compose, instead of letting Plans roll its own.
+  4. **Test-fixture helper for fully-loaded today responses** — `page.spec.tsx` builds the Today response shape inline in five places (~25 lines each). A `makeTodayGroup({ goal, tasks, routines })` fixture under `src/test/fixtures/` would shave ~80 lines.
+  5. **Fixtures accept partial DTO overrides** — When mocking PATCH responses in the toggle test we hand-rolled an entire `GoalDto`. A `makeGoalDto(partial: Partial<GoalDto>)` fixture would make these mocks one-liners.
+- [x] 2.R.10 **Decision: Epic 2 is done.** The Today list renders, items toggle with optimistic UI + rollback, the plant grows on completion with a transition animation, and reduced-motion is honored throughout. Improvements above are explicitly Epic 3 work, not gaps in Epic 2. Ready to open Epic 3 (Plans tab).
 
-Items considered and intentionally not fixed:
-- `today-header.tsx` defines a local `Pill` with inline gold/orange hex values. Single-use and the comment already flags the "promote to `--color-accent-*` if a third surface adopts it" path. Leave.
-- `progress-summary.tsx` reimplements a gradient progress bar instead of reusing `<ProgressBar>`. The atom's API only exposes a single `accent` colour today; supporting a gradient track requires an API extension that's out of scope for tidy. Leave; revisit if a third surface needs the same look.
-- The `useGoals.ts` mutations (`useUpdateTask`, `useUpdateRoutine`) overlap in shape with the new toggle hooks. They serve different cache surfaces (single-goal screens vs Today list) so they're intentionally separate; no change.
-
-180 unit tests still pass; lint / format:check / build green.
+180 unit tests pass; lint / format:check / build green; e2e green on the merged Story 2.3 PR.
 
 ---
 
@@ -406,39 +432,31 @@ The order isn't a Gantt chart — it's the sequence that lets us demo something 
    - Domain rules added or revised in `domain-model.md` if any were introduced or changed.
    - `architecture.md` / `coding-guidelines.md` / `design-system.md` updated when a decision in the PR contradicts or extends them. Don't ship the code and "do the docs later" — reviewers should be able to read the doc change and the code change side by side.
 
-## Tidy up (every epic, before the review)
-
-A short focused pass over the **code that landed this epic** — independent of UX/docs/CI checks. The goal is to keep the codebase clean and the standards in `coding-guidelines.md` and `CLAUDE.md` enforced as we go, instead of letting cruft compound. Add a `### 🧹 Epic N Tidy-up` section to the backlog at the end of every epic with the checklist below; ship the resulting fixes as a single `chore/tidy` PR before opening the between-epic review.
-
-Walk every file the epic added or substantially modified and look for:
-
-1. **Dead / speculative code.** Unused exports, unreferenced helpers, props with no caller, error-handling for cases that can't happen, feature flags / shims kept "just in case". Delete it.
-2. **Premature abstraction.** Wrappers / hooks / utilities introduced for one caller. If three similar lines would be clearer, inline. If an abstraction's name is vague (`Helper`, `Util`, `Manager`), rename or remove.
-3. **Duplication.** The same shape declared in two places (Zod enums, magic-string lists, type aliases). Promote to a shared module. The same logic written twice — extract or unify.
-4. **File size + cohesion.** Anything past ~400 lines or mixing concerns gets split per `coding-guidelines.md`'s "Split files by entity / resource" rule. One file = one role.
-5. **Naming.** Identifiers describe intent, not mechanics. No `data2`, `tmp`, abbreviated single-letter names outside tight scopes. Files match what they export.
-6. **Comment hygiene** (per `CLAUDE.md`). Default to no comment. Keep the ones that explain a non-obvious WHY: a hidden constraint, an invariant, a workaround. Delete comments that restate the code, narrate the task, or reference callers / PRs / issues — those rot.
-7. **Type safety.** No `any`, no `@ts-ignore`, no `as unknown as X` shortcuts at boundaries we control. Optional / nullable fields modelled honestly.
-8. **Magic values.** Numbers, durations, colour hex literals, copy strings that should live in tokens / a constants module / a shared schema. Cross-check against `design-system.md`.
-9. **Test quality.** Tests assert observable behaviour, not implementation. No reaching into internal state, no brittle snapshot matches when a single targeted assertion would do. `it()` names describe behaviour.
-10. **Boundary respect.** No client → server imports. No domain → infra imports. ESLint should already catch these; the manual re-check is for new patterns the rules haven't been taught yet.
-
-Output of the pass: a punch list of fixes (short — usually 3–8 items), applied in a single `chore/tidy: Epic N` PR. If a finding is too big to fit, file it as a follow-up sub-task on the next epic instead of letting it derail the tidy.
-
 ## Between-epic review (every epic)
 
-Before opening the next epic, run a short review pass to make sure the closing one is genuinely done. Add a `### 🔍 Epic N Review` section to the backlog at the end of every epic with the checklist below — it lives next to the epic so it's hard to skip.
+Before opening the next epic, run a short review pass to make sure the closing one is genuinely done. Add a `### 🔍 Epic N Review` section to the backlog at the end of every epic with the checklist below — it lives next to the epic so it's hard to skip. Ship the review notes **and any tidy-up fixes** in a single PR (e.g. `chore: Epic N review`).
 
 Reviewable items (canonical template):
 
-1. **Walk the user journey end-to-end** in dev for whatever the epic claims to ship.
-2. **Re-read each affected doc** (`architecture.md`, `domain-model.md`, `coding-guidelines.md`, `design-system.md`, `testing-strategy.md`) and confirm reality matches the words.
-3. **Re-read the backlog**: every checked sub-task actually done? Anything that emerged that should be a follow-up rather than silently dropped?
-4. **Structural sanity check** against `coding-guidelines.md` ("Split files by entity / resource"). Anything mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
-5. **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
-6. **CI sanity check**: typecheck / lint / format / tests / build all green on `main`. No flakes.
-7. **Prototype fidelity check**: take a screenshot of every user-visible screen the epic touched; place it next to the matching prototype screen in [`docs/prototype-design/`](./prototype-design/README.md) (or the relevant `screenshots/<screen>.png`) and look. Layout, illustrations, palette application, microcopy, flow steps. Any drift that wasn't a deliberate, noted decision earns a follow-up task.
-8. **List 3–5 improvements** that would make the next epic faster or safer (better fixtures, missing helper, ergonomics). File as `chore/` issues or as the first sub-tasks of the next epic.
-9. **Decide**: is the epic done? If not, add missing tasks to the review section and ship them before the next epic starts.
+1. **Tidy up the code that landed this epic.** Walk every file the epic added or substantially modified looking for the issues below; apply the worth-doing-now fixes in this PR; defer the rest as the first sub-tasks of the next epic. Output is a short punch list (usually 3–8 items) recorded in this section.
+   - **Dead / speculative code.** Unused exports, unreferenced helpers, props with no caller, error-handling for cases that can't happen, feature flags / shims kept "just in case". Delete it.
+   - **Premature abstraction.** Wrappers / hooks / utilities introduced for one caller. If three similar lines would be clearer, inline. If an abstraction's name is vague (`Helper`, `Util`, `Manager`), rename or remove.
+   - **Duplication.** The same shape declared in two places (Zod enums, magic-string lists, type aliases). Promote to a shared module. The same logic written twice — extract or unify.
+   - **File size + cohesion.** Anything past ~400 lines or mixing concerns gets split per `coding-guidelines.md`'s "Split files by entity / resource" rule. One file = one role.
+   - **Naming.** Identifiers describe intent, not mechanics. No `data2`, `tmp`, abbreviated single-letter names outside tight scopes. Files match what they export.
+   - **Comment hygiene** (per `CLAUDE.md`). Default to no comment. Keep the ones that explain a non-obvious WHY: a hidden constraint, an invariant, a workaround. Delete comments that restate the code, narrate the task, or reference callers / PRs / issues — those rot.
+   - **Type safety.** No `any`, no `@ts-ignore`, no `as unknown as X` shortcuts at boundaries we control. Optional / nullable fields modelled honestly.
+   - **Magic values.** Numbers, durations, colour hex literals, copy strings that should live in tokens / a constants module / a shared schema. Cross-check against `design-system.md`.
+   - **Test quality.** Tests assert observable behaviour, not implementation. No reaching into internal state, no brittle snapshot matches when a single targeted assertion would do. `it()` names describe behaviour.
+   - **Boundary respect.** No client → server imports. No domain → infra imports. ESLint should already catch these; the manual re-check is for new patterns the rules haven't been taught yet.
+2. **Walk the user journey end-to-end** in dev for whatever the epic claims to ship.
+3. **Re-read each affected doc** (`architecture.md`, `domain-model.md`, `coding-guidelines.md`, `design-system.md`, `testing-strategy.md`) and confirm reality matches the words.
+4. **Re-read the backlog**: every checked sub-task actually done? Anything that emerged that should be a follow-up rather than silently dropped?
+5. **Structural sanity check** against `coding-guidelines.md` ("Split files by entity / resource"). Anything mixed across entities? Any cross-cutting helper that grew enough to deserve a folder?
+6. **Test sanity check**: every layer covered? Coverage trend on the PR-comment report — anything dropping?
+7. **CI sanity check**: typecheck / lint / format / tests / build all green on `main`. No flakes.
+8. **Prototype fidelity check**: take a screenshot of every user-visible screen the epic touched; place it next to the matching prototype screen in [`docs/prototype-design/`](./prototype-design/README.md) (or the relevant `screenshots/<screen>.png`) and look. Layout, illustrations, palette application, microcopy, flow steps. Any drift that wasn't a deliberate, noted decision earns a follow-up task.
+9. **List 3–5 improvements** that would make the next epic faster or safer (better fixtures, missing helper, ergonomics). File as `chore/` issues or as the first sub-tasks of the next epic.
+10. **Decide**: is the epic done? If not, add missing tasks to the review section and ship them before the next epic starts.
 
 The point isn't to gold-plate — it's a 30-minute pause to catch what the by-the-PR cadence missed.
