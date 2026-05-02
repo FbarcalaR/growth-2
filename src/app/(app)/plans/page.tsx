@@ -9,6 +9,7 @@ import { GoalCard, GoalDetailSheet, GoalEditor } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
+import { TasksEditor } from "./_components/tasks-editor";
 
 export default function PlansPage() {
   const goals = useGoals();
@@ -88,7 +89,9 @@ export default function PlansPage() {
           open={openGoalId !== null}
           goal={openGoal}
           onClose={() => setOpenGoalId(null)}
-        />
+        >
+          <TasksEditor goalId={openGoal.id} area={openGoal.area} tasks={openGoal.tasks} />
+        </GoalDetailSheet>
       )}
     </section>
   );
