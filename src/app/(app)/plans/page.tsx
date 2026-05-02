@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 
 import { useCreateGoal, useGoals } from "@/client/hooks";
 import { Button, Spinner } from "@/components/atoms";
-import { GoalCard, GoalEditor } from "@/components/organisms";
+import { GoalCard, GoalDetailSheet, GoalEditor } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
@@ -14,9 +14,11 @@ export default function PlansPage() {
   const goals = useGoals();
   const createGoal = useCreateGoal();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [openGoalId, setOpenGoalId] = useState<string | null>(null);
 
   const { active, blooming } = useMemo(() => splitByBloom(goals.data ?? []), [goals.data]);
   const all = goals.data ?? [];
+  const openGoal = openGoalId ? (all.find((g) => g.id === openGoalId) ?? null) : null;
 
   if (goals.isPending) {
     return (
@@ -50,7 +52,7 @@ export default function PlansPage() {
             <ul className="mt-2 flex flex-col gap-3" aria-label="Active goals">
               {active.map((goal) => (
                 <li key={goal.id}>
-                  <GoalCard goal={goal} />
+                  <GoalCard goal={goal} onClick={() => setOpenGoalId(goal.id)} />
                 </li>
               ))}
             </ul>
@@ -80,6 +82,14 @@ export default function PlansPage() {
           await createGoal.mutateAsync(input);
         }}
       />
+
+      {openGoal && (
+        <GoalDetailSheet
+          open={openGoalId !== null}
+          goal={openGoal}
+          onClose={() => setOpenGoalId(null)}
+        />
+      )}
     </section>
   );
 }
