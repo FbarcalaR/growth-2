@@ -217,10 +217,11 @@ Goal: see and complete today's tasks and routines; resources accrue; plant grows
 - [x] 2.0.4 Save-button copy `aria-live` polish in `SetPrioritiesModal` — the button label is wrapped in `<span aria-live="polite">` so screen readers announce the "Allocate N" → "🔒 Save and lock" transition. The `Saving…` state also picks up the new `<Spinner>`.
 - [x] 2.0.5 Tests: `src/client/hooks/__tests__/use-toast.spec.tsx` (4 specs: publish, auto-dismiss, single dismiss, clearAll) and `src/components/atoms/__tests__/toaster.spec.tsx` (3 specs: empty, render+dismiss, role mapping).
 
-### Story 2.1 — Today list
-- [ ] 2.1.1 **`GET /api/today`** returns today's items grouped by goal (server filters by date + user). **Land first** — Today's UI depends on it.
-- [ ] 2.1.2 `TaskRow`/`RoutineRow` molecules render the items with checkbox, title, area badge
-- [ ] 2.1.3 Empty state copy
+### Story 2.1 — Today list ✅ (PR #17)
+- [x] 2.1.1 **`GET /api/today`** returns today's items grouped by goal — `today-service.ts` filters by `clock.now()` (undated tasks always visible, dated tasks visible from `dueDate`, routines visible per `repeatDays[dow]`). DTO flattens goal metadata + adds derived `goalHealth`/`goalHealthState`. 7 API specs cover empty/undated/all-day/excluded/derived-health/completed-excluded.
+- [x] 2.1.2 Existing `TaskRow`/`RoutineRow` molecules render items inside a per-goal `GoalGroup` with area-tinted icon. Toggle handlers are no-op stubs pending Story 2.2.
+- [x] 2.1.3 Empty state with `Sprout` icon and "Nothing for today" copy when no group has visible items.
+- [x] 2.1.4 Page renders greeting (`Good morning/afternoon/evening, {name} 🌿`), coin & streak chips, progress summary card with linear-gradient bar, and the goal groups. 4 page specs cover empty / chips / multi-group with streak label / progress totals.
 
 ### Story 2.2 — Toggle task / routine
 - [ ] 2.2.1 Domain functions for completion math (already in 0.5)

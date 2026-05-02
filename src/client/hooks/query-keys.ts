@@ -8,4 +8,5 @@ export const queryKeys = {
   goal: (id: string) => ["goals", id] as const,
   garden: () => ["garden"] as const,
   shop: () => ["shop"] as const,
+  today: () => ["today"] as const,
 };

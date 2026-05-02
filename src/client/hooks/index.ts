@@ -25,3 +25,4 @@ export {
 } from "./use-goals";
 export { useGarden, usePlaceDeco, usePlantOnTile, useUnplaceDeco } from "./use-garden";
 export { useBuyDeco, useShop } from "./use-shop";
+export { useToday } from "./use-today";
