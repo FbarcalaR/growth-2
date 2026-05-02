@@ -37,15 +37,19 @@ Render features against a real query client backed by a mock fetch (or MSW handl
 We do **not** mock the domain layer or services in integration tests. The whole point is to catch wiring bugs.
 
 ### End-to-end (Playwright, `tests/e2e`)
-A handful of golden flows, each one click-by-click:
-1. First-run onboarding: enter name → set priorities → land on Today.
+A handful of golden flows, each one click-by-click. Run via `pnpm test:e2e` (or `:ui` for the UI mode); CI runs them on every PR via the `e2e` job. The Playwright config in `playwright.config.ts` boots `pnpm dev -p 3100` for the test run (separate port from the developer's `pnpm dev` so both can coexist).
+
+Currently shipped:
+1. **First-run onboarding** (`tests/e2e/onboarding.spec.ts`) — visit `/` → sign in via the welcome→name two-step → set priorities → land on `/today`. Landed in PR #14 (Story 1.3.3).
+
+Planned as the relevant epics ship:
 2. Plant a goal: Plans → pick goal → place on garden tile.
 3. Complete the daily routine, see the resource animation, watch the plant advance a stage.
 4. Let a task go overdue (mock clock) → see Wilting badge → complete it → back to Healthy.
 5. Complete a goal → trophy in garden, tile freed.
 6. Reset state → confirm clean slate.
 
-E2E uses a fixed clock (server-side) and a seeded user via the in-memory backend so runs are deterministic.
+E2E uses a fixed clock (server-side) and unique random usernames per test so the in-memory backend doesn't carry state across tests.
 
 ## Coverage philosophy
 
@@ -71,7 +75,8 @@ Reviewers ask "would I notice if this regressed?" — if the answer is yes and t
 
 ## CI
 
-- `pnpm test:unit` — Vitest, fast, runs on every PR.
-- `pnpm test:e2e` — Playwright, runs on PRs touching `app/`, `src/features/`, `src/server/`.
-- `pnpm typecheck` and `pnpm lint` always.
+- `pnpm typecheck` / `pnpm lint` / `pnpm format:check` — fast checks, run on every PR.
+- `pnpm test:unit` — Vitest, runs on every PR.
+- `pnpm build` — Next.js production build, runs on every PR.
+- `pnpm test:e2e` — Playwright, runs on every PR in a separate `e2e` job (depends on `check`). Browsers cached across runs; HTML report uploaded as an artefact on failure. Retries set to 2 in CI to soak up flake.
 - Coverage is reported as a PR comment so we can see trends. It is **not** a hard merge gate — reviewers use judgment per the philosophy above.

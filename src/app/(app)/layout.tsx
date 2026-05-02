@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { useSession } from "@/client/hooks";
-import { BottomNav } from "@/components/organisms";
+import { BottomNav, SetPrioritiesModal } from "@/components/organisms";
 
 export default function AppShellLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { user, isLoading } = useSession();
+  const { user, isLoading, prioritiesLocked } = useSession();
 
   useEffect(() => {
     if (!isLoading && !user) router.replace("/login");
@@ -26,6 +26,10 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 overflow-y-auto">{children}</main>
         <BottomNav />
       </div>
+      {/* Priorities modal overlays the entire shell while the user hasn't
+          locked their wheel yet. It's `dismissable={false}` so the user can't
+          escape onboarding without committing. */}
+      <SetPrioritiesModal open={!prioritiesLocked} initial={user.wheelOfLife} />
     </div>
   );
 }
