@@ -1,4 +1,11 @@
-import { CalendarCheck, CalendarDays, ListChecks, Sprout, User, type LucideIcon } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  ListChecks,
+  Sprout,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
 export type TabKey = "today" | "plans" | "garden" | "history" | "profile";
 

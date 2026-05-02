@@ -26,6 +26,13 @@ export function jsonRequest(method: string, body?: unknown): Request {
   });
 }
 
+/** Build a Request for a GET handler. Optional query params get appended. */
+export function getRequest(query: Record<string, string> = {}): Request {
+  const search = new URLSearchParams(query).toString();
+  const url = search ? `http://localhost/test?${search}` : "http://localhost/test";
+  return new Request(url, { method: "GET" });
+}
+
 /** Build a Next.js dynamic route context with a Promise<params>. */
 export function ctx<T extends Record<string, string>>(params: T): { params: Promise<T> } {
   return { params: Promise.resolve(params) };

@@ -22,6 +22,15 @@ import { newId } from "./ids";
 
 export type GoalService = ReturnType<typeof createGoalService>;
 
+/** A goal counts as "blooming" when it has been completed (trophy) or its
+ * plant has reached full bloom (`stage === 4`). Mirrors the prototype's split
+ * between active goals and the "Blooming & Completed" section on Plans. */
+export type GoalListStatus = "active" | "blooming" | "all";
+
+export function isBlooming(goal: Goal): boolean {
+  return Boolean(goal.completed) || (goal.planted && goal.stage >= 4);
+}
+
 export function createGoalService({ clock, repos }: AppContainer) {
   /** Apply a coin/resource delta to a user's wallet, then persist. */
   async function applyReward(user: User, reward: CompletionReward): Promise<User> {
@@ -38,8 +47,18 @@ export function createGoalService({ clock, repos }: AppContainer) {
   }
 
   return {
-    list(user: User): Promise<Goal[]> {
-      return repos.goals.listByUser(user.id);
+    async list(
+      user: User,
+      filters: { area?: Area; status?: GoalListStatus } = {},
+    ): Promise<Goal[]> {
+      const all = await repos.goals.listByUser(user.id);
+      const status = filters.status ?? "all";
+      return all.filter((g) => {
+        if (filters.area && g.area !== filters.area) return false;
+        if (status === "active") return !isBlooming(g);
+        if (status === "blooming") return isBlooming(g);
+        return true;
+      });
     },
 
     get(user: User, goalId: GoalId): Promise<Goal> {
