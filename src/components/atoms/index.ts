@@ -7,6 +7,7 @@ export { Chip } from "./chip";
 export { Icon } from "./icon";
 export { Input } from "./input";
 export { Modal } from "./modal";
+export { PlantSprite } from "./plant-sprite";
 export { ProgressBar } from "./progress-bar";
 export { Spinner } from "./spinner";
 export { Toaster } from "./toaster";

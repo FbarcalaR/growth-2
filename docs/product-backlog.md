@@ -231,10 +231,11 @@ Goal: see and complete today's tasks and routines; resources accrue; plant grows
 - [x] 2.2.5 `FlyingResource` sprite (Sprout icon) animates up-and-left from the row toward the goal-group's plant icon (CSS `@keyframes fly-resource`, 600ms). `useReducedMotion` (`useSyncExternalStore` over `prefers-reduced-motion: reduce`) bails the sprite entirely when the user opts out; the CSS rule also disables the animation as a defence-in-depth.
 - [x] 2.2.6 Tests: 2 new page integration specs (optimistic flip + PATCH body, rollback on PATCH error). 165 unit tests total.
 
-### Story 2.3 — Plant growth on completion
-- [ ] 2.3.1 Server applies `growPlant` after every resource change; returns new stage
-- [ ] 2.3.2 Stage-transition animation in the goal card
-- [ ] 2.3.3 Tests covering each of the 4 stage transitions
+### Story 2.3 — Plant growth on completion ✅ (PR #19)
+- [x] 2.3.1 Server applies `growPlant` after every resource change and returns the updated goal — already implemented in `applyTaskCompletion` / `applyRoutineCompletion` since 0.5; the Today endpoint surfaces `goalStage` so the client renders the right artwork.
+- [x] 2.3.2 `<PlantSprite>` atom (`src/components/atoms/plant-sprite.tsx`) ports the prototype's seven plant variants × five stages plus the dead-stem fallback. Today's GoalGroup now renders a 32px sprite in the goal header (replaces the previous emoji). `<GoalPlant>` wraps the sprite, watches the stage prop with a ref, and applies the `plant-grow` CSS keyframe (700ms scale-bounce, transform-origin: center bottom) when the stage advances. `prefers-reduced-motion: reduce` disables the keyframe.
+- [x] 2.3.3 Tests: `plant-sprite.spec.tsx` covers labelled SVG output, every plant × every stage rendering without crashing, monotonic artwork growth across the four herb transitions, the wilting filter, and the dead fallback. `goal-plant.spec.tsx` covers no-animation-on-mount, the 0→1/1→2/2→3/3→4 transitions setting the `data-growing` flag and `plant-grow` class, fake-timer-driven settle after 700ms, and no-animation-on-equal-or-regressing-stage. 165 → 180 unit tests.
+- [x] 2.3.4 Consolidated duplicate `PlantIdSchema` definitions into `src/shared/plants.ts` (`PLANT_IDS`, `PlantId`, `Stage`, `STAGES`, `STAGE_NAMES`); both schemas now import from it.
 
 ---
 
