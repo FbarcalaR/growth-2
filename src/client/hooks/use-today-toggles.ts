@@ -1,101 +1,100 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import { goalsApi } from "@/client/api";
+import { goalsApi, type GoalAndUser } from "@/client/api";
 import type { GoalDto } from "@/shared/schemas/goal";
-import type { TodayResponse } from "@/shared/schemas/today";
+import type { TodayGroupDto, TodayResponse } from "@/shared/schemas/today";
 import type { UserDto } from "@/shared/schemas/user";
 
 import { queryKeys } from "./query-keys";
 
 type ToggleTaskInput = { goalId: string; taskId: string; completed: boolean };
 type ToggleRoutineInput = { goalId: string; routineId: string; completedToday: boolean };
-type Snapshot = { previous: TodayResponse | undefined };
+type ToggleContext = { previous: TodayResponse | undefined };
 
 /**
- * Toggle a task from the Today list. Optimistically flips the item in the
- * `today` cache; rolls back on error; on success writes the updated goal +
- * user back into their caches and invalidates `today` + `garden` so any
- * downstream changes (plant stage, tile state) are picked up.
+ * Toggle a task on the Today list with optimistic semantics.
+ *
+ * - `onMutate` snapshots `today` and writes the flipped item synchronously so
+ *   the checkbox flips without waiting for the round-trip.
+ * - `onError` restores the snapshot.
+ * - `onSuccess` reconciles `today` from the server's authoritative goal so
+ *   derived fields (stage, health) line up without a refetch flash, then
+ *   writes the goal + user back into their respective caches.
+ * - `onSettled` invalidates `garden` because completion may grow the plant.
  */
 export function useToggleTodayTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ goalId, taskId, completed }: ToggleTaskInput) =>
       goalsApi.updateTask(goalId, taskId, { completed }),
-    onMutate: ({ goalId, taskId, completed }): Snapshot => {
-      const previous = qc.getQueryData<TodayResponse>(queryKeys.today());
-      if (previous) {
-        qc.setQueryData<TodayResponse>(queryKeys.today(), {
-          groups: previous.groups.map((g) =>
-            g.goalId === goalId
-              ? {
-                  ...g,
-                  tasks: g.tasks.map((t) => (t.id === taskId ? { ...t, completed } : t)),
-                }
-              : g,
-          ),
-        });
-      }
-      return { previous };
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.previous) qc.setQueryData(queryKeys.today(), ctx.previous);
-    },
-    onSuccess: ({ goal, user }) => {
-      // Reconcile the today cache from the authoritative goal so derived
-      // fields (health, stage, plantRes) line up with what the server saw,
-      // without triggering a refetch that would overwrite our optimistic
-      // state with a stale snapshot.
-      reconcileTodayFromGoal(qc, goal);
-      writeGoalAndUser(qc, goal, user);
-    },
-    onSettled: () => {
-      // The plant may have grown / a tile may have changed.
-      qc.invalidateQueries({ queryKey: queryKeys.garden() });
-    },
+    onMutate: ({ goalId, taskId, completed }) =>
+      optimisticallyPatchToday(qc, goalId, (g) => ({
+        ...g,
+        tasks: g.tasks.map((t) => (t.id === taskId ? { ...t, completed } : t)),
+      })),
+    onError: rollbackTodayCache(qc),
+    onSuccess: applyServerTruth(qc),
+    onSettled: invalidateGarden(qc),
   });
 }
 
-/** Toggle a routine's "done today" flag with the same optimistic semantics. */
+/** Same shape as {@link useToggleTodayTask}, for routines' `completedToday`. */
 export function useToggleTodayRoutine() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ goalId, routineId, completedToday }: ToggleRoutineInput) =>
       goalsApi.updateRoutine(goalId, routineId, { completedToday }),
-    onMutate: ({ goalId, routineId, completedToday }): Snapshot => {
-      const previous = qc.getQueryData<TodayResponse>(queryKeys.today());
-      if (previous) {
-        qc.setQueryData<TodayResponse>(queryKeys.today(), {
-          groups: previous.groups.map((g) =>
-            g.goalId === goalId
-              ? {
-                  ...g,
-                  routines: g.routines.map((r) =>
-                    r.id === routineId ? { ...r, completedToday } : r,
-                  ),
-                }
-              : g,
-          ),
-        });
-      }
-      return { previous };
-    },
-    onError: (_err, _input, ctx) => {
-      if (ctx?.previous) qc.setQueryData(queryKeys.today(), ctx.previous);
-    },
-    onSuccess: ({ goal, user }) => {
-      reconcileTodayFromGoal(qc, goal);
-      writeGoalAndUser(qc, goal, user);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.garden() });
-    },
+    onMutate: ({ goalId, routineId, completedToday }) =>
+      optimisticallyPatchToday(qc, goalId, (g) => ({
+        ...g,
+        routines: g.routines.map((r) => (r.id === routineId ? { ...r, completedToday } : r)),
+      })),
+    onError: rollbackTodayCache(qc),
+    onSuccess: applyServerTruth(qc),
+    onSettled: invalidateGarden(qc),
   });
 }
 
-function reconcileTodayFromGoal(qc: ReturnType<typeof useQueryClient>, goal: GoalDto): void {
+function optimisticallyPatchToday(
+  qc: QueryClient,
+  goalId: string,
+  patchGroup: (group: TodayGroupDto) => TodayGroupDto,
+): ToggleContext {
+  const previous = qc.getQueryData<TodayResponse>(queryKeys.today());
+  if (previous) {
+    qc.setQueryData<TodayResponse>(queryKeys.today(), {
+      groups: previous.groups.map((g) => (g.goalId === goalId ? patchGroup(g) : g)),
+    });
+  }
+  return { previous };
+}
+
+function rollbackTodayCache(qc: QueryClient) {
+  return (_err: unknown, _input: unknown, ctx: ToggleContext | undefined) => {
+    if (ctx?.previous) qc.setQueryData(queryKeys.today(), ctx.previous);
+  };
+}
+
+function applyServerTruth(qc: QueryClient) {
+  return ({ goal, user }: GoalAndUser) => {
+    reconcileTodayFromGoal(qc, goal);
+    qc.setQueryData(queryKeys.goal(goal.id), goal);
+    qc.setQueryData<GoalDto[]>(queryKeys.goals(), (prev) =>
+      prev ? prev.map((g) => (g.id === goal.id ? goal : g)) : prev,
+    );
+    qc.setQueryData<UserDto>(queryKeys.me(), user);
+  };
+}
+
+function invalidateGarden(qc: QueryClient) {
+  return () => {
+    qc.invalidateQueries({ queryKey: queryKeys.garden() });
+  };
+}
+
+function reconcileTodayFromGoal(qc: QueryClient, goal: GoalDto): void {
   qc.setQueryData<TodayResponse>(queryKeys.today(), (prev) => {
     if (!prev) return prev;
     return {
@@ -113,16 +112,4 @@ function reconcileTodayFromGoal(qc: ReturnType<typeof useQueryClient>, goal: Goa
       ),
     };
   });
-}
-
-function writeGoalAndUser(
-  qc: ReturnType<typeof useQueryClient>,
-  goal: GoalDto,
-  user: UserDto,
-): void {
-  qc.setQueryData(queryKeys.goal(goal.id), goal);
-  qc.setQueryData<GoalDto[]>(queryKeys.goals(), (prev) =>
-    prev ? prev.map((g) => (g.id === goal.id ? goal : g)) : prev,
-  );
-  qc.setQueryData(queryKeys.me(), user);
 }

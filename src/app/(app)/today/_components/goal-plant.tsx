@@ -25,16 +25,12 @@ export function GoalPlant({ plantId, stage, size = 36 }: GoalPlantProps) {
   const [growing, setGrowing] = useState(false);
 
   useEffect(() => {
-    if (stage > prev.current) {
-      setGrowing(true);
-      const timer = window.setTimeout(() => setGrowing(false), 700);
-      return () => window.clearTimeout(timer);
-    }
-    return undefined;
-  }, [stage]);
-
-  useEffect(() => {
+    const advanced = stage > prev.current;
     prev.current = stage;
+    if (!advanced) return undefined;
+    setGrowing(true);
+    const timer = window.setTimeout(() => setGrowing(false), 700);
+    return () => window.clearTimeout(timer);
   }, [stage]);
 
   return (

@@ -239,6 +239,24 @@ Goal: see and complete today's tasks and routines; resources accrue; plant grows
 
 ---
 
+### 🧹 Epic 2 Tidy-up — code-quality pass (PR #20)
+
+Walked every file Epic 2 added or substantially modified looking for the issues listed in the canonical `## Tidy up` section above. Found four worth fixing now; everything else was clean.
+
+- [x] 2.T.1 **`plant-sprite.tsx` was 707 lines** — past the 400-line trip wire from `coding-guidelines.md`. Split into a folder: `src/components/atoms/plant-sprite/` with `index.tsx` (host: pot, health filters, variant dispatch — 110 lines), `dead-plant.tsx` (the withered-stem fallback), and one file per plant under `variants/{herb,sunflower,rose,mushroom,money-tree,crystal,moon-flower}.tsx`. Variants share a `StageRendererProps` type re-exported from `herb.tsx` (the canonical first variant). Public import unchanged: `import { PlantSprite } from "@/components/atoms"`. Variant lookup is now a typed `Record<PlantId, ...>` instead of a `switch`, so adding a plant variant requires touching one map entry.
+- [x] 2.T.2 **`use-today-toggles.ts` had two near-identical hooks** — ~60 lines of repeated `onMutate` / `onError` / `onSuccess` / `onSettled` wiring across `useToggleTodayTask` and `useToggleTodayRoutine`. Extracted the shared pieces into module-private helpers (`optimisticallyPatchToday` takes a `(group) => group` patcher; `rollbackTodayCache`, `applyServerTruth`, `invalidateGarden` close over the query client). The two public hooks are now ~12 lines each and the only difference between them is which fetcher to call and which collection to flip.
+- [x] 2.T.3 **`flying-resource.tsx` had a misleading prop comment** referencing a `direction` prop that doesn't exist (a vestige from an earlier draft). Replaced with a one-liner that accurately describes `onDone`.
+- [x] 2.T.4 **`goal-plant.tsx` had two `useEffect`s both depending on `stage`** — one to set the `growing` flag, one to update the `prev` ref. Order-fragile and harder to read than necessary. Merged into a single effect that captures `advanced = stage > prev.current`, updates the ref, then conditionally schedules the timer.
+
+Items considered and intentionally not fixed:
+- `today-header.tsx` defines a local `Pill` with inline gold/orange hex values. Single-use and the comment already flags the "promote to `--color-accent-*` if a third surface adopts it" path. Leave.
+- `progress-summary.tsx` reimplements a gradient progress bar instead of reusing `<ProgressBar>`. The atom's API only exposes a single `accent` colour today; supporting a gradient track requires an API extension that's out of scope for tidy. Leave; revisit if a third surface needs the same look.
+- The `useGoals.ts` mutations (`useUpdateTask`, `useUpdateRoutine`) overlap in shape with the new toggle hooks. They serve different cache surfaces (single-goal screens vs Today list) so they're intentionally separate; no change.
+
+180 unit tests still pass; lint / format:check / build green.
+
+---
+
 ## Epic 3 — Plans tab
 
 ### Story 3.1 — Goals list
@@ -387,6 +405,25 @@ The order isn't a Gantt chart — it's the sequence that lets us demo something 
    - This backlog: every implemented sub-task ticked `[x]`; every implemented story tagged with the merging PR (e.g. `### Story X — Title ✅ (PR #N)`).
    - Domain rules added or revised in `domain-model.md` if any were introduced or changed.
    - `architecture.md` / `coding-guidelines.md` / `design-system.md` updated when a decision in the PR contradicts or extends them. Don't ship the code and "do the docs later" — reviewers should be able to read the doc change and the code change side by side.
+
+## Tidy up (every epic, before the review)
+
+A short focused pass over the **code that landed this epic** — independent of UX/docs/CI checks. The goal is to keep the codebase clean and the standards in `coding-guidelines.md` and `CLAUDE.md` enforced as we go, instead of letting cruft compound. Add a `### 🧹 Epic N Tidy-up` section to the backlog at the end of every epic with the checklist below; ship the resulting fixes as a single `chore/tidy` PR before opening the between-epic review.
+
+Walk every file the epic added or substantially modified and look for:
+
+1. **Dead / speculative code.** Unused exports, unreferenced helpers, props with no caller, error-handling for cases that can't happen, feature flags / shims kept "just in case". Delete it.
+2. **Premature abstraction.** Wrappers / hooks / utilities introduced for one caller. If three similar lines would be clearer, inline. If an abstraction's name is vague (`Helper`, `Util`, `Manager`), rename or remove.
+3. **Duplication.** The same shape declared in two places (Zod enums, magic-string lists, type aliases). Promote to a shared module. The same logic written twice — extract or unify.
+4. **File size + cohesion.** Anything past ~400 lines or mixing concerns gets split per `coding-guidelines.md`'s "Split files by entity / resource" rule. One file = one role.
+5. **Naming.** Identifiers describe intent, not mechanics. No `data2`, `tmp`, abbreviated single-letter names outside tight scopes. Files match what they export.
+6. **Comment hygiene** (per `CLAUDE.md`). Default to no comment. Keep the ones that explain a non-obvious WHY: a hidden constraint, an invariant, a workaround. Delete comments that restate the code, narrate the task, or reference callers / PRs / issues — those rot.
+7. **Type safety.** No `any`, no `@ts-ignore`, no `as unknown as X` shortcuts at boundaries we control. Optional / nullable fields modelled honestly.
+8. **Magic values.** Numbers, durations, colour hex literals, copy strings that should live in tokens / a constants module / a shared schema. Cross-check against `design-system.md`.
+9. **Test quality.** Tests assert observable behaviour, not implementation. No reaching into internal state, no brittle snapshot matches when a single targeted assertion would do. `it()` names describe behaviour.
+10. **Boundary respect.** No client → server imports. No domain → infra imports. ESLint should already catch these; the manual re-check is for new patterns the rules haven't been taught yet.
+
+Output of the pass: a punch list of fixes (short — usually 3–8 items), applied in a single `chore/tidy: Epic N` PR. If a finding is too big to fit, file it as a follow-up sub-task on the next epic instead of letting it derail the tidy.
 
 ## Between-epic review (every epic)
 
