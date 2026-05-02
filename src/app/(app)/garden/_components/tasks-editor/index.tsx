@@ -21,9 +21,7 @@ type TasksEditorProps = {
 export function TasksEditor({ goalId, area, tasks }: TasksEditorProps) {
   return (
     <section aria-label="Tasks" className="space-y-3">
-      <h3 className="text-ink-strong text-xs font-bold tracking-wide uppercase">
-        Tasks ({tasks.length})
-      </h3>
+      <h3 className="text-[11px] font-bold tracking-wide text-[#7A8A7A] uppercase">Tasks</h3>
       <ul className="flex flex-col gap-2">
         {tasks.map((task) => (
           <li key={task.id}>

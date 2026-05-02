@@ -20,7 +20,7 @@ afterEach(() => {
 const goalId = "g1";
 
 describe("<TasksEditor />", () => {
-  it("renders the count and the existing tasks", () => {
+  it("renders the section header and the existing tasks", () => {
     const { getByText } = renderWithQuery(
       <TasksEditor
         goalId={goalId}
@@ -28,7 +28,7 @@ describe("<TasksEditor />", () => {
         tasks={[makeTaskDto(), makeTaskDto({ id: "t2", title: "Sign up for race" })]}
       />,
     );
-    getByText("Tasks (2)");
+    getByText("Tasks");
     getByText("Buy shoes");
     getByText("Sign up for race");
   });
@@ -63,16 +63,14 @@ describe("<TasksEditor />", () => {
       <TasksEditor goalId={goalId} area="health" tasks={[]} />,
     );
     fireEvent.click(await findByRole("button", { name: /add task/i }));
-    fireEvent.change(getByPlaceholderText(/new task title/i), {
+    fireEvent.change(getByPlaceholderText(/new task/i), {
       target: { value: "Sign up for race" },
     });
-    fireEvent.change(
-      getByPlaceholderText(/new task title/i).parentElement!.querySelector("input[type='date']")!,
-      {
-        target: { value: "2026-05-10" },
-      },
-    );
-    fireEvent.click(await findByRole("button", { name: /^add$/i }));
+    const dateInput = (
+      await findByRole("button", { name: /^today$/i })
+    ).parentElement!.querySelector("input[type='date']") as HTMLInputElement;
+    fireEvent.change(dateInput, { target: { value: "2026-05-10" } });
+    fireEvent.click(await findByRole("button", { name: /^add task$/i }));
     await waitFor(() => expect(fm.calls("POST", `/api/goals/${goalId}/tasks`)).toHaveLength(1));
     expect(fm.calls("POST", `/api/goals/${goalId}/tasks`)[0]!.body).toEqual({
       title: "Sign up for race",

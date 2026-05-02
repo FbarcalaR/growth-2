@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useCreateGoal, useGoals } from "@/client/hooks";
 import { Button, Spinner } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
-import { GoalCard, GoalEditor } from "@/components/organisms";
+import { GoalCard, GoalDetailSheet, GoalEditor } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
@@ -17,12 +17,14 @@ export default function GardenPage() {
   const goals = useGoals();
   const createGoal = useCreateGoal();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [openGoalId, setOpenGoalId] = useState<string | null>(null);
 
   const all = useMemo(() => goals.data ?? [], [goals.data]);
   const { active, blooming } = useMemo(() => splitByBloom(all), [all]);
   const isEmpty = all.length === 0;
   const hasActive = active.length > 0;
   const hasBlooming = blooming.length > 0;
+  const openGoal = openGoalId ? (all.find((g) => g.id === openGoalId) ?? null) : null;
 
   if (goals.isPending) {
     return (
@@ -54,7 +56,7 @@ export default function GardenPage() {
         <ul className="mt-2 flex flex-col gap-3" aria-label="Active goals">
           {active.map((goal) => (
             <li key={goal.id}>
-              <GoalCardWithEditors goal={goal} />
+              <GoalCard goal={goal} onClick={() => setOpenGoalId(goal.id)} />
             </li>
           ))}
         </ul>
@@ -68,7 +70,7 @@ export default function GardenPage() {
           <ul className="flex flex-col gap-3">
             {blooming.map((goal) => (
               <li key={goal.id}>
-                <GoalCardWithEditors goal={goal} />
+                <GoalCard goal={goal} onClick={() => setOpenGoalId(goal.id)} />
               </li>
             ))}
           </ul>
@@ -83,16 +85,18 @@ export default function GardenPage() {
           await createGoal.mutateAsync(input);
         }}
       />
-    </section>
-  );
-}
 
-function GoalCardWithEditors({ goal }: { goal: GoalDto }) {
-  return (
-    <GoalCard goal={goal}>
-      <TasksEditor goalId={goal.id} area={goal.area} tasks={goal.tasks} />
-      <RoutinesEditor goalId={goal.id} area={goal.area} routines={goal.routines} />
-    </GoalCard>
+      {openGoal && (
+        <GoalDetailSheet
+          open={openGoalId !== null}
+          goal={openGoal}
+          onClose={() => setOpenGoalId(null)}
+        >
+          <TasksEditor goalId={openGoal.id} area={openGoal.area} tasks={openGoal.tasks} />
+          <RoutinesEditor goalId={openGoal.id} area={openGoal.area} routines={openGoal.routines} />
+        </GoalDetailSheet>
+      )}
+    </section>
   );
 }
 

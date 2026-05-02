@@ -37,11 +37,11 @@ const makeGoal = (overrides: Parameters<typeof makeGoalDto>[0] = {}) =>
   });
 
 describe("<RoutinesEditor />", () => {
-  it("renders the count, the streak label, and the routine title", () => {
+  it("renders the section header, the streak label, and the routine title", () => {
     const { getByText } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    getByText("Routines (1)");
+    getByText("Routines");
     getByText("Read 30 minutes");
     getByText(/4-day streak/);
   });
@@ -72,13 +72,13 @@ describe("<RoutinesEditor />", () => {
       <RoutinesEditor goalId={goalId} area="personal" routines={[]} />,
     );
     fireEvent.click(await findByRole("button", { name: /add routine/i }));
-    fireEvent.change(getByPlaceholderText(/new routine title/i), {
+    fireEvent.change(getByPlaceholderText(/daily routine/i), {
       target: { value: "Read 30 minutes" },
     });
     // Default state has all days selected; tap Tuesday off so we change the
     // day mask through the picker and assert it round-trips.
     fireEvent.click(await findByRole("checkbox", { name: /tuesday/i }));
-    fireEvent.click(await findByRole("button", { name: /^add$/i }));
+    fireEvent.click(await findByRole("button", { name: /^add routine$/i }));
 
     await waitFor(() => expect(fm.calls("POST", `/api/goals/${goalId}/routines`)).toHaveLength(1));
     expect(fm.calls("POST", `/api/goals/${goalId}/routines`)[0]!.body).toEqual({

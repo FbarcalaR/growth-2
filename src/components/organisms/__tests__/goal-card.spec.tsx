@@ -67,14 +67,19 @@ describe("<GoalCard />", () => {
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("expands to reveal Edit + Delete actions when the header is tapped", () => {
+  it("calls onClick when tapped (drawer-opening pattern)", () => {
     setupFetchMock();
-    const { getByRole, queryByRole } = renderWithQuery(
-      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} />,
+    const onClick = vi.fn();
+    const { getByRole } = renderWithQuery(
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} onClick={onClick} />,
     );
-    expect(queryByRole("button", { name: /^edit$/i })).toBeNull();
     fireEvent.click(getByRole("button", { name: /run a 5k/i }));
-    getByRole("button", { name: /^edit$/i });
-    getByRole("button", { name: /^delete$/i });
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders without an interactive role when no onClick is provided", () => {
+    setupFetchMock();
+    const { queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
+    expect(queryByRole("button")).toBeNull();
   });
 });

@@ -1,17 +1,19 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { useAddRoutine } from "@/client/hooks";
-import { Button, Input } from "@/components/atoms";
+import { Button } from "@/components/atoms";
 import { ALL_DAYS, DayPicker, type RepeatDays } from "@/components/molecules";
 
 type AddRoutineRowProps = {
   goalId: string;
 };
 
-/** Toggleable "Add routine" button + inline form. */
+const WEEKDAYS: RepeatDays = [true, true, true, true, true, false, false];
+
+/** Toggleable "+ Add routine" pill + inline form (title + 🔁 day picker + presets). */
 export function AddRoutineRow({ goalId }: AddRoutineRowProps) {
   const addRoutine = useAddRoutine(goalId);
   const [open, setOpen] = useState(false);
@@ -30,15 +32,14 @@ export function AddRoutineRow({ goalId }: AddRoutineRowProps) {
 
   if (!open) {
     return (
-      <Button
-        size="sm"
-        variant="secondary"
+      <button
+        type="button"
         onClick={() => setOpen(true)}
-        leadingIcon={<Plus size={14} aria-hidden />}
-        className="self-start"
+        className="rounded-pill border-input-border text-brand-700 inline-flex items-center gap-1.5 self-start border-[1.5px] bg-[#F8FBF8] px-3 py-2 text-[13px] font-semibold"
       >
+        <Plus size={14} aria-hidden />
         Add routine
-      </Button>
+      </button>
     );
   }
 
@@ -50,27 +51,53 @@ export function AddRoutineRow({ goalId }: AddRoutineRowProps) {
         await addRoutine.mutateAsync({ title: trimmedTitle, repeatDays: days });
         reset();
       }}
-      className="bg-surface-card border-surface-muted flex flex-col gap-2 rounded-md border p-3"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          reset();
+        }
+      }}
+      className="border-input-border flex flex-col gap-2.5 rounded-[14px] border bg-[#F8FBF8] p-3"
     >
-      <Input
+      <input
+        autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="New routine title"
-        autoFocus
+        placeholder="Daily routine…"
+        className="border-input-border text-ink-strong focus:border-brand-700 w-full rounded-[10px] border-[1.5px] bg-white px-3 py-2.5 text-sm outline-none"
       />
-      <DayPicker value={days} onChange={setDays} />
-      <div className="flex justify-end gap-2">
-        <Button
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-[#7A8A7A]">🔁 Repeat on</span>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setDays(ALL_DAYS)}
+              className="border-input-border text-brand-700 rounded-[8px] border bg-white px-2 py-0.5 text-[10px] font-bold"
+            >
+              Every day
+            </button>
+            <button
+              type="button"
+              onClick={() => setDays(WEEKDAYS)}
+              className="border-input-border text-brand-700 rounded-[8px] border bg-white px-2 py-0.5 text-[10px] font-bold"
+            >
+              Weekdays
+            </button>
+          </div>
+        </div>
+        <DayPicker value={days} onChange={setDays} />
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={reset}
-          leadingIcon={<X size={14} aria-hidden />}
+          className="rounded-[10px] bg-[#F0F4EC] px-3.5 py-2 text-[13px] font-semibold text-[#7A8A7A]"
         >
           Cancel
-        </Button>
-        <Button type="submit" size="sm" disabled={!canSave}>
-          Add
+        </button>
+        <Button type="submit" size="sm" disabled={!canSave} className="rounded-[10px]">
+          Add routine
         </Button>
       </div>
     </form>
