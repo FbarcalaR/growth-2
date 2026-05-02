@@ -48,9 +48,12 @@ test.describe("first-run onboarding", () => {
     const lockButton = dialog.getByRole("button", { name: /save and lock my priorities/i });
     await expect(lockButton).toBeEnabled();
 
-    // 7. Lock; the modal disappears and Today's placeholder is visible.
+    // 7. Lock; the modal disappears and Today renders the greeting heading
+    //    with the user's name.
     await lockButton.click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("heading", { name: /^today$/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: new RegExp(name, "i") }),
+    ).toBeVisible();
   });
 });

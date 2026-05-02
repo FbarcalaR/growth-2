@@ -6,3 +6,4 @@
 export { userToDto } from "./user";
 export { goalToDto } from "./goal";
 export { gardenToDto } from "./garden";
+export { todayGroupToDto } from "./today";
