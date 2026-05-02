@@ -223,12 +223,13 @@ Goal: see and complete today's tasks and routines; resources accrue; plant grows
 - [x] 2.1.3 Empty state with `Sprout` icon and "Nothing for today" copy when no group has visible items.
 - [x] 2.1.4 Page renders greeting (`Good morning/afternoon/evening, {name} 🌿`), coin & streak chips, progress summary card with linear-gradient bar, and the goal groups. 4 page specs cover empty / chips / multi-group with streak label / progress totals.
 
-### Story 2.2 — Toggle task / routine
-- [ ] 2.2.1 Domain functions for completion math (already in 0.5)
-- [ ] 2.2.2 Service `toggleTask`, `toggleRoutine` — applies math, persists, returns updated goal
-- [ ] 2.2.3 `PATCH /api/goals/[id]/tasks/[taskId]` and `/routines/[routineId]`
-- [ ] 2.2.4 Optimistic update in TanStack Query mutation; rollback on error
-- [ ] 2.2.5 Resource-fly-to-plant animation (respects `prefers-reduced-motion`)
+### Story 2.2 — Toggle task / routine ✅ (PR #18)
+- [x] 2.2.1 Domain functions for completion math (already shipped in 0.5 — `applyTaskCompletion` / `applyRoutineCompletion`).
+- [x] 2.2.2 Service `updateTask` / `updateRoutine` route through the domain rule when `completed`/`completedToday` flips — already present from 0.7, exercised here from the Today list.
+- [x] 2.2.3 `PATCH /api/goals/[id]/tasks/[taskId]` and `/routines/[routineId]` — already present, now consumed by Today.
+- [x] 2.2.4 `useToggleTodayTask` / `useToggleTodayRoutine` hooks: synchronously snapshot + optimistically flip the item in the `today` cache; roll back on error; on success reconcile from the server's authoritative goal so health/stage stay accurate without a refetch flash. Also added `matchMedia` polyfill in test setup.
+- [x] 2.2.5 `FlyingResource` sprite (Sprout icon) animates up-and-left from the row toward the goal-group's plant icon (CSS `@keyframes fly-resource`, 600ms). `useReducedMotion` (`useSyncExternalStore` over `prefers-reduced-motion: reduce`) bails the sprite entirely when the user opts out; the CSS rule also disables the animation as a defence-in-depth.
+- [x] 2.2.6 Tests: 2 new page integration specs (optimistic flip + PATCH body, rollback on PATCH error). 165 unit tests total.
 
 ### Story 2.3 — Plant growth on completion
 - [ ] 2.3.1 Server applies `growPlant` after every resource change; returns new stage
