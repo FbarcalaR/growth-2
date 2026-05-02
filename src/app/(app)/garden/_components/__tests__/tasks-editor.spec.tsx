@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TasksEditor } from "../tasks-editor";
 import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto, makeTaskDto } from "@/test/fixtures/dto";
 import { lockedUser } from "@/test/fixtures/state";
 import { renderWithQuery } from "@/test/render";
-import type { GoalDto, TaskDto } from "@/shared/schemas/goal";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/garden",
@@ -19,36 +19,13 @@ afterEach(() => {
 
 const goalId = "g1";
 
-function task(overrides: Partial<TaskDto> = {}): TaskDto {
-  return { id: "t1", title: "Buy shoes", completed: false, dueDate: null, ...overrides };
-}
-
-function makeGoal(overrides: Partial<GoalDto> = {}): GoalDto {
-  return {
-    id: goalId,
-    title: "Run a 5K",
-    area: "health",
-    plantType: "herb",
-    stage: 0,
-    plantRes: {},
-    planted: false,
-    tileCol: null,
-    tileRow: null,
-    tasks: [],
-    routines: [],
-    health: 100,
-    healthState: "healthy",
-    ...overrides,
-  };
-}
-
 describe("<TasksEditor />", () => {
   it("renders the count and the existing tasks", () => {
     const { getByText } = renderWithQuery(
       <TasksEditor
         goalId={goalId}
         area="health"
-        tasks={[task(), task({ id: "t2", title: "Sign up for race" })]}
+        tasks={[makeTaskDto(), makeTaskDto({ id: "t2", title: "Sign up for race" })]}
       />,
     );
     getByText("Tasks (2)");
@@ -57,15 +34,14 @@ describe("<TasksEditor />", () => {
   });
 
   it("toggles completion via the same PATCH endpoint as Today", async () => {
-    setupFetchMock();
     const fm = setupFetchMock();
     fm.json(
       `/api/goals/${goalId}/tasks/t1`,
-      { goal: makeGoal(), user: await lockedUser() },
+      { goal: makeGoalDto(), user: await lockedUser() },
       "PATCH",
     );
     const { findByLabelText } = renderWithQuery(
-      <TasksEditor goalId={goalId} area="health" tasks={[task()]} />,
+      <TasksEditor goalId={goalId} area="health" tasks={[makeTaskDto()]} />,
     );
     fireEvent.click(await findByLabelText('Mark "Buy shoes" complete'));
     await waitFor(() => expect(fm.calls("PATCH", `/api/goals/${goalId}/tasks/t1`)).toHaveLength(1));
@@ -78,7 +54,7 @@ describe("<TasksEditor />", () => {
     const fm = setupFetchMock();
     fm.json(
       `/api/goals/${goalId}/tasks`,
-      makeGoal({
+      makeGoalDto({
         tasks: [{ id: "t2", title: "Sign up for race", completed: false, dueDate: "2026-05-10" }],
       }),
       "POST",
@@ -108,11 +84,11 @@ describe("<TasksEditor />", () => {
     const fm = setupFetchMock();
     fm.json(
       `/api/goals/${goalId}/tasks/t1`,
-      { goal: makeGoal(), user: await lockedUser() },
+      { goal: makeGoalDto(), user: await lockedUser() },
       "PATCH",
     );
     const { findByLabelText, findByRole, getByDisplayValue } = renderWithQuery(
-      <TasksEditor goalId={goalId} area="health" tasks={[task()]} />,
+      <TasksEditor goalId={goalId} area="health" tasks={[makeTaskDto()]} />,
     );
     fireEvent.click(await findByLabelText('Edit "Buy shoes"'));
     const input = getByDisplayValue("Buy shoes") as HTMLInputElement;
@@ -129,7 +105,7 @@ describe("<TasksEditor />", () => {
     const fm = setupFetchMock();
     fm.mock(`/api/goals/${goalId}/tasks/t1`, { method: "DELETE", status: 200, body: {} });
     const { findByLabelText } = renderWithQuery(
-      <TasksEditor goalId={goalId} area="health" tasks={[task()]} />,
+      <TasksEditor goalId={goalId} area="health" tasks={[makeTaskDto()]} />,
     );
     fireEvent.click(await findByLabelText('Delete "Buy shoes"'));
     await waitFor(() =>

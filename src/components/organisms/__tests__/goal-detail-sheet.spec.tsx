@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GoalDetailSheet } from "../goal-detail-sheet";
 import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto } from "@/test/fixtures/dto";
 import { renderWithQuery } from "@/test/render";
-import type { GoalDto } from "@/shared/schemas/goal";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/garden",
@@ -16,24 +16,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function makeGoal(overrides: Partial<GoalDto> = {}): GoalDto {
-  return {
-    id: "g1",
-    title: "Run a 5K",
-    area: "health",
-    plantType: "herb",
-    stage: 1,
-    plantRes: {},
-    planted: true,
-    tileCol: 0,
-    tileRow: 4,
-    tasks: [],
-    routines: [],
-    health: 100,
-    healthState: "healthy",
-    ...overrides,
-  };
-}
+const makeGoal = (overrides: Parameters<typeof makeGoalDto>[0] = {}) =>
+  makeGoalDto({ stage: 1, planted: true, tileCol: 0, tileRow: 4, ...overrides });
 
 describe("<GoalDetailSheet />", () => {
   it("PATCHes the goal on Edit -> Save", async () => {

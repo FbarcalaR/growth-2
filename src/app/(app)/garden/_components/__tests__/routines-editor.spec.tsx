@@ -4,9 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RoutinesEditor } from "../routines-editor";
 import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto, makeRoutineDto } from "@/test/fixtures/dto";
 import { lockedUser } from "@/test/fixtures/state";
 import { renderWithQuery } from "@/test/render";
-import type { GoalDto, RoutineDto } from "@/shared/schemas/goal";
+import type { RoutineDto } from "@/shared/schemas/goal";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/garden",
@@ -19,35 +20,21 @@ afterEach(() => {
 
 const goalId = "g1";
 
-function routine(overrides: Partial<RoutineDto> = {}): RoutineDto {
-  return {
-    id: "r1",
-    title: "Read 30 minutes",
-    completedToday: false,
-    streak: 4,
-    repeatDays: [true, true, true, true, true, true, true],
-    ...overrides,
-  };
-}
+const routine = (overrides: Partial<RoutineDto> = {}) =>
+  makeRoutineDto({ streak: 4, ...overrides });
 
-function makeGoal(overrides: Partial<GoalDto> = {}): GoalDto {
-  return {
+const makeGoal = (overrides: Parameters<typeof makeGoalDto>[0] = {}) =>
+  makeGoalDto({
     id: goalId,
     title: "Read 12 books",
     area: "personal",
     plantType: "mushroom",
     stage: 1,
-    plantRes: {},
     planted: true,
     tileCol: 0,
     tileRow: 4,
-    tasks: [],
-    routines: [],
-    health: 100,
-    healthState: "healthy",
     ...overrides,
-  };
-}
+  });
 
 describe("<RoutinesEditor />", () => {
   it("renders the count, the streak label, and the routine title", () => {

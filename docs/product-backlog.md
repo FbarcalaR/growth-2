@@ -317,6 +317,48 @@ Originally drafted as a "Plans tab" but corrected during PR #21 review (comment 
 
 ---
 
+### 🔍 Epic 3 Review — between-epics gate (PR #22)
+
+A short focused pass before opening Epic 4. Tidy-up is item 3.R.1.
+
+- [x] 3.R.1 **Tidy up the code that landed this epic.** Walked every file Epic 3 added or substantially modified looking for the issues in the canonical checklist. Found four worth fixing now; everything else was already addressed by the post-#21-review fixes.
+  - [x] 3.R.1.a **Reuse `<GoalIcon>` in `<GoalDetailSheet>`** — the inline `<span style={{background:"color-mix(...)" }}><PlantSprite/></span>` block in the sheet's header was a copy of the same pattern in `<GoalCard>`. Promoted `GoalIcon` to the organisms barrel and the sheet now consumes it (1 component, not 2 inlined squares).
+  - [x] 3.R.1.b **`makeGoalDto(partial)` / `makeTaskDto(partial)` / `makeRoutineDto(partial)` test fixtures** (queued from 2.R.9 #4–5) — landed under `src/test/fixtures/dto.ts`, plus a `makeTodayGroup(goal, items)` helper. Adopted in `goal-card`, `goal-detail-sheet`, `tasks-editor`, `routines-editor`, and `/garden/page` specs. Killed ~80 lines of duplicated DTO literals across the 5 files.
+  - [x] 3.R.1.c **Stale comment in `<GoalDetailSheet>`** referenced "Stories 3.4/3.5" — those landed in this PR. Replaced with an accurate one-liner.
+  - [x] 3.R.1.d **Duplicate `setupFetchMock();` call** in `tasks-editor.spec.tsx`'s toggle test (`setupFetchMock(); const fm = setupFetchMock();`). Dropped the orphan first call.
+  - Items considered and intentionally not fixed: `goal-editor.tsx` at 163 lines is under the new ~400-line ceiling and reads top-to-bottom as one form — splitting into title / area / plant sections would scatter the validation logic; leave. The `goal-service.ts` at 283 lines is also under the ceiling and remains entity-cohesive (one entity, multiple operations); leave.
+- [x] 3.R.2 **Walked the user journey end-to-end**: visit `/` → `/login` → name → `/garden` → empty state → "+ New" → fill title → pick area → plant defaults to area's recommended → submit → card appears under "Life Goals" → click → detail sheet opens → add a task with a due date → check it off → add a routine with a custom day mask → graduate → confirm dialog → graduated row appears below → Edit goal → change title → Save → card updates → Delete → confirm → goal disappears, garden tile freed. Verified via the existing 210 unit + integration tests covering the individual behaviours; no browser-driven manual smoke (sandbox limitation noted in Epic 1's review still applies).
+- [x] 3.R.3 **Re-read each affected doc**.
+  - `architecture.md` — authed-route list back at four; explicit note that goal management lives under `/garden`. ✅
+  - `coding-guidelines.md` — added **File size**, **Component decomposition**, expanded **Styling** sections (no hex literals; promote shared accents to token groups). All match how Epic 3 actually shipped after the review fixes. ✅
+  - `design-system.md` — `accent-warm` / `accent-warm-bg` / `accent-warm-border` token group documented; `input-border` reuse for empty-state outlines noted. ✅
+  - `domain-model.md` — `isBlooming(goal)` is the only new derived rule; documented inline in `goal-service.ts`. The full canonical model didn't change this epic. No update needed.
+  - `testing-strategy.md` — no convention shift; the new `makeGoalDto` fixture follows the existing pattern in `src/test/fixtures/state.ts`.
+- [x] 3.R.4 **Re-read the backlog**. All 17 Epic-3 sub-tasks across 3.1 / 3.2 / 3.3 / 3.4 / 3.5 are ticked. Notable additions captured during implementation that weren't in the original sub-task list: 3.2.3 (consolidate `AREA_DEFAULT_PLANT` + new `PLANT_LABELS` into shared); 3.3.1 (extracted `<ConfirmDialog>` molecule); 3.5.4 (streak display sub-task added so the existing molecule's behaviour gets called out). The IA correction (Plans tab → goal management under `/garden`) is documented in the epic's lead paragraph.
+- [x] 3.R.5 **Structural sanity check**. New folders that emerged: `src/components/organisms/goal-card/` (4 files), `src/app/(app)/garden/_components/{tasks-editor,routines-editor}/` (4 + 5 files). Largest file in the epic is `goal-service.ts` at 283 lines — comfortably under the new 400-line trip wire from `coding-guidelines.md`. No file mixes concerns; per-entity layout still respected.
+- [x] 3.R.6 **Test sanity check**.
+  - **210 unit + integration specs** (was 180 at end of Epic 2; +30 this epic). New suites: `goals.spec.ts` +2 (`?status` and `?area` filters), `goal-card.spec.tsx` (5), `goal-editor.spec.tsx` (4), `goal-detail-sheet.spec.tsx` (3), `garden/page.spec.tsx` (4), `tasks-editor.spec.tsx` (5), `routines-editor.spec.tsx` (7).
+  - Coverage by layer: server filter logic, organism rendering, modal happy-path forms, page-level routing/state, mutation→PATCH-body assertions for every CRUD operation. No gap.
+- [x] 3.R.7 **CI sanity check**: `check` + `e2e` green on PR #21 (`52827bf` on main). `pnpm format:check`, `pnpm lint`, `pnpm test:unit`, `pnpm build` all green locally on this branch. No flakes observed.
+- [x] 3.R.8 **Prototype fidelity check**. The user-visible surface this epic touched is `/garden`. Compared against `docs/prototype-design/plans-tab.jsx`:
+  - "Life Goals" header + "+ New" button — matches.
+  - Empty state with sprout illustration + create-first-goal CTA — matches; uses the existing `--color-input-border` token instead of the inline hex from the prototype.
+  - Per-goal card with plant sprite, title, area chip, progress bar, status badge — matches.
+  - Active vs Blooming & Completed split — matches the prototype's `sortedActive` / `sortedBlooming` partition.
+  - Goal detail sheet → tasks + routines editors → graduate flow — matches the prototype's GoalCard/NewGoalModal structure.
+  - Drift: the embedded `<GardenCard>` preview at the top of Plans is **deferred to Epic 4** (the actual garden grid lives there). Called out in this PR's epic-lead paragraph.
+- [x] 3.R.9 **Improvements identified for Epic 4**:
+  1. **Sortable goal lists** — the `GET /api/goals` "sorted by recently updated" requirement is currently unimplemented (the in-memory repo doesn't track timestamps). Add `createdAt` / `updatedAt` to the Goal entity as Epic A's persistence story prep; surface a `?sort=` query param. Worth doing once we have more than ~5 goals on a screen.
+  2. **`<GardenCard>` preview at the top of `/garden`** — the prototype embeds a small visual garden above the goals list. Pull it in as part of Story 4.1 so the page lands on its full prototype shape.
+  3. **`<GoalIcon>` lives under organisms but is shaped like a molecule** — small visual block (area-tinted square + plant sprite). When Garden lands and re-uses it for the planting flow, consider promoting to `src/components/molecules/goal-icon.tsx`.
+  4. **`<GoalCard>` is currently 80 lines and fine, but the per-card `<GoalDetailSheet>` mounts at the page level** — when Garden adds the planting flow we'll likely want a per-card overflow/menu. Plan the affordance now to avoid a re-architecture later.
+  5. **Health badge tinting on the goal-card status** — `<HealthBadge>` always shows the label; on the dense Plans list a single coloured dot might read better. Defer to design polish in Epic 8.
+- [x] 3.R.10 **Decision: Epic 3 is done.** Goal CRUD ships with create / edit / delete, tasks and routines manageable per goal, optimistic toggle still working from Today, prototype fidelity matched (modulo the deliberately-deferred GardenCard preview). Improvements above are explicitly Epic 4 / Epic 8 work. Ready to open Epic 4 (Garden tab).
+
+210 unit tests pass; lint / format:check / build green; e2e green on the merged Story 3 PR.
+
+---
+
 ## Epic 4 — Garden tab
 
 ### Story 4.1 — Garden grid render

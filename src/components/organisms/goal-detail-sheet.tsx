@@ -4,18 +4,19 @@ import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { useDeleteGoal, useUpdateGoal } from "@/client/hooks";
-import { BottomSheet, Button, PlantSprite } from "@/components/atoms";
+import { BottomSheet, Button } from "@/components/atoms";
 import { AreaChip, ConfirmDialog, HealthBadge } from "@/components/molecules";
 import type { GoalDto, UpdateGoalRequest } from "@/shared/schemas/goal";
 import { type Stage } from "@/shared/plants";
 
 import { GoalEditor } from "./goal-editor";
+import { GoalIcon } from "./goal-card/goal-icon";
 
 type GoalDetailSheetProps = {
   open: boolean;
   goal: GoalDto;
   onClose: () => void;
-  /** Slot below the header — tasks / routines editors land here in Stories 3.4/3.5. */
+  /** Slot below the header — `<TasksEditor>` and `<RoutinesEditor>` land here. */
   children?: React.ReactNode;
 };
 
@@ -30,6 +31,7 @@ export function GoalDetailSheet({ open, goal, onClose, children }: GoalDetailShe
   const deleteGoal = useDeleteGoal();
   const [editorOpen, setEditorOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const showHealth = goal.planted && !goal.completed;
 
   async function handleEditSubmit(input: { title: string; plantType: GoalDto["plantType"] }) {
     const patch: UpdateGoalRequest = { title: input.title, plantType: input.plantType };
@@ -46,26 +48,20 @@ export function GoalDetailSheet({ open, goal, onClose, children }: GoalDetailShe
     <>
       <BottomSheet open={open} onClose={onClose} title={`${goal.title} details`}>
         <header className="border-surface-muted flex items-start gap-3 border-b px-5 py-4">
-          <span
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              background: `color-mix(in srgb, var(--color-area-${goal.area}) 13%, transparent)`,
-            }}
-          >
-            <PlantSprite
-              plantId={goal.plantType}
-              stage={goal.stage as Stage}
-              healthState={goal.healthState}
-              size={56}
-            />
-          </span>
+          <GoalIcon
+            area={goal.area}
+            plantType={goal.plantType}
+            stage={goal.stage as Stage}
+            healthState={goal.healthState}
+            size={56}
+          />
           <div className="min-w-0 flex-1">
             <h2 className="text-ink-strong truncate text-lg leading-tight font-extrabold">
               {goal.title}
             </h2>
             <div className="mt-1 flex items-center gap-2">
               <AreaChip area={goal.area} />
-              {goal.planted && !goal.completed && <HealthBadge state={goal.healthState} />}
+              {showHealth && <HealthBadge state={goal.healthState} />}
             </div>
           </div>
         </header>
