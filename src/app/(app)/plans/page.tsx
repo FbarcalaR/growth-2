@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import { useGoals } from "@/client/hooks";
-import { Spinner } from "@/components/atoms";
-import { GoalCard } from "@/components/organisms";
+import { useCreateGoal, useGoals } from "@/client/hooks";
+import { Button, Spinner } from "@/components/atoms";
+import { GoalCard, GoalEditor } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
 
 export default function PlansPage() {
   const goals = useGoals();
+  const createGoal = useCreateGoal();
+  const [editorOpen, setEditorOpen] = useState(false);
+
   const { active, blooming } = useMemo(() => splitByBloom(goals.data ?? []), [goals.data]);
   const all = goals.data ?? [];
 
@@ -29,10 +33,17 @@ export default function PlansPage() {
           <h1 className="text-ink-strong text-[22px] leading-tight font-extrabold">Life Goals</h1>
           <p className="text-brand-muted text-xs">Each goal grows a plant in your garden</p>
         </div>
+        <Button
+          size="sm"
+          onClick={() => setEditorOpen(true)}
+          leadingIcon={<Plus size={14} aria-hidden />}
+        >
+          New
+        </Button>
       </header>
 
       {all.length === 0 ? (
-        <EmptyState />
+        <EmptyState onCreate={() => setEditorOpen(true)} />
       ) : (
         <>
           {active.length > 0 && (
@@ -60,6 +71,15 @@ export default function PlansPage() {
           )}
         </>
       )}
+
+      <GoalEditor
+        mode="create"
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        onSubmit={async (input) => {
+          await createGoal.mutateAsync(input);
+        }}
+      />
     </section>
   );
 }
