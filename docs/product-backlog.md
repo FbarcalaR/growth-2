@@ -157,9 +157,13 @@ Goal: a user can launch the app, log in (dev stub), set priorities, land on Toda
 - [x] 1.2.9 Integration test (`src/components/organisms/__tests__/set-priorities-modal.spec.tsx`) — 7 specs: render shape, increment/decrement budget, exhausted-budget disables `+`, save CTA flips at 0, PATCH call shape on submit, 409 → inline alert + no `onLocked`, Escape doesn't dismiss.
 
 ### Story 1.3 — Authed shell guard
-- [ ] 1.3.1 `(app)/layout.tsx` redirects to `/login` if no session
-- [ ] 1.3.2 Overlays `SetPrioritiesModal` if `prioritiesLocked === false`
-- [ ] 1.3.3 E2E: full first-run flow lands on `/today`
+### Story 1.3 — Authed shell guard ✅ (PR #14)
+- [x] 1.3.1 `(app)/layout.tsx` redirects to `/login` if no session (in place since PR #4; verified by the new layout integration test added in this PR).
+- [x] 1.3.2 Overlays `SetPrioritiesModal` (the Story 1.2 organism) when `user.prioritiesLocked === false`. Modal sits over the existing children so the bottom-nav and tab content remain mounted underneath but unreachable until the wheel is locked. `dismissable={false}` means Escape and backdrop are no-ops.
+- [x] 1.3.3 **First Playwright e2e** in `tests/e2e/onboarding.spec.ts`: visit `/` → sign in via the welcome→name two-step → set 30 points on Health → lock priorities → land on `/today`. Each test gets a unique random username so the in-memory backend doesn't carry state.
+- [x] 1.3.4 Layout integration test (`src/app/(app)/__tests__/layout.spec.tsx`) covering the three states: no session → redirects to `/login`; signed in + locked → renders children with no modal; signed in + unlocked → renders children + the SetPrioritiesModal overlay.
+- [x] 1.3.5 Playwright bootstrap: `playwright.config.ts` boots `pnpm dev -p 3100` for the test run; CI workflow gets a new `e2e` job (browsers cached across runs, retries=2 on failure, HTML report uploaded as an artefact on failure).
+- [x] 1.3.6 `pnpm test:e2e` script + `pnpm test:e2e:ui` for local debugging. `tests/e2e/` excluded from Vitest by virtue of Vitest's `include` being scoped to `src/**`.
 
 ---
 
