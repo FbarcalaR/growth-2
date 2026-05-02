@@ -4,13 +4,12 @@ import { useState } from "react";
 
 import { useToggleTodayRoutine, useToggleTodayTask } from "@/client/hooks";
 import { TaskRow, RoutineRow } from "@/components/molecules";
-import { AREA_META } from "@/shared/areas";
 import type { TodayGroupDto } from "@/shared/schemas/today";
 
 import { FlyingResource } from "./flying-resource";
+import { GoalPlant } from "./goal-plant";
 
 export function GoalGroup({ group }: { group: TodayGroupDto }) {
-  const meta = AREA_META[group.goalArea];
   const toggleTask = useToggleTodayTask();
   const toggleRoutine = useToggleTodayRoutine();
   // Map of item-id → counter; the counter changes per click so React remounts
@@ -30,13 +29,12 @@ export function GoalGroup({ group }: { group: TodayGroupDto }) {
     <li className="bg-surface-card border-surface-muted rounded-lg border-[1.5px] p-3">
       <div className="mb-2 flex items-center gap-2">
         <span
-          aria-hidden
-          className="flex h-7 w-7 items-center justify-center rounded-md text-base"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
           style={{
             background: `color-mix(in srgb, var(--color-area-${group.goalArea}) 13%, transparent)`,
           }}
         >
-          {meta.icon}
+          <GoalPlant plantId={group.goalPlantType} stage={group.goalStage} size={32} />
         </span>
         <span className="text-ink-strong flex-1 truncate text-sm leading-tight font-bold">
           {group.goalTitle}

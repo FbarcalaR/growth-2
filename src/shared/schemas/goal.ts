@@ -2,17 +2,10 @@ import { z } from "zod";
 
 import { AREA_KEYS } from "@/shared/areas";
 import { HEALTH_STATES } from "@/shared/health";
+import { PLANT_IDS } from "@/shared/plants";
 import { RESOURCE_KEYS } from "@/shared/resources";
 
-const PlantIdSchema = z.enum([
-  "herb",
-  "sunflower",
-  "money_tree",
-  "rose",
-  "mushroom",
-  "crystal",
-  "moon_flower",
-]);
+const PlantIdSchema = z.enum(PLANT_IDS);
 
 const StageSchema = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
 
