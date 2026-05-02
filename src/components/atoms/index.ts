@@ -1,3 +1,4 @@
+export { AccentPill } from "./accent-pill";
 export { Avatar } from "./avatar";
 export { Badge } from "./badge";
 export { BottomSheet } from "./bottom-sheet";

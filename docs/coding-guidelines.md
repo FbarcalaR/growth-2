@@ -17,6 +17,13 @@ Read once. Apply always.
 - Tests sit in `__tests__/` next to the code they test, named `*.spec.ts(x)`.
 - Imports ordered: node/builtin → external → `@/` aliases → relative → styles. Enforce with ESLint `import/order`.
 
+## File size
+
+- **Hard ceiling: ~400 lines.** Past that, split. The number isn't sacred — a 410-line file with one role is fine, a 280-line file mixing concerns is not — but past 400 the burden of proof flips: assume it should be split unless there's a clear reason to keep it together.
+- Splits live as a **folder** with `index.tsx` (or `index.ts`) as the public face plus one file per sub-piece. Public consumers keep importing from the folder path; internals are private.
+- Don't wait for a tidy-up to split. If a PR drops a file past the ceiling, split as part of that PR.
+- Generated artefacts (e.g. SVG ports) and one-role-but-long files (e.g. a single hand-drawn variant renderer) are exempt — they fail "would splitting help?" up front.
+
 ## Split files by entity / resource
 
 When a module starts holding code for more than one domain entity (e.g. types, schemas, mappers, services, routes), **split it into one file per entity** — usually inside an entity-named folder.
@@ -49,9 +56,19 @@ Read [`docs/design-system.md`](./design-system.md) for the full token list. Enco
 ## Styling
 
 - Tailwind utility classes for layout and most styling. Use `cn()` for conditional class composition.
-- Tokens (colors, radii, motion) referenced through Tailwind theme utilities (`bg-brand-700`, `rounded-md`) — never raw hex codes inside components.
+- Tokens (colors, radii, motion) referenced through Tailwind theme utilities (`bg-brand-700`, `rounded-md`) — never raw hex codes inside components. If a colour shows up in a component, add it to `globals.css` under `@theme` first, document it in `design-system.md`, then reference the token. **Hex literals in component code are a smell** — even one-off uses, because they bypass the tokens we audit.
+- When the same accent appears on more than one surface, promote it to a token group (e.g. `--color-accent-warm` + `--color-accent-warm-bg` + `--color-accent-warm-border`) and ship it as a small atom (`<AccentPill>`) so the next consumer doesn't re-derive it.
 - Avoid inline `style={}` except for dynamic values that can't be expressed as utilities (per-area / per-resource colors via `var(--color-*)`).
 - One global stylesheet (`globals.css`); per-component CSS files are a smell.
+
+## Component decomposition
+
+When a JSX block grows beyond a screen of code or carries non-trivial conditional rendering, decompose it before adding the next concern.
+
+- **Name conditions in variables.** Replace inline `goal.completed ? ... : goal.planted ? ... : null` with `const showTrophy = goal.completed`, `const showHealthBadge = !goal.completed && goal.planted`, etc., and read the JSX top-to-bottom. Stacked ternaries in JSX are a code smell.
+- **Extract sub-components when a region has its own state, its own conditional shape, or its own visual identity.** `<GoalCard>` decomposes into `<GoalIcon>`, `<GoalStatusBadge>`, `<GoalProgress>` — the parent stays composition-only.
+- **Reusable layout pieces become molecules.** A page header that recurs (title + description + actions) belongs in `src/components/molecules/page-header.tsx`, not duplicated per page.
+- **Resist props sprawl.** If a sub-component takes more than 3-4 props, the boundary is probably wrong — pass the goal/dto and let the sub-component pull what it needs.
 
 ## State
 

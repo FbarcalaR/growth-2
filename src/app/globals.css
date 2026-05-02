@@ -76,6 +76,13 @@
   /* Input border (light sage). Different from `brand-track`, lifted from the prototype. */
   --color-input-border: #c8e6c9;
 
+  /* Warm accent (gold/orange) — used for the coin pill, streak pill, and the
+     trophy badge on completed goals. Three-token group so foreground / fill /
+     border line up across the surfaces that adopt it. */
+  --color-accent-warm: #f0a500;
+  --color-accent-warm-bg: #fff8e1;
+  --color-accent-warm-border: #ffe0b2;
+
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 12px;

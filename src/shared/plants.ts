@@ -23,3 +23,33 @@ export const STAGE_NAMES: Record<Stage, string> = {
   3: "Mature",
   4: "Blooming",
 };
+
+/**
+ * Human-readable plant catalog labels. Lives alongside `PLANT_IDS` so client
+ * surfaces (plant pickers, goal cards) don't have to reach into the server
+ * domain just to render a name.
+ */
+export const PLANT_LABELS: Record<PlantId, string> = {
+  herb: "Herb",
+  sunflower: "Sunflower",
+  money_tree: "Money Tree",
+  rose: "Rose",
+  mushroom: "Mushroom",
+  crystal: "Crystal",
+  moon_flower: "Moon Flower",
+};
+
+import type { Area } from "./areas";
+
+/** Suggested default plant kind per life area. Mirrors the server's
+ * `AREA_DEFAULT_PLANT` so the create-goal modal can pre-fill the picker
+ * without crossing the client→server boundary. */
+export const AREA_DEFAULT_PLANT: Record<Area, PlantId> = {
+  health: "herb",
+  career: "sunflower",
+  finances: "money_tree",
+  relationships: "rose",
+  personal: "mushroom",
+  fun: "crystal",
+  spirituality: "moon_flower",
+};

@@ -29,7 +29,17 @@ The welcome surface is composed via `linear-gradient(160deg, var(--color-welcome
 | `ink-strong` | `#1C2B20` | Hero titles on the welcome surface |
 | `ink-soft` | `#6B7F70` | Tagline / secondary copy on the welcome surface |
 | `ink-faint` | `#A8BCA8` | Privacy notes / fine print |
-| `input-border` | `#C8E6C9` | Default input border (lighter sage than `brand-track`) |
+| `input-border` | `#C8E6C9` | Default input border (lighter sage than `brand-track`); also reused for empty-state dashed outlines on `/garden`. |
+
+## Warm accent (gold/orange)
+
+A three-token group for the warm-accent palette used on the coin pill, the streak pill, and the trophy badge that appears on completed goals. When a fourth surface adopts the look, reach for `<AccentPill>` (atom) instead of re-deriving the classes.
+
+| Token | Value | Use |
+|---|---|---|
+| `accent-warm` | `#F0A500` | Foreground (text, icons) |
+| `accent-warm-bg` | `#FFF8E1` | Pill / badge background |
+| `accent-warm-border` | `#FFE0B2` | Pill / badge border |
 
 ## Brand greens
 

@@ -68,7 +68,7 @@ growth-2/
 │   ├── (app)/                        # Authed app shell (route group)
 │   │   ├── layout.tsx                # Bottom nav, auth/onboarding guard
 │   │   ├── today/page.tsx
-│   │   ├── garden/page.tsx
+│   │   ├── garden/page.tsx                # Goal management + the visual garden
 │   │   ├── history/page.tsx
 │   │   └── profile/page.tsx
 │   ├── login/page.tsx                # Public
@@ -224,7 +224,7 @@ Yes — this is what the backend buys us. Same user, multiple browsers/devices, 
 ## 7. Routing and navigation
 
 - Public routes: `/login`.
-- Authed routes (route group `(app)`): `/today`, `/garden`, `/history`, `/profile`. Each is a real page so browser back works and tabs are deep-linkable.
+- Authed routes (route group `(app)`): `/today`, `/garden`, `/history`, `/profile`. Each is a real page so browser back works and tabs are deep-linkable. **There is no `/plans` route** — life-goal management and the visual garden live together under `/garden`, matching the prototype's IA where the bottom-nav "Garden" tab embeds both surfaces.
 - The `(app)` layout enforces two guards: signed in (today: dev stub; later: real session) and `prioritiesLocked === true`. If priorities aren't locked, the `SetPrioritiesModal` overlays the active tab — it cannot be dismissed except by submitting.
 
 ## 8. Performance notes
