@@ -8,7 +8,7 @@ import { renderWithQuery } from "@/test/render";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/plans",
+  usePathname: () => "/garden",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
 }));
 

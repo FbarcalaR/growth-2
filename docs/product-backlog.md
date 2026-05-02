@@ -283,16 +283,16 @@ A short focused pass before opening Epic 3. Tidy-up is folded in as item 2.R.1.
 
 ---
 
-## Epic 3 — Plans tab
+## Epic 3 — Goal management (lives under `/garden`)
 
 The whole epic ships in **PR #21** following the user's "small batches of change, one story per commit, one PR per epic" instruction. The between-epic review (`### 🔍 Epic 3 Review`) lands in a follow-up PR after this one merges.
 
-Foundation (lands in this PR): added `plans` to `TabKey`, wired the bottom-nav entry between Today and Garden, created the `/plans` route. Architecture doc updated with the new authed route.
+Originally drafted as a "Plans tab" but corrected during PR #21 review (comment on `bottom-nav.tsx`): the bottom nav stays at four tabs (Today / Garden / History / Profile) and goal management lives under `/garden`, matching the prototype's IA where the Garden tab embeds both the goals list and the visual garden. The full garden grid lands in Epic 4 alongside this content.
 
 ### Story 3.1 — Goals list ✅ (PR #21)
 - [x] 3.1.1 `GET /api/goals` accepts optional `?area=<area>` and `?status=active|blooming|all` query params (Zod-validated). New `isBlooming(goal)` helper = `completed || (planted && stage >= 4)`, mirrors the prototype's split. "Sorted by recently updated" deferred — the in-memory repo doesn't track `updatedAt`/`createdAt`; logged as a follow-up for whichever epic introduces persistence.
 - [x] 3.1.2 `<GoalCard>` organism: 48px `<PlantSprite>` in an area-tinted square, title + `<AreaChip>` + stage label / Trophy stamp, area-tinted progress bar (tasks + routines combined), `<HealthBadge>` for planted non-completed goals. Click handler optional — Plans uses it to open the detail sheet.
-- [x] 3.1.3 `/plans` page: fetches via `useGoals()`, splits client-side into `Active` and `Blooming & Completed` sections, renders an empty-state CTA when no goals exist.
+- [x] 3.1.3 `/garden` page: fetches via `useGoals()`, splits client-side into `Active` and `Blooming & Completed` sections, renders an empty-state CTA when no goals exist.
 
 ### Story 3.2 — Create goal ✅ (PR #21)
 - [x] 3.2.1 `<GoalEditor>` organism (bottom-sheet form): title input + `<AreaPicker>` + new `<PlantPicker>` molecule. Picking an area defaults the plant to that area's recommendation; the user can override. Form state lives inside an inner `<Body>` so closing the sheet unmounts it and the next open is a clean draft — no `useEffect` resets needed.
@@ -306,13 +306,13 @@ Foundation (lands in this PR): added `plans` to `TabKey`, wired the bottom-nav e
 - [x] 3.3.4 In edit mode, `<GoalEditor>` locks the area picker (changing it would re-route resources between plant kinds, which the domain doesn't support cleanly) but the title and plant kind stay editable.
 
 ### Story 3.4 — Tasks within a goal ✅ (PR #21)
-- [x] 3.4.1 `<TasksEditor>` _component (lives in `src/app/(app)/plans/_components/`): per-task inline edit (title input + native `<input type="date">`), delete icon, and an "Add task" button that toggles to an inline form. Submit goes through the existing `useAddTask` / `useUpdateTask` / `useDeleteTask` hooks.
+- [x] 3.4.1 `<TasksEditor>` _component (lives in `src/app/(app)/garden/_components/tasks-editor/`): per-task inline edit (title input + native `<input type="date">`), delete icon, and an "Add task" button that toggles to an inline form. Submit goes through the existing `useAddTask` / `useUpdateTask` / `useDeleteTask` hooks. Split into `index.tsx` + `task-row-item.tsx` + `task-edit-form.tsx` + `add-task-row.tsx` per `coding-guidelines.md`'s file-size + decomposition rules.
 - [x] 3.4.2 Inline checkbox toggle reuses the existing `useUpdateTask` PATCH path — same domain rule as Today (resource reward + plant grow fires regardless of surface).
 
 ### Story 3.5 — Routines within a goal ✅ (PR #21)
 - [x] 3.5.1 `<DayPicker>` molecule: 7 Mon-Sun toggle buttons (`role="checkbox"`, per-day `aria-label`). Exposes the existing `RepeatDays` tuple + `ALL_DAYS` / `NO_DAYS` helpers.
-- [x] 3.5.2 `<RoutinesEditor>` _component: per-routine inline edit (title + `<DayPicker>`), delete icon, "Graduate" (permanent complete) gated by `<ConfirmDialog>` ("Graduate this routine?"). Save disabled when zero days are picked.
-- [x] 3.5.3 Permanent-complete posts to `/api/goals/[id]/routines/[routineId]/permanent`; the graduated routine renders as a read-only row with the kept-streak label so the user keeps the milestone.
+- [x] 3.5.2 `<RoutinesEditor>` _component (lives in `src/app/(app)/garden/_components/routines-editor/`): per-routine inline edit (title + `<DayPicker>`), delete icon, "Graduate" (permanent complete) gated by `<ConfirmDialog>` ("Graduate this routine?"). Save disabled when zero days are picked. Split into `index.tsx` + `routine-row-item.tsx` + `routine-edit-form.tsx` + `add-routine-row.tsx` + `graduated-routine-row.tsx`.
+- [x] 3.5.3 Permanent-complete posts to `/api/goals/[id]/routines/[routineId]/permanent`; the graduated routine renders via the dedicated `<GraduatedRoutineRow>` (read-only, kept-streak label) so the user keeps the milestone.
 - [x] 3.5.4 Streak displays via the existing `<RoutineRow>` molecule (`{streak}-day streak` line; "Starts your streak today" when zero) — already correct.
 
 ---

@@ -14,7 +14,6 @@ type Tab = {
 
 const TABS: Tab[] = [
   { href: "/today", key: "today", label: "Today" },
-  { href: "/plans", key: "plans", label: "Plans" },
   { href: "/garden", key: "garden", label: "Garden" },
   { href: "/history", key: "history", label: "History" },
   { href: "/profile", key: "profile", label: "Profile" },

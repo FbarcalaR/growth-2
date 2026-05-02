@@ -8,7 +8,7 @@ import { freshUser, lockedUser, seededGoals } from "@/test/fixtures/state";
 import { renderWithQuery } from "@/test/render";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/plans",
+  usePathname: () => "/garden",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
 }));
 
@@ -16,7 +16,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("/plans", () => {
+describe("/garden", () => {
   it("shows the empty state when the user has no goals", async () => {
     const user = await freshUser("Ada");
     setupFetchMock({
