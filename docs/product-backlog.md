@@ -209,12 +209,13 @@ A short focused review pass before opening Epic 2.
 
 Goal: see and complete today's tasks and routines; resources accrue; plant grows.
 
-### Story 2.0 — Epic 1 review improvements (toast + skeleton + spinner + a11y)
+### Story 2.0 — Epic 1 review improvements (toast + skeleton + spinner + a11y) ✅ (PR #16)
 **As a** developer, **I want** the small primitives flagged in the Epic 1 review in place before Story 2.2's task-toggle mutation lands, **so that** the Today tab can surface mutation errors and loading state consistently.
-- [ ] 2.0.1 `<Toaster>` + `useToast()` (atom + hook) — minimal: success / error / info, auto-dismiss, mounted in root `app/layout.tsx`. Visual polish deferred to Epic 8 (Story 8.2).
-- [ ] 2.0.2 `<Spinner>` atom — single token-driven spinner. Replaces "Signing you in…" / "Saving…" text-only states.
-- [ ] 2.0.3 `(app)` shell loading skeleton — replaces the current `null` while `useSession()` is pending with a soft sheet-bg fill so cold loads don't flash the dark `surface-frame`.
-- [ ] 2.0.4 Save-button copy `aria-live` polish in `SetPrioritiesModal` — wrap the button label in `aria-live="polite"` so screen readers announce the "Allocate N" → "Save and lock" transition.
+- [x] 2.0.1 `<Toaster>` + `toast` pub-sub (`src/components/atoms/toaster.tsx` + `src/client/hooks/use-toast.ts`) — success / error / info, auto-dismiss with configurable `durationMs`, mounted once in `src/app/layout.tsx`. Imperative API: `toast.success(message)`. Error toasts get `role="alert"`; success/info get `role="status"`. Visual polish (animations, swipe-to-dismiss, stacking limits) deferred to Epic 8 (Story 8.2).
+- [x] 2.0.2 `<Spinner>` atom (`src/components/atoms/spinner.tsx`) — token-driven SVG that inherits `currentColor`, three sizes (`sm | md | lg`), `role="status"` with a labelled accessible name. Adopted in the login submit button and the Set-Priorities save button.
+- [x] 2.0.3 `(app)` shell loading skeleton — `src/app/(app)/_loading-skeleton.tsx` renders the centred `surface-app` column with a muted spinner while `useSession()` is pending. Replaces the previous `null`.
+- [x] 2.0.4 Save-button copy `aria-live` polish in `SetPrioritiesModal` — the button label is wrapped in `<span aria-live="polite">` so screen readers announce the "Allocate N" → "🔒 Save and lock" transition. The `Saving…` state also picks up the new `<Spinner>`.
+- [x] 2.0.5 Tests: `src/client/hooks/__tests__/use-toast.spec.tsx` (4 specs: publish, auto-dismiss, single dismiss, clearAll) and `src/components/atoms/__tests__/toaster.spec.tsx` (3 specs: empty, render+dismiss, role mapping).
 
 ### Story 2.1 — Today list
 - [ ] 2.1.1 **`GET /api/today`** returns today's items grouped by goal (server filters by date + user). **Land first** — Today's UI depends on it.

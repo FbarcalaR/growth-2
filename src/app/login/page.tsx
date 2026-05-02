@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 
 import { ApiError } from "@/client/api";
 import { useSession } from "@/client/hooks";
-import { Button, Input } from "@/components/atoms";
+import { Button, Input, Spinner } from "@/components/atoms";
 import { GardenIllustration, WelcomeLogo } from "@/components/illustrations";
 import { CreateSessionRequestSchema, type CreateSessionRequest } from "@/shared/schemas/user";
 
@@ -123,7 +123,13 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-            {buttonLabel}
+            {submitting ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size="sm" /> Signing you in…
+              </span>
+            ) : (
+              buttonLabel
+            )}
           </Button>
         </form>
 

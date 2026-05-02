@@ -6,6 +6,8 @@ import { useEffect, type ReactNode } from "react";
 import { useSession } from "@/client/hooks";
 import { BottomNav, SetPrioritiesModal } from "@/components/organisms";
 
+import { AppShellSkeleton } from "./_loading-skeleton";
+
 export default function AppShellLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user, isLoading, prioritiesLocked } = useSession();
@@ -14,11 +16,14 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
     if (!isLoading && !user) router.replace("/login");
   }, [isLoading, user, router]);
 
-  if (isLoading || !user) {
-    // Render nothing while resolving the session — avoids a flash of authed UI
-    // (or, when unauthenticated, a flash before the redirect lands).
-    return null;
-  }
+  // While the session resolves, show a soft skeleton instead of `null`. Avoids
+  // a flash of dark `surface-frame` on cold loads.
+  if (isLoading) return <AppShellSkeleton />;
+
+  // No session: the effect above is sending us to /login. Render nothing for
+  // the brief moment between resolution and navigation so we don't flash an
+  // empty authed shell.
+  if (!user) return null;
 
   return (
     <div className="bg-surface-frame text-brand-700 flex min-h-screen justify-center">
