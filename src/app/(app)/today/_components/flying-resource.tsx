@@ -6,11 +6,7 @@ import { useEffect } from "react";
 import { useReducedMotion } from "@/client/hooks";
 
 type FlyingResourceProps = {
-  /**
-   * Direction the icon flies relative to its anchor. The icon always travels
-   * roughly toward the goal-group's plant icon (top-left), so the default is
-   * fine; we keep this prop for future tuning.
-   */
+  /** Called when the sprite finishes (or is skipped under reduced motion). */
   onDone: () => void;
 };
 
