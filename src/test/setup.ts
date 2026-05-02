@@ -17,6 +17,24 @@ afterEach(async () => {
   }
 });
 
+// jsdom doesn't implement matchMedia. Components that read prefers-reduced-
+// motion (or any other media query) need a stub; default to "no match".
+if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
 class TestCookieStore {
   private store = new Map<string, string>();
 
