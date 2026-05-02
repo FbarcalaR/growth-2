@@ -1,5 +1,6 @@
 export { Avatar } from "./avatar";
 export { Badge } from "./badge";
+export { BottomSheet } from "./bottom-sheet";
 export { Button } from "./button";
 export { Checkbox } from "./checkbox";
 export { Chip } from "./chip";
