@@ -354,8 +354,19 @@ A short focused pass before opening Epic 4. Tidy-up is item 3.R.1.
   4. **`<GoalCard>` is currently 80 lines and fine, but the per-card `<GoalDetailSheet>` mounts at the page level** — when Garden adds the planting flow we'll likely want a per-card overflow/menu. Plan the affordance now to avoid a re-architecture later.
   5. **Health badge tinting on the goal-card status** — `<HealthBadge>` always shows the label; on the dense Plans list a single coloured dot might read better. Defer to design polish in Epic 8.
 - [x] 3.R.10 **Decision: Epic 3 is done.** Goal CRUD ships with create / edit / delete, tasks and routines manageable per goal, optimistic toggle still working from Today, prototype fidelity matched (modulo the deliberately-deferred GardenCard preview). Improvements above are explicitly Epic 4 / Epic 8 work. Ready to open Epic 4 (Garden tab).
+- [x] 3.R.11 **Visual fidelity pass against `plans-tab.jsx`.** Reviewer flagged on PR #22 that the implementation didn't match the design at all. Walked the prototype thoroughly and rewrote the surface to match:
+  - **Two-step `<GoalEditor>`** matching `NewGoalModal`. Step 0 is title + Life Area chips with per-area slot counters (`X/Y` or 🔒); Step 1 is the plant grid with an area-tinted resource hint and an "Add as seed 🌰" CTA. Edit mode opens directly on Step 1 with the title editable inline. Blocked-area hint copy ports verbatim ("🔒 No slots in {area}…", "⚠️ {area} is full…"). New `useAreaSlots()` client hook computes quotas from `wheelOfLife` + active goals; mirrors the prototype's `getAreaSlots` helper.
+  - **Inline-expandable `<GoalCard>`** matching the prototype's tap-to-expand pattern. Header shows the plant or seed envelope (52px), title, status chips (area + Seed/stage/Dead), `X/Y` count, chevron. Below the header: Plant-Now CTA when seed (Epic 4 hook), `<GoalGrowthBar>` ("Growing → Sprout" + thin area-tinted bar) when growing, `<FullyBloomingBanner>` at stage 4, `<DeadPlantBanner>` when dead. Tap to expand reveals the children slot (tasks + routines editors) plus inline Edit / Delete in the footer. Border colour reflects state (seed-yellow / wilting / ill / critical / dead-grey / expanded-mint / default).
+  - **Dropped `<GoalDetailSheet>`** entirely. The prototype has no detail-sheet route; everything lives inline on the card.
+  - **Seed envelope SVG** ported into `<GoalIcon>` (a small hand-drawn seed packet that replaces the plant when `!planted`). Per-stage chip tints from the new `STAGE_COLORS` map in `src/shared/plants.ts`.
+  - **Token cleanup**: warm-accent + input-border tokens shipped earlier in this PR continue to absorb hex literals; no new component-level hex were introduced this round.
+  - **Tests rewritten**: `goal-card.spec.tsx` now drives the collapsed/expanded / banners, `goal-editor.spec.tsx` walks the two-step flow + back button + edit-mode prefill, `garden/page.spec.tsx` walks New → Step 0 → Next → Step 1 → Add as seed. Old `goal-detail-sheet.spec.tsx` deleted.
+  - **Deferred from the prototype** (called out so they don't get silently dropped):
+    - Swipeable task / routine rows. Inline icon buttons for edit + delete are kept as a deliberate simplification — same affordances, fewer gestures. Promote to swipe in the design-polish epic if needed.
+    - "Make-room" overlay when an area is full. The current modal disables Next with the prototype's copy; the choose-a-goal-to-drop overlay lands once the planting flow needs it (Epic 4).
+    - Resource-needed hint inside the expanded card ("Needs 4 more 💧 Water"). Requires `PLANT_DEFS.requirements` exposed to the client; will land alongside Epic 4 garden-grid work.
 
-210 unit tests pass; lint / format:check / build green; e2e green on the merged Story 3 PR.
+209 unit tests pass; lint / format:check / build green.
 
 ---
 

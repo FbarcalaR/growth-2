@@ -24,6 +24,15 @@ export const STAGE_NAMES: Record<Stage, string> = {
   4: "Blooming",
 };
 
+/** Per-stage tint used by goal-card chips ("Sprout", "Seedling", ...). */
+export const STAGE_COLORS: Record<Stage, string> = {
+  0: "#F9A825",
+  1: "#A5D6A7",
+  2: "#66BB6A",
+  3: "#43A047",
+  4: "#2E7D32",
+};
+
 /**
  * Human-readable plant catalog labels. Lives alongside `PLANT_IDS` so client
  * surfaces (plant pickers, goal cards) don't have to reach into the server

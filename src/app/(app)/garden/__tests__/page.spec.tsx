@@ -76,8 +76,10 @@ describe("/garden", () => {
     await findByText("Bloomed Out");
   });
 
-  it("opens the GoalEditor when the New button is clicked and posts on save", async () => {
-    const user = await freshUser("Ada");
+  it("walks the two-step New goal flow and POSTs the goal", async () => {
+    // lockedUser so the area chips have non-zero quotas, otherwise every
+    // chip is locked and Step 0 won't advance.
+    const user = await lockedUser();
     const fm = setupFetchMock({
       "/api/me": user,
       "/api/goals": { goals: [] },
@@ -86,9 +88,16 @@ describe("/garden", () => {
 
     const { findByRole, getByPlaceholderText } = renderWithQuery(<GardenPage />);
     fireEvent.click(await findByRole("button", { name: /^new$/i }));
-    fireEvent.change(getByPlaceholderText(/run a 5k/i), { target: { value: "Run a 5K" } });
-    fireEvent.click(await findByRole("radio", { name: /health/i }));
-    fireEvent.click(await findByRole("button", { name: /plant goal/i }));
+
+    // Step 0: title input + area is preselected to the first open area
+    // (health, in lockedUser). Click Next.
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "Run a 5K" },
+    });
+    fireEvent.click(await findByRole("button", { name: /next: choose your plant/i }));
+
+    // Step 1: plant grid; herb is preselected for health. Submit.
+    fireEvent.click(await findByRole("button", { name: /add as seed/i }));
 
     await waitFor(() => expect(fm.calls("POST", "/api/goals")).toHaveLength(1));
     expect(fm.calls("POST", "/api/goals")[0]!.body).toEqual({
