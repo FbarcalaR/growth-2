@@ -68,6 +68,7 @@ growth-2/
 │   ├── (app)/                        # Authed app shell (route group)
 │   │   ├── layout.tsx                # Bottom nav, auth/onboarding guard
 │   │   ├── today/page.tsx
+│   │   ├── plans/page.tsx
 │   │   ├── garden/page.tsx
 │   │   ├── history/page.tsx
 │   │   └── profile/page.tsx
@@ -224,7 +225,7 @@ Yes — this is what the backend buys us. Same user, multiple browsers/devices, 
 ## 7. Routing and navigation
 
 - Public routes: `/login`.
-- Authed routes (route group `(app)`): `/today`, `/garden`, `/history`, `/profile`. Each is a real page so browser back works and tabs are deep-linkable.
+- Authed routes (route group `(app)`): `/today`, `/plans`, `/garden`, `/history`, `/profile`. Each is a real page so browser back works and tabs are deep-linkable.
 - The `(app)` layout enforces two guards: signed in (today: dev stub; later: real session) and `prioritiesLocked === true`. If priorities aren't locked, the `SetPrioritiesModal` overlays the active tab — it cannot be dismissed except by submitting.
 
 ## 8. Performance notes

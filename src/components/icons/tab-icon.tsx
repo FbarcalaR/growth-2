@@ -1,9 +1,10 @@
-import { CalendarCheck, CalendarDays, Sprout, User, type LucideIcon } from "lucide-react";
+import { CalendarCheck, CalendarDays, ListChecks, Sprout, User, type LucideIcon } from "lucide-react";
 
-export type TabKey = "today" | "garden" | "history" | "profile";
+export type TabKey = "today" | "plans" | "garden" | "history" | "profile";
 
 export const TAB_ICONS: Record<TabKey, LucideIcon> = {
   today: CalendarCheck,
+  plans: ListChecks,
   garden: Sprout,
   history: CalendarDays,
   profile: User,
