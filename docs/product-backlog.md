@@ -167,12 +167,57 @@ Goal: a user can launch the app, log in (dev stub), set priorities, land on Toda
 
 ---
 
+---
+
+### 🔍 Epic 1 Review — between-epics gate
+
+A short focused review pass before opening Epic 2.
+
+- [x] 1.R.1 **Walk the user journey end-to-end in dev**: visit `/` → `/login`; welcome step → name step; land on `/today` with the priorities modal overlaid; lock priorities; navigate the four tabs; sign out; return to `/login`.
+  - Verified via curl with cookie jar against `pnpm dev`: GET `/` renders (page-level redirect to `/today`); POST `/api/me` → 201 + Set-Cookie; GET `/today` (authed, unlocked) → 200; PATCH `/api/me/priorities` → 200; second PATCH → 409 `PRIORITIES_ALREADY_LOCKED`; all four tabs return 200; DELETE `/api/me` → 204. Browser smoke matches the integration tests' assertions.
+- [x] 1.R.2 **Re-read each affected doc**.
+  - `architecture.md` — RHF + Zod, Playwright, Tailwind v4, Zustand-when-needed all reflect reality. ✅
+  - `coding-guidelines.md` — State section accurately describes "no Zustand bundled". ✅
+  - `design-system.md` — Welcome gradient, ink, input-border tokens documented. ✅
+  - `domain-model.md` — Wheel-of-Life onboarding rules match the implementation (one-time lock, ≤30 budget). ✅
+  - `testing-strategy.md` — Harness pattern + e2e (with `pnpm test:e2e`) listed correctly; first shipped spec called out separately from planned. ✅
+  - **No drift uncovered this time.** PR #9's lessons stuck.
+- [x] 1.R.3 **Re-read the backlog**. All 24 Epic-1 sub-tasks (across Stories 1.0–1.3) are ticked. Notable additions captured during implementation that weren't in the original plan: 1.1.6 (global `cleanup()` in setup), 1.2.6 (`BottomSheet` atom), 1.2.7 (`AREA_DESCRIPTION` copy), 1.2.8 (styleguide section), 1.3.4 (layout integration test), 1.3.5 (Playwright bootstrap), 1.3.6 (e2e scripts). Nothing silently dropped.
+- [x] 1.R.4 **Structural sanity check**.
+  - Per-entity layout still consistent. New folders that emerged this epic: `src/components/illustrations/` (port-from-prototype SVGs), `src/test/fixtures/` (state builders), `tests/e2e/` (Playwright). Each contains one or two files of a single kind — clean.
+  - File-size watch list (from Epic 0 review): `goal-service.ts` 264 lines, `wheel-of-life.tsx` 172 lines, `use-goals.ts` 161 lines. Still well under the ~400-line trip wire.
+- [x] 1.R.5 **Test sanity check**.
+  - **143 unit + integration specs** (was 122 at end of Epic 0; +21 this epic). New suites: `harness.spec.tsx` (6), `login/page.spec.tsx` (5), `set-priorities-modal.spec.tsx` (7), `(app)/layout.spec.tsx` (3).
+  - **First Playwright e2e** (`tests/e2e/onboarding.spec.ts`) shipped. CI verifies; sandbox couldn't run locally due to chromium download restriction.
+  - Coverage by layer: domain rules, repos, HTTP boundary, services, hooks, page components, app shell. Only gap: feature-tab placeholder pages (Today / Garden / History / Profile) have no specs — they're literal stubs, not worth the test effort until they have behaviour.
+- [x] 1.R.6 **CI sanity check**: typecheck / lint / format:check / test:unit / build all green on `main` HEAD (`9979ca5`). The new `e2e` job depends on `check`; CI logs are the source of truth for the Playwright run. No known flakes in this epic's PRs.
+- [x] 1.R.7 **Prototype fidelity check**. User-visible surfaces touched in Epic 1:
+  - `/login` (welcome + name) — fidelity verified in PR #12 against `docs/prototype-design/login-page.jsx`. No remaining drift.
+  - Set-priorities modal — fidelity verified in PR #13 against `docs/prototype-design/set-priorities-modal.jsx` (sheet shape, budget pill behaviour, area icon tints, info disclosure, ± steppers, header/footer copy, save button flip, non-dismissable). No remaining drift.
+  - `(app)` shell layout — behavioural change only (modal overlay); no prototype reference for the wiring.
+- [x] 1.R.8 **Improvements identified for Epic 2**:
+  1. **Toast primitive (stub)** — Errors currently surface inline per-component (login, modal). Epic 2's Today tab will have lots of mutations (task toggle, routine toggle, complete) where inline-per-component gets noisy. Land a minimal `<Toaster>` + `useToast()` hook as the first Story 2.0 work, even if the visual polish waits for Epic 8.
+  2. **`/api/today` aggregate endpoint** — Already in Story 2.1.1 but worth promoting to the very first sub-task. Without it Today has to call `/api/goals` and filter client-side.
+  3. **`(app)` loading skeleton** — The shell currently renders `null` while `useSession()` is pending. A subtle sheet-bg fill avoids the brief flash of the dark `surface-frame` on cold loads. ~20 lines.
+  4. **Save-button copy `aria-live`** — The Set Priorities save button text changes ("Allocate N more points" ↔ "🔒 Save and lock my priorities") but isn't announced to screen readers. The budget pill is `aria-live`; extend to the button label or wrap the change in a `<span aria-live="polite">`.
+  5. **Loading spinner atom** — Multiple upcoming surfaces will need a "loading…" indicator (Today list while goals fetch, button mid-mutation). Today the login page and modal use text-only "Signing you in…" / "Saving…" — fine, but a real `<Spinner>` atom keeps it consistent.
+- [x] 1.R.9 **Decision: Epic 1 is done.** All four foundations of onboarding are in place — login, set priorities, layout overlay, and the first Playwright e2e covers the full journey. The improvements above are explicitly Epic 2 work, not gaps in Epic 1.
+
+---
+
 ## Epic 2 — Today tab
 
 Goal: see and complete today's tasks and routines; resources accrue; plant grows.
 
+### Story 2.0 — Epic 1 review improvements (toast + skeleton + spinner + a11y)
+**As a** developer, **I want** the small primitives flagged in the Epic 1 review in place before Story 2.2's task-toggle mutation lands, **so that** the Today tab can surface mutation errors and loading state consistently.
+- [ ] 2.0.1 `<Toaster>` + `useToast()` (atom + hook) — minimal: success / error / info, auto-dismiss, mounted in root `app/layout.tsx`. Visual polish deferred to Epic 8 (Story 8.2).
+- [ ] 2.0.2 `<Spinner>` atom — single token-driven spinner. Replaces "Signing you in…" / "Saving…" text-only states.
+- [ ] 2.0.3 `(app)` shell loading skeleton — replaces the current `null` while `useSession()` is pending with a soft sheet-bg fill so cold loads don't flash the dark `surface-frame`.
+- [ ] 2.0.4 Save-button copy `aria-live` polish in `SetPrioritiesModal` — wrap the button label in `aria-live="polite"` so screen readers announce the "Allocate N" → "Save and lock" transition.
+
 ### Story 2.1 — Today list
-- [ ] 2.1.1 `GET /api/today` returns today's items grouped by goal (server filters by date + user)
+- [ ] 2.1.1 **`GET /api/today`** returns today's items grouped by goal (server filters by date + user). **Land first** — Today's UI depends on it.
 - [ ] 2.1.2 `TaskRow`/`RoutineRow` molecules render the items with checkbox, title, area badge
 - [ ] 2.1.3 Empty state copy
 
