@@ -79,9 +79,7 @@ describe("<TasksEditor />", () => {
     fm.json(
       `/api/goals/${goalId}/tasks`,
       makeGoal({
-        tasks: [
-          { id: "t2", title: "Sign up for race", completed: false, dueDate: "2026-05-10" },
-        ],
+        tasks: [{ id: "t2", title: "Sign up for race", completed: false, dueDate: "2026-05-10" }],
       }),
       "POST",
     );
