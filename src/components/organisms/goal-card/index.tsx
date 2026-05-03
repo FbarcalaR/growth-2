@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 import { cn } from "@/client/lib/cn";
 import { HealthWarning } from "@/components/molecules";
+import { isUnhealthyState } from "@/shared/health";
 import type { GoalDto } from "@/shared/schemas/goal";
 import { type Stage } from "@/shared/plants";
 
@@ -27,8 +28,7 @@ export function GoalCard({ goal, onClick, className }: GoalCardProps) {
   const isSeed = !goal.planted;
   const isDead = goal.healthState === "dead";
   const isFullyGrown = goal.stage >= 4;
-  const isUnhealthy =
-    goal.healthState === "wilting" || goal.healthState === "ill" || goal.healthState === "critical";
+  const isUnhealthy = isUnhealthyState(goal.healthState);
   const totalItems = goal.tasks.length + goal.routines.length;
   const doneItems =
     goal.tasks.filter((t) => t.completed).length +
