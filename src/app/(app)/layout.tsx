@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-import { hydrateAccentOnMount, useSession } from "@/client/hooks";
+import { useSession } from "@/client/hooks";
 import { BottomNav, SetPrioritiesModal } from "@/components/organisms";
 
 import { AppShellSkeleton } from "./_loading-skeleton";
@@ -15,13 +15,6 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading && !user) router.replace("/login");
   }, [isLoading, user, router]);
-
-  // Apply the user's saved accent override (Story 6.2.2) on mount. Doing it
-  // after first paint accepts a one-frame FOUC in exchange for keeping the
-  // pref purely client-side until persistence lands in Epic A.
-  useEffect(() => {
-    hydrateAccentOnMount();
-  }, []);
 
   // While the session resolves, show a soft skeleton instead of `null`. Avoids
   // a flash of dark `surface-frame` on cold loads.

@@ -23,16 +23,9 @@ export {
   useUpdateRoutine,
   useUpdateTask,
 } from "./use-goals";
-export {
-  ACCENT_OPTIONS,
-  hydrateAccentOnMount,
-  updateAppPrefs,
-  useAppPrefs,
-  type AppPrefs,
-} from "./use-app-prefs";
 export { useGarden, usePlaceDeco, usePlantOnTile, useUnplaceDeco } from "./use-garden";
 export { useHistory } from "./use-history";
-export { downloadExport, useImportData, useResetData } from "./use-me-data";
+export { useResetData } from "./use-me-data";
 export { useBuyDeco, useShop } from "./use-shop";
 export { useToday } from "./use-today";
 export { useToggleTodayTask, useToggleTodayRoutine } from "./use-today-toggles";

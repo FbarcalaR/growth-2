@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { GET as GET_ME } from "@/app/api/me/route";
-import { GET as GET_EXPORT } from "@/app/api/me/export/route";
-import { POST as POST_IMPORT } from "@/app/api/me/import/route";
 import { POST as POST_RESET } from "@/app/api/me/reset/route";
 import { POST as CREATE_GOAL } from "@/app/api/goals/route";
 import { POST as CREATE_TASK } from "@/app/api/goals/[id]/tasks/route";
@@ -74,100 +72,5 @@ describe("/api/me/reset", () => {
     const afterMe = await after.json();
     expect(afterMe.id).toBe(me.id); // same user, still signed in
     expect(afterMe.name).toBe("Ada"); // identity preserved
-  });
-});
-
-describe("/api/me/export", () => {
-  beforeEach(freshTestContext);
-
-  it("requires a session", async () => {
-    const res = await GET_EXPORT();
-    expect(res.status).toBe(401);
-  });
-
-  it("returns a versioned payload with goals + garden + completions", async () => {
-    await signIn("Ada");
-    const goal = await createGoal("Run a 5K");
-    await addTaskAndComplete(goal.id, "Buy shoes");
-
-    const res = await GET_EXPORT();
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.version).toBe(1);
-    expect(body.user.name).toBe("Ada");
-    expect(body.goals).toHaveLength(1);
-    expect(body.goals[0].title).toBe("Run a 5K");
-    expect(body.completions.length).toBeGreaterThanOrEqual(1);
-    expect(body.completions[0].kind).toBe("task");
-    expect(body.garden).toBeDefined();
-    expect(typeof body.exportedAt).toBe("number");
-  });
-});
-
-describe("/api/me/import", () => {
-  beforeEach(freshTestContext);
-
-  it("requires a session", async () => {
-    const res = await POST_IMPORT(jsonRequest("POST", { version: 1 }));
-    expect(res.status).toBe(401);
-  });
-
-  it("rejects malformed payloads with 422", async () => {
-    await signIn("Ada");
-    const res = await POST_IMPORT(jsonRequest("POST", { version: 999 }));
-    expect(res.status).toBe(422);
-  });
-
-  it("round-trips: export → reset → import puts the data back", async () => {
-    const me = await signIn("Ada");
-    await PATCH_PRIORITIES(jsonRequest("PATCH", { values: validWheel }));
-    const goal = await createGoal("Run a 5K");
-    await addTaskAndComplete(goal.id, "Buy shoes");
-
-    const exportRes = await GET_EXPORT();
-    const payload = await exportRes.json();
-
-    await POST_RESET();
-    const afterReset = await GET_ME();
-    expect((await afterReset.json()).prioritiesLocked).toBe(false);
-
-    const imported = await POST_IMPORT(jsonRequest("POST", payload));
-    expect(imported.status).toBe(200);
-    const restored = await imported.json();
-    expect(restored.id).toBe(me.id);
-    expect(restored.prioritiesLocked).toBe(true);
-    expect(restored.wheelOfLife).toEqual(validWheel);
-
-    // Goals + a completion should come back too.
-    const exportAgain = await GET_EXPORT();
-    const next = await exportAgain.json();
-    expect(next.goals).toHaveLength(1);
-    expect(next.goals[0].title).toBe("Run a 5K");
-    expect(next.completions.length).toBeGreaterThanOrEqual(1);
-    // IDs got regenerated (different from the original goal.id).
-    expect(next.goals[0].id).not.toBe(goal.id);
-  });
-
-  it("clobbers any existing data — import is replace, not merge", async () => {
-    await signIn("Ada");
-
-    // Make a snapshot with one goal.
-    const goalA = await createGoal("First snapshot goal");
-    const exportA = await GET_EXPORT();
-    const payloadA = await exportA.json();
-
-    // Add another goal *after* the snapshot.
-    await createGoal("Added later");
-    const beforeImport = await GET_EXPORT();
-    expect((await beforeImport.json()).goals).toHaveLength(2);
-
-    // Importing the original snapshot drops the second goal.
-    await POST_IMPORT(jsonRequest("POST", payloadA));
-    const after = await GET_EXPORT();
-    const afterPayload = await after.json();
-    expect(afterPayload.goals).toHaveLength(1);
-    expect(afterPayload.goals[0].title).toBe("First snapshot goal");
-    // Restored goal carries a fresh id.
-    expect(afterPayload.goals[0].id).not.toBe(goalA.id);
   });
 });

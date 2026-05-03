@@ -8,8 +8,7 @@ import { useGoals, useSession } from "@/client/hooks";
 import { Avatar, Button, Input, Modal } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 
-import { DataPanel } from "./_components/data-panel";
-import { SettingsPanel } from "./_components/settings-panel";
+import { ResetAction } from "./_components/reset-action";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -76,19 +75,18 @@ export default function ProfilePage() {
         />
       </div>
 
-      <SettingsPanel />
-
-      <DataPanel />
-
-      <Button
-        variant="outline-destructive"
-        size="lg"
-        onClick={handleSignOut}
-        leadingIcon={<LogOut size={14} aria-hidden />}
-        className="mt-2 w-full rounded-[14px]"
-      >
-        Sign out
-      </Button>
+      <div className="mt-2 flex flex-col gap-2">
+        <ResetAction />
+        <Button
+          variant="outline-destructive"
+          size="lg"
+          onClick={handleSignOut}
+          leadingIcon={<LogOut size={14} aria-hidden />}
+          className="w-full rounded-[14px]"
+        >
+          Sign out
+        </Button>
+      </div>
 
       <EditNameDialog
         open={editing}

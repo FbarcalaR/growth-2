@@ -459,11 +459,11 @@ A single combined review pass for Epics 4 and 5 — both shipped without their c
 ## Epic 6 — Profile tab
 - [x] 6.1.1 Display name, total coins earned, current streak (PR #26)
 - [x] 6.1.2 Edit name (PR #26)
-- [x] 6.2.1 Toggle resource animations (PR #28)
-- [x] 6.2.2 Accent color picker (CSS var) (PR #28)
+- [ ] ~~6.2.1 Toggle resource animations~~ — dropped on PR #28 review (the settings card didn't read as useful in-product; revisit if a real settings need surfaces).
+- [ ] ~~6.2.2 Accent color picker (CSS var)~~ — dropped with 6.2.1 on PR #28 review.
 - [x] 6.3.1 Reset all data with double confirmation (`POST /api/me/reset`) (PR #28)
-- [x] 6.3.2 Export state as JSON (PR #28)
-- [x] 6.3.3 Import state from JSON (validated server-side) (PR #28)
+- [ ] ~~6.3.2 Export state as JSON~~ — dropped on PR #28 review (not surfaced in UI; backend code reverted with it).
+- [ ] ~~6.3.3 Import state from JSON (validated server-side)~~ — dropped with 6.3.2.
 
 ---
 
