@@ -1,6 +1,8 @@
 import "server-only";
 
 import { type AppContainer } from "../container";
+import { toISODate } from "../domain/clock";
+import type { Completion, CompletionKind } from "../domain/completion/types";
 import { DomainError } from "../domain/errors";
 import { unplantGoalFromTile } from "../domain/garden/operations";
 import {
@@ -44,6 +46,28 @@ export function createGoalService({ clock, repos }: AppContainer) {
     const goal = await repos.goals.findById(userId, goalId);
     if (!goal) throw new DomainError("GOAL_NOT_FOUND");
     return goal;
+  }
+
+  /** Append a completion event so the History tab can render it. */
+  async function recordCompletion(
+    userId: string,
+    goalId: GoalId,
+    kind: CompletionKind,
+    itemId: TaskId | RoutineId | null,
+    title: string,
+  ): Promise<void> {
+    const now = clock.now();
+    const event: Completion = {
+      id: newId("completion"),
+      userId,
+      goalId,
+      kind,
+      itemId,
+      title,
+      completedDate: toISODate(now),
+      completedAt: now.getTime(),
+    };
+    await repos.completions.append(event);
   }
 
   return {
@@ -139,6 +163,11 @@ export function createGoalService({ clock, repos }: AppContainer) {
         const result = applyTaskCompletion(goal, taskId);
         const persisted = await repos.goals.update(result.goal);
         const persistedUser = await applyReward(user, result.reward);
+        // Record the completion event for the History tab — only when toggling
+        // *on* (uncompleting a task isn't a "completion event").
+        if (changes.completed === true) {
+          await recordCompletion(user.id, goal.id, "task", taskId, task.title);
+        }
         // Apply remaining edits (title/dueDate) on top.
         const stillToEdit = { ...changes };
         delete stillToEdit.completed;
@@ -208,6 +237,9 @@ export function createGoalService({ clock, repos }: AppContainer) {
         const result = applyRoutineCompletion(goal, routineId);
         const persisted = await repos.goals.update(result.goal);
         const persistedUser = await applyReward(user, result.reward);
+        if (changes.completedToday === true) {
+          await recordCompletion(user.id, goal.id, "routine", routineId, routine.title);
+        }
         const stillToEdit = { ...changes };
         delete stillToEdit.completedToday;
         if (Object.keys(stillToEdit).length === 0) return { goal: persisted, user: persistedUser };
@@ -243,9 +275,13 @@ export function createGoalService({ clock, repos }: AppContainer) {
       routineId: RoutineId,
     ): Promise<{ goal: Goal; user: User }> {
       const goal = await loadGoal(user.id, goalId);
+      const routine = goal.routines.find((r) => r.id === routineId);
       const result = completeRoutinePermanently(goal, routineId);
       const persisted = await repos.goals.update(result.goal);
       const persistedUser = await applyReward(user, result.reward);
+      if (routine) {
+        await recordCompletion(user.id, goal.id, "routine", routineId, routine.title);
+      }
       return { goal: persisted, user: persistedUser };
     },
 
@@ -271,6 +307,7 @@ export function createGoalService({ clock, repos }: AppContainer) {
 
       const persisted = await repos.goals.update(result.goal);
       const persistedUser = await applyReward(user, result.reward);
+      await recordCompletion(user.id, goal.id, "goal", null, goal.title);
       return { goal: persisted, user: persistedUser };
     },
 

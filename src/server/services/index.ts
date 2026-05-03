@@ -4,6 +4,7 @@ import { getContainer } from "../container";
 
 import { createGardenService } from "./garden-service";
 import { createGoalService } from "./goal-service";
+import { createHistoryService } from "./history-service";
 import { createShopService } from "./shop-service";
 import { createTodayService } from "./today-service";
 import { createUserService } from "./user-service";
@@ -14,6 +15,7 @@ export type Services = {
   gardens: ReturnType<typeof createGardenService>;
   shop: ReturnType<typeof createShopService>;
   today: ReturnType<typeof createTodayService>;
+  history: ReturnType<typeof createHistoryService>;
 };
 
 /**
@@ -29,12 +31,14 @@ export function getServices(): Services {
     gardens: createGardenService(container),
     shop: createShopService(container),
     today: createTodayService(container),
+    history: createHistoryService(container),
   };
 }
 
 export {
   createGardenService,
   createGoalService,
+  createHistoryService,
   createShopService,
   createTodayService,
   createUserService,
