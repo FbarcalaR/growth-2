@@ -2,13 +2,16 @@ import type { DecoItem } from "../../domain/garden/types";
 import type { ShopRepo } from "../shop-repo";
 
 const CATALOG: DecoItem[] = [
-  { id: "fountain", name: "Stone Fountain", cost: 30, emoji: "⛲" },
-  { id: "bench", name: "Garden Bench", cost: 20, emoji: "🪑" },
-  { id: "lantern", name: "Lantern", cost: 15, emoji: "🏮" },
-  { id: "mushroom_ring", name: "Mushroom Ring", cost: 10, emoji: "🍄" },
-  { id: "rock", name: "Mossy Rock", cost: 8, emoji: "🪨" },
-  { id: "butterfly", name: "Butterfly", cost: 12, emoji: "🦋" },
-  { id: "rainbow", name: "Rainbow", cost: 100, emoji: "🌈" },
+  { id: "stone_path", name: "Stone Path", cost: 25, emoji: "🪨", rarity: "common" },
+  { id: "fence", name: "Picket Fence", cost: 30, emoji: "🪵", rarity: "common" },
+  { id: "bench", name: "Garden Bench", cost: 40, emoji: "🪑", rarity: "common" },
+  { id: "lantern", name: "Lantern", cost: 75, emoji: "🏮", rarity: "rare" },
+  { id: "birdbath", name: "Bird Bath", cost: 90, emoji: "🐦", rarity: "rare" },
+  { id: "windmill", name: "Windmill", cost: 110, emoji: "🌀", rarity: "rare" },
+  { id: "arch", name: "Flower Arch", cost: 160, emoji: "🌸", rarity: "epic" },
+  { id: "koi_pond", name: "Koi Pond", cost: 200, emoji: "🐠", rarity: "epic" },
+  { id: "fountain", name: "Fountain", cost: 300, emoji: "⛲", rarity: "legendary" },
+  { id: "pagoda", name: "Pagoda", cost: 420, emoji: "⛩️", rarity: "legendary" },
 ];
 
 export function createInMemoryShopRepo(): ShopRepo {

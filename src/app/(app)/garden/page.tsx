@@ -3,16 +3,19 @@
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { useCreateGoal, useGarden, useGoals, usePlantOnTile } from "@/client/hooks";
+import { useCreateGoal, useGarden, useGoals, usePlaceDeco, usePlantOnTile } from "@/client/hooks";
 import { Button, Spinner } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 import {
+  DecoShopSheet,
   GardenCard,
   GoalCard,
   GoalDetailSheet,
   GoalEditor,
   PlantNowSheet,
+  TrophiesSheet,
 } from "@/components/organisms";
+import type { DecoId } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
@@ -24,10 +27,14 @@ export default function GardenPage() {
   const garden = useGarden();
   const createGoal = useCreateGoal();
   const plantOnTile = usePlantOnTile();
+  const placeDeco = usePlaceDeco();
   const [editorOpen, setEditorOpen] = useState(false);
   const [openGoalId, setOpenGoalId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [trophiesOpen, setTrophiesOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
   const [placingGoalId, setPlacingGoalId] = useState<string | null>(null);
+  const [placingDeco, setPlacingDeco] = useState<DecoId | null>(null);
 
   const all = useMemo(() => goals.data ?? [], [goals.data]);
   const { active, blooming } = useMemo(() => splitByBloom(all), [all]);
@@ -46,7 +53,18 @@ export default function GardenPage() {
 
   function startPlanting(goalId: string) {
     setOpenGoalId(null);
+    setPlacingDeco(null);
     setPlacingGoalId(goalId);
+  }
+
+  function startPlacingDeco(itemId: DecoId) {
+    setPlacingGoalId(null);
+    setPlacingDeco(itemId);
+  }
+
+  function cancelPlacing() {
+    setPlacingGoalId(null);
+    setPlacingDeco(null);
   }
 
   async function handleTileTap(col: number, row: number, kind: "plant" | "deco" | "empty") {
@@ -60,6 +78,15 @@ export default function GardenPage() {
       }
       return;
     }
+    if (kind === "deco" && placingDeco) {
+      try {
+        await placeDeco.mutateAsync({ col, row, itemId: placingDeco });
+        setPlacingDeco(null);
+      } catch {
+        // Same rationale as planting — the mutation is the source of truth.
+      }
+      return;
+    }
     if (kind === "empty") setPickerOpen(true);
   }
 
@@ -70,10 +97,13 @@ export default function GardenPage() {
           goals={all}
           garden={garden.data}
           placingGoalId={placingGoalId}
+          placingDeco={placingDeco}
           onTilePlantClick={(goalId) => setOpenGoalId(goalId)}
           onTileTap={handleTileTap}
           selectedGoalId={openGoalId}
-          onCancelPlacing={placingGoalId ? () => setPlacingGoalId(null) : undefined}
+          onCancelPlacing={placingGoalId || placingDeco ? cancelPlacing : undefined}
+          onTrophiesClick={() => setTrophiesOpen(true)}
+          onShopClick={() => setShopOpen(true)}
         />
       )}
 
@@ -137,6 +167,24 @@ export default function GardenPage() {
           startPlanting(goalId);
         }}
       />
+
+      {garden.data && (
+        <TrophiesSheet
+          open={trophiesOpen}
+          goals={all}
+          garden={garden.data}
+          onClose={() => setTrophiesOpen(false)}
+        />
+      )}
+
+      {garden.data && (
+        <DecoShopSheet
+          open={shopOpen}
+          garden={garden.data}
+          onClose={() => setShopOpen(false)}
+          onPickToPlace={startPlacingDeco}
+        />
+      )}
 
       {openGoal && (
         <GoalDetailSheet

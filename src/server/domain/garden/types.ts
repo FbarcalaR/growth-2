@@ -18,9 +18,12 @@ export type GardenState = {
 export const GARDEN_COLS = 8;
 export const GARDEN_ROWS = 6;
 
+export type DecoRarity = "common" | "rare" | "epic" | "legendary";
+
 export type DecoItem = {
   id: DecoId;
   name: string;
   cost: number;
   emoji: string;
+  rarity: DecoRarity;
 };
