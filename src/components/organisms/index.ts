@@ -1,4 +1,5 @@
 export { BottomNav } from "./bottom-nav";
+export { GardenCard, IsometricGarden, PlantNowSheet } from "./garden";
 export { GoalCard, GoalIcon } from "./goal-card";
 export { GoalDetailSheet } from "./goal-detail-sheet";
 export { GoalEditor } from "./goal-editor";

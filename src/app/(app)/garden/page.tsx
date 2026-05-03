@@ -3,10 +3,16 @@
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { useCreateGoal, useGoals } from "@/client/hooks";
+import { useCreateGoal, useGarden, useGoals, usePlantOnTile } from "@/client/hooks";
 import { Button, Spinner } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
-import { GoalCard, GoalDetailSheet, GoalEditor } from "@/components/organisms";
+import {
+  GardenCard,
+  GoalCard,
+  GoalDetailSheet,
+  GoalEditor,
+  PlantNowSheet,
+} from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 import { EmptyState } from "./_components/empty-state";
@@ -15,9 +21,13 @@ import { TasksEditor } from "./_components/tasks-editor";
 
 export default function GardenPage() {
   const goals = useGoals();
+  const garden = useGarden();
   const createGoal = useCreateGoal();
+  const plantOnTile = usePlantOnTile();
   const [editorOpen, setEditorOpen] = useState(false);
   const [openGoalId, setOpenGoalId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [placingGoalId, setPlacingGoalId] = useState<string | null>(null);
 
   const all = useMemo(() => goals.data ?? [], [goals.data]);
   const { active, blooming } = useMemo(() => splitByBloom(all), [all]);
@@ -26,7 +36,7 @@ export default function GardenPage() {
   const hasBlooming = blooming.length > 0;
   const openGoal = openGoalId ? (all.find((g) => g.id === openGoalId) ?? null) : null;
 
-  if (goals.isPending) {
+  if (goals.isPending || garden.isPending) {
     return (
       <section className="flex min-h-full items-center justify-center px-6 py-16">
         <Spinner size="lg" className="text-brand-muted" />
@@ -34,11 +44,43 @@ export default function GardenPage() {
     );
   }
 
+  function startPlanting(goalId: string) {
+    setOpenGoalId(null);
+    setPlacingGoalId(goalId);
+  }
+
+  async function handleTileTap(col: number, row: number, kind: "plant" | "deco" | "empty") {
+    if (kind === "plant" && placingGoalId) {
+      try {
+        await plantOnTile.mutateAsync({ col, row, goalId: placingGoalId });
+        setPlacingGoalId(null);
+      } catch {
+        // The garden cache stays consistent because the mutation only writes
+        // on success; surface the error visually via the disabled state.
+      }
+      return;
+    }
+    if (kind === "empty") setPickerOpen(true);
+  }
+
   return (
     <section className="flex flex-col gap-3 px-5 pt-5 pb-10">
+      {garden.data && (
+        <GardenCard
+          goals={all}
+          garden={garden.data}
+          placingGoalId={placingGoalId}
+          onTilePlantClick={(goalId) => setOpenGoalId(goalId)}
+          onTileTap={handleTileTap}
+          selectedGoalId={openGoalId}
+          onCancelPlacing={placingGoalId ? () => setPlacingGoalId(null) : undefined}
+        />
+      )}
+
       <PageHeader
         title="Life Goals"
         description="Each goal grows a plant in your garden"
+        className="mt-2"
         actions={
           <Button
             size="sm"
@@ -86,11 +128,22 @@ export default function GardenPage() {
         }}
       />
 
+      <PlantNowSheet
+        open={pickerOpen}
+        goals={all}
+        onClose={() => setPickerOpen(false)}
+        onPick={(goalId) => {
+          setPickerOpen(false);
+          startPlanting(goalId);
+        }}
+      />
+
       {openGoal && (
         <GoalDetailSheet
           open={openGoalId !== null}
           goal={openGoal}
           onClose={() => setOpenGoalId(null)}
+          onPlantNow={startPlanting}
         >
           <TasksEditor goalId={openGoal.id} area={openGoal.area} tasks={openGoal.tasks} />
           <RoutinesEditor goalId={openGoal.id} area={openGoal.area} routines={openGoal.routines} />

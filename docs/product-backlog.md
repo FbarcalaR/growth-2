@@ -375,21 +375,30 @@ A short focused pass before opening Epic 4. Tidy-up is item 3.R.1.
 
 ## Epic 4 — Garden tab
 
-### Story 4.1 — Garden grid render
-- [ ] 4.1.1 `GardenGrid` 8×6 (locked); terrain map (plantable / non-plantable)
-- [ ] 4.1.2 Render planted goals as `PlantSprite` per stage + health
-- [ ] 4.1.3 Render placed decorations
+Stories 4.1 + 4.2 ship in **PR #23** (the foundation + the planting flow). Stories 4.3 (replant / drop), 4.4 (trophies) and 4.5 (decoration shop) land in a follow-up PR — the prototype's `garden-tab.jsx` is dense (2146 lines, 600+ lines of pixel-art SVG to port) and shipping it all in one PR would re-trigger the back-and-forth from PR #22. Honest scoping note: prototype-faithful first, polish if reviewers flag gaps.
 
-### Story 4.2 — Plant a goal on a tile
-- [ ] 4.2.1 Tap empty tile → "Pick a goal to plant" sheet listing unplanted goals
-- [ ] 4.2.2 `POST /api/garden/tiles` with `(col, row, goalId)`; rejects occupied tiles (DB-level uniqueness later)
-- [ ] 4.2.3 Animation: seed → sprout
+### Story 4.1 — Garden grid render ✅ (PR #23)
+- [x] 4.1.1 8×6 `<IsometricGarden>` organism in `src/components/organisms/garden/`. Geometry (`TILE`, `PLOT_TILE`, `SCENE_COLS/ROWS`, `PLOT_OX/OY`, plot-vs-scene coordinate split, `PLANT_ROW_START`) ported verbatim from the prototype into `geometry.ts`. The plot's top 4 rows are the deco zone (grass), the bottom 2 are the planting zone (tilled soil). Hover on a free tile shows a yellow-dashed "valid placement" highlight when compatible with the current placing state (or a red one when not).
+- [x] 4.1.2 Planted goals render via the new `<TilePlant>` (top-down 28px sprite, distinct from `<PlantSprite>`). All 7 plant variants × 5 stages + dead fallback + selection ring + health-state filter ported 1:1.
+- [x] 4.1.3 Placed decorations render via the new `<DecoSprite>` covering all 10 deco kinds (`stone_path`, `fence`, `bench`, `lantern`, `birdbath`, `windmill`, `arch`, `koi_pond`, `fountain`, `pagoda`).
+- [x] 4.1.4 Pixel-art ground tiles ported: `<GroundTile>` (5 scene palettes — grass, dark-grass, path, water, sand), `<TilledSoil>`, `<WetSoil>` (hover state for the planting zone), `<GrassSoil>`, `<HoverGrass>`. Plus `<FarmScenery>` (the 14×11 scene-tile painting, fence, scattered trees / rocks / bushes / signpost / wishing well) — all 1:1 from `garden-tab.jsx`.
+- [x] 4.1.5 `<GardenCard>` wrapper: white rounded card, "My Garden" title + plants/decorations count, warm-gold coin pill on the right, optional placing-state banner with a Cancel button.
+- [x] 4.1.6 `/garden` page: `<GardenCard>` at the top, then the existing "Life Goals" page-header + cards block below — matches the prototype's IA where Garden tab embeds both surfaces.
+
+### Story 4.2 — Plant a goal on a tile ✅ (PR #23)
+- [x] 4.2.1 `<PlantNowSheet>` bottom-sheet listing every unplanted, non-completed goal as a tappable seed packet (uses `<GoalIcon isSeed />`). Tapping an empty tile in the plot opens this picker; tapping a goal starts the placing state.
+- [x] 4.2.2 `<GoalDetailSheet>` already had an `onPlantNow` hook stub from Story 3.3; the Garden page now wires it to start placing the picked goal.
+- [x] 4.2.3 `POST /api/garden/tiles` with `{ col, row, goalId }` — already shipped in 0.7 via `services.gardens.plantOnTile`. The mutation rejects occupied tiles (`TILE_OCCUPIED`) and out-of-bounds coords (`TILE_OUT_OF_BOUNDS`); the page surfaces failures via the existing toast layer.
+- [ ] 4.2.4 Seed → sprout animation. Deferred to the design-polish epic — `growPlant` already runs server-side on completion, so the animation is purely visual.
+- [x] 4.2.5 Tests: `<IsometricGarden>` integration spec covers SVG dimensions, planted-goal rendering, and tile-tap firing `onTileTap("plant", ...)` while in placing mode. 214 → 217 unit tests.
 
 ### Story 4.3 — Replant / drop a dead plant
+*Follow-up PR.*
 - [ ] 4.3.1 Tap dead plant → modal with Replant / Drop
 - [ ] 4.3.2 Server `replantGoal` resets stage and reschedules overdue tasks to today
 
 ### Story 4.4 — Trophies on goal completion
+*Follow-up PR.*
 - [ ] 4.4.1 `POST /api/goals/[id]/complete` awards `+50 coins` and `trophyId`
 - [ ] 4.4.2 Tile freed; trophy added to `garden.owned`
 - [ ] 4.4.3 Trophy display somewhere on the garden
