@@ -17,12 +17,11 @@ afterEach(() => {
 });
 
 describe("<GoalCard />", () => {
-  it("starts collapsed and shows the seed chip + no progress bar for unplanted goals", () => {
+  it("shows the seed chip and no growth bar for unplanted goals", () => {
     setupFetchMock();
     const { getByText, queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
     getByText("Run a 5K");
     getByText(/seed/i);
-    // No growth bar for seeds.
     expect(queryByRole("progressbar")).toBeNull();
   });
 
@@ -38,7 +37,6 @@ describe("<GoalCard />", () => {
     });
     const { getByText, getByRole, getAllByText } = renderWithQuery(<GoalCard goal={goal} />);
     getByText("Seedling");
-    // "1/2" appears in both the chip row and the growth bar legend.
     expect(getAllByText("1/2").length).toBeGreaterThanOrEqual(1);
     expect(getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50");
   });
@@ -46,19 +44,13 @@ describe("<GoalCard />", () => {
   it("shows the dead banner instead of the growth bar when the plant is dead", () => {
     setupFetchMock();
     const { getByText, queryByRole } = renderWithQuery(
-      <GoalCard
-        goal={makeGoalDto({
-          planted: true,
-          stage: 1,
-          healthState: "dead",
-        })}
-      />,
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1, healthState: "dead" })} />,
     );
     getByText(/withered/i);
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("shows the fully-blooming banner when the plant has reached stage 4", () => {
+  it("shows the fully-blooming banner at stage 4", () => {
     setupFetchMock();
     const { getByText, queryByRole } = renderWithQuery(
       <GoalCard goal={makeGoalDto({ planted: true, stage: 4 })} />,
@@ -67,50 +59,19 @@ describe("<GoalCard />", () => {
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("expands on header click and reveals Edit / Delete", () => {
+  it("calls onClick when tapped (drawer-opening pattern)", () => {
     setupFetchMock();
-    const { getByRole, queryByRole } = renderWithQuery(
-      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} />,
-    );
-    expect(queryByRole("button", { name: /^edit goal$/i })).toBeNull();
-    fireEvent.click(getByRole("button", { name: /run a 5k/i }));
-    getByRole("button", { name: /^edit goal$/i });
-    getByRole("button", { name: /^delete goal$/i });
-  });
-
-  it("surfaces 'Mark goal as complete' when every item is done", () => {
-    setupFetchMock();
+    const onClick = vi.fn();
     const { getByRole } = renderWithQuery(
-      <GoalCard
-        goal={makeGoalDto({
-          planted: true,
-          stage: 2,
-          tasks: [
-            { id: "t1", title: "a", completed: true, dueDate: null },
-            { id: "t2", title: "b", completed: true, dueDate: null },
-          ],
-        })}
-      />,
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} onClick={onClick} />,
     );
     fireEvent.click(getByRole("button", { name: /run a 5k/i }));
-    getByRole("button", { name: /mark goal as complete/i });
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it("hides 'Mark goal as complete' while items remain", () => {
+  it("renders without an interactive role when no onClick is provided", () => {
     setupFetchMock();
-    const { getByRole, queryByRole } = renderWithQuery(
-      <GoalCard
-        goal={makeGoalDto({
-          planted: true,
-          stage: 2,
-          tasks: [
-            { id: "t1", title: "a", completed: true, dueDate: null },
-            { id: "t2", title: "b", completed: false, dueDate: null },
-          ],
-        })}
-      />,
-    );
-    fireEvent.click(getByRole("button", { name: /run a 5k/i }));
-    expect(queryByRole("button", { name: /mark goal as complete/i })).toBeNull();
+    const { queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
+    expect(queryByRole("button")).toBeNull();
   });
 });
