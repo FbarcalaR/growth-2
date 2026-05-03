@@ -66,6 +66,7 @@ describe("/today", () => {
             goalStage: goalA.stage,
             goalHealth: 100,
             goalHealthState: "healthy",
+            goalOverdueCount: 0,
             tasks: [{ id: "t1", title: "Buy shoes", completed: false, dueDate: null }],
             routines: [],
           },
@@ -77,6 +78,7 @@ describe("/today", () => {
             goalStage: goalB.stage,
             goalHealth: 100,
             goalHealthState: "healthy",
+            goalOverdueCount: 0,
             tasks: [],
             routines: [
               {
@@ -115,6 +117,7 @@ describe("/today", () => {
             goalStage: 0,
             goalHealth: 100,
             goalHealthState: "healthy",
+            goalOverdueCount: 0,
             tasks: [{ id: "t1", title: "Buy shoes", completed: false, dueDate: null }],
             routines: [],
           },
@@ -141,6 +144,7 @@ describe("/today", () => {
           routines: [],
           health: 100,
           healthState: "healthy",
+          overdueCount: 0,
         },
         user,
       },
@@ -173,6 +177,7 @@ describe("/today", () => {
             goalStage: 0,
             goalHealth: 100,
             goalHealthState: "healthy",
+            goalOverdueCount: 0,
             tasks: [],
             routines: [
               {
@@ -216,6 +221,7 @@ describe("/today", () => {
             goalStage: 1,
             goalHealth: 100,
             goalHealthState: "healthy",
+            goalOverdueCount: 0,
             tasks: [
               { id: "t1", title: "Done already", completed: true, dueDate: null },
               { id: "t2", title: "Pending", completed: false, dueDate: null },
