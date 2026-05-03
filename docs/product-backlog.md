@@ -392,21 +392,19 @@ Stories 4.1 + 4.2 ship in **PR #23** (the foundation + the planting flow). Stori
 - [ ] 4.2.4 Seed → sprout animation. Deferred to the design-polish epic — `growPlant` already runs server-side on completion, so the animation is purely visual.
 - [x] 4.2.5 Tests: `<IsometricGarden>` integration spec covers SVG dimensions, planted-goal rendering, and tile-tap firing `onTileTap("plant", ...)` while in placing mode. 214 → 217 unit tests.
 
-### Story 4.3 — Replant / drop a dead plant
-*Follow-up PR.*
-- [ ] 4.3.1 Tap dead plant → modal with Replant / Drop
-- [ ] 4.3.2 Server `replantGoal` resets stage and reschedules overdue tasks to today
+### Story 4.3 — Replant / drop a dead plant ✅ (PR #24)
+- [x] 4.3.1 Tap dead plant → modal with Replant / Drop
+- [x] 4.3.2 Server `replantGoal` resets stage and reschedules overdue tasks to today
 
-### Story 4.4 — Trophies on goal completion
-*Follow-up PR.*
-- [ ] 4.4.1 `POST /api/goals/[id]/complete` awards `+50 coins` and `trophyId`
-- [ ] 4.4.2 Tile freed; trophy added to `garden.owned`
-- [ ] 4.4.3 Trophy display somewhere on the garden
+### Story 4.4 — Trophies on goal completion ✅ (PR #24)
+- [x] 4.4.1 `POST /api/goals/[id]/complete` awards `+50 coins` and `trophyId`
+- [x] 4.4.2 Tile freed; trophy added to `garden.owned`
+- [x] 4.4.3 Trophy display somewhere on the garden
 
-### Story 4.5 — Decoration shop
-- [ ] 4.5.1 `DECO_CATALOG` ported (server-owned)
-- [ ] 4.5.2 `POST /api/shop/buy` rejects insufficient coins / duplicate purchase
-- [ ] 4.5.3 Place owned decoration on a free tile
+### Story 4.5 — Decoration shop ✅ (PR #24)
+- [x] 4.5.1 `DECO_CATALOG` ported (server-owned)
+- [x] 4.5.2 `POST /api/shop/buy` rejects insufficient coins / duplicate purchase
+- [x] 4.5.3 Place owned decoration on a free tile
 
 ---
 
