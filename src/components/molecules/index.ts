@@ -7,4 +7,5 @@ export { PageHeader } from "./page-header";
 export { PlantPicker } from "./plant-picker";
 export { ResourceMeter } from "./resource-meter";
 export { RoutineRow } from "./routine-row";
+export { SwipeableRow, type SwipeAction } from "./swipeable-row";
 export { TaskRow } from "./task-row";

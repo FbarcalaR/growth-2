@@ -28,3 +28,5 @@ export { useBuyDeco, useShop } from "./use-shop";
 export { useToday } from "./use-today";
 export { useToggleTodayTask, useToggleTodayRoutine } from "./use-today-toggles";
 export { useReducedMotion } from "./use-reduced-motion";
+export { useAreaSlots } from "./use-area-slots";
+export type { AreaSlot, AreaSlots } from "./use-area-slots";

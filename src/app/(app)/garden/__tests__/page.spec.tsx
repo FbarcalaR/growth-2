@@ -2,8 +2,9 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import PlansPage from "../page";
+import GardenPage from "../page";
 import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto } from "@/test/fixtures/dto";
 import { freshUser, lockedUser, seededGoals } from "@/test/fixtures/state";
 import { renderWithQuery } from "@/test/render";
 
@@ -23,7 +24,7 @@ describe("/garden", () => {
       "/api/me": user,
       "/api/goals": { goals: [] },
     });
-    const { findByText } = renderWithQuery(<PlansPage />);
+    const { findByText } = renderWithQuery(<GardenPage />);
     await findByText(/plant your first goal/i);
   });
 
@@ -36,7 +37,7 @@ describe("/garden", () => {
       "/api/me": user,
       "/api/goals": { goals },
     });
-    const { findByText, findByRole } = renderWithQuery(<PlansPage />);
+    const { findByText, findByRole } = renderWithQuery(<GardenPage />);
     await findByRole("heading", { level: 1, name: /life goals/i });
     await findByText("Run a 5K");
     await findByText("Read 12 books");
@@ -48,76 +49,55 @@ describe("/garden", () => {
       "/api/me": user,
       "/api/goals": {
         goals: [
-          {
+          makeGoalDto({
             id: "g1",
             title: "Active Goal",
-            area: "health",
-            plantType: "herb",
             stage: 1,
-            plantRes: {},
             planted: true,
             tileCol: 0,
             tileRow: 4,
-            tasks: [],
-            routines: [],
-            health: 100,
-            healthState: "healthy",
-          },
-          {
+          }),
+          makeGoalDto({
             id: "g2",
             title: "Bloomed Out",
             area: "career",
             plantType: "money_tree",
             stage: 4,
-            plantRes: {},
             planted: true,
             tileCol: 1,
             tileRow: 4,
-            tasks: [],
-            routines: [],
-            health: 100,
-            healthState: "healthy",
-          },
+          }),
         ],
       },
     });
-    const { findByText, findByRole } = renderWithQuery(<PlansPage />);
+    const { findByText, findByRole } = renderWithQuery(<GardenPage />);
     await findByText("Active Goal");
     await findByRole("heading", { level: 2, name: /blooming.*completed/i });
     await findByText("Bloomed Out");
   });
 
-  it("opens the GoalEditor when the New button is clicked and posts on save", async () => {
-    const user = await freshUser("Ada");
+  it("walks the two-step New goal flow and POSTs the goal", async () => {
+    // lockedUser so the area chips have non-zero quotas, otherwise every
+    // chip is locked and Step 0 won't advance.
+    const user = await lockedUser();
     const fm = setupFetchMock({
       "/api/me": user,
       "/api/goals": { goals: [] },
     });
-    fm.json(
-      "/api/goals",
-      {
-        id: "g1",
-        title: "Run a 5K",
-        area: "health",
-        plantType: "herb",
-        stage: 0,
-        plantRes: {},
-        planted: false,
-        tileCol: null,
-        tileRow: null,
-        tasks: [],
-        routines: [],
-        health: 100,
-        healthState: "healthy",
-      },
-      "POST",
-    );
+    fm.json("/api/goals", makeGoalDto(), "POST");
 
-    const { findByRole, getByPlaceholderText } = renderWithQuery(<PlansPage />);
+    const { findByRole, getByPlaceholderText } = renderWithQuery(<GardenPage />);
     fireEvent.click(await findByRole("button", { name: /^new$/i }));
-    fireEvent.change(getByPlaceholderText(/run a 5k/i), { target: { value: "Run a 5K" } });
-    fireEvent.click(await findByRole("radio", { name: /health/i }));
-    fireEvent.click(await findByRole("button", { name: /plant goal/i }));
+
+    // Step 0: title input + area is preselected to the first open area
+    // (health, in lockedUser). Click Next.
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "Run a 5K" },
+    });
+    fireEvent.click(await findByRole("button", { name: /next: choose your plant/i }));
+
+    // Step 1: plant grid; herb is preselected for health. Submit.
+    fireEvent.click(await findByRole("button", { name: /add as seed/i }));
 
     await waitFor(() => expect(fm.calls("POST", "/api/goals")).toHaveLength(1));
     expect(fm.calls("POST", "/api/goals")[0]!.body).toEqual({

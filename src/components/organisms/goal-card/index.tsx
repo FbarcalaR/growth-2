@@ -1,80 +1,104 @@
 "use client";
 
-import { cn } from "@/client/lib/cn";
-import { AreaChip } from "@/components/molecules";
-import { STAGE_NAMES, type Stage } from "@/shared/plants";
-import type { GoalDto } from "@/shared/schemas/goal";
+import { ChevronRight } from "lucide-react";
 
+import { cn } from "@/client/lib/cn";
+import type { GoalDto } from "@/shared/schemas/goal";
+import { type Stage } from "@/shared/plants";
+
+import { DeadPlantBanner, FullyBloomingBanner, GoalGrowthBar } from "./goal-growth-bar";
 import { GoalIcon } from "./goal-icon";
-import { GoalProgress } from "./goal-progress";
-import { GoalStatusBadge, statusLabel } from "./goal-status-badge";
+import { GoalStatusChips } from "./goal-status-chips";
 
 type GoalCardProps = {
   goal: GoalDto;
-  /** Slot rendered below the header — used by Garden to inline tasks/routines. */
-  children?: React.ReactNode;
-  className?: string;
-  /** Click handler on the whole card (not the children slot). */
+  /** Tap handler — typically opens the `<GoalDetailSheet>` drawer. */
   onClick?: () => void;
+  className?: string;
 };
 
 /**
- * Card for a single goal: plant sprite, title + area, status descriptor,
- * progress bar, and a status badge (trophy / health / none).
- *
- * Each visual region (icon, status badge, progress block) lives in its own
- * file under `goal-card/` so this top-level stays mostly composition.
+ * Compact summary card for a goal in the `/garden` list. Tapping the card
+ * opens `<GoalDetailSheet>`, which is where the full detail UI (tasks,
+ * routines, edit, delete, mark-complete) lives.
  */
-export function GoalCard({ goal, children, className, onClick }: GoalCardProps) {
-  const stage = goal.stage as Stage;
+export function GoalCard({ goal, onClick, className }: GoalCardProps) {
+  const isSeed = !goal.planted;
+  const isDead = goal.healthState === "dead";
+  const isFullyGrown = goal.stage >= 4;
   const totalItems = goal.tasks.length + goal.routines.length;
   const doneItems =
     goal.tasks.filter((t) => t.completed).length +
     goal.routines.filter((r) => r.completedToday).length;
-  const showProgress = !goal.completed && totalItems > 0;
+
+  const borderColor = cardBorderColor({ isSeed, isDead, healthState: goal.healthState });
   const isInteractive = Boolean(onClick);
 
   return (
     <article
+      role={isInteractive ? "button" : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!isInteractive) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
       className={cn(
-        "bg-surface-card border-surface-muted relative rounded-xl border-[1.5px] p-4",
+        "bg-surface-card overflow-hidden rounded-[20px] border-[1.5px]",
         isInteractive && "hover:border-brand-muted cursor-pointer transition-colors",
         className,
       )}
-      onClick={onClick}
-      role={isInteractive ? "button" : undefined}
+      style={{ borderColor }}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5 px-4 py-3.5">
         <GoalIcon
           area={goal.area}
           plantType={goal.plantType}
-          stage={stage}
+          stage={goal.stage as Stage}
           healthState={goal.healthState}
+          isSeed={isSeed}
+          size={52}
         />
         <div className="min-w-0 flex-1">
-          <h3 className="text-ink-strong truncate text-base leading-tight font-bold">
+          <h3 className="text-ink-strong truncate text-[15px] leading-tight font-bold">
             {goal.title}
           </h3>
-          <div className="mt-1 flex items-center gap-2">
-            <AreaChip area={goal.area} />
-            <span className="text-brand-muted text-xs font-semibold tabular-nums">
-              {statusLabel(goal, STAGE_NAMES[stage])}
-            </span>
+          <div className="mt-0.5">
+            <GoalStatusChips goal={goal} doneItems={doneItems} totalItems={totalItems} />
           </div>
         </div>
-        <GoalStatusBadge goal={goal} />
+        {isInteractive && (
+          <ChevronRight size={16} aria-hidden className="text-brand-muted shrink-0" />
+        )}
       </div>
 
-      {showProgress && (
-        <GoalProgress
-          area={goal.area}
-          doneItems={doneItems}
-          totalItems={totalItems}
-          goalTitle={goal.title}
-        />
-      )}
-
-      {children}
+      <div className="px-4 pb-3">
+        {!isSeed && isDead && <DeadPlantBanner />}
+        {!isSeed && !isDead && isFullyGrown && <FullyBloomingBanner />}
+        {!isSeed && !isDead && !isFullyGrown && <GoalGrowthBar goal={goal} />}
+      </div>
     </article>
   );
 }
+
+function cardBorderColor({
+  isSeed,
+  isDead,
+  healthState,
+}: {
+  isSeed: boolean;
+  isDead: boolean;
+  healthState: GoalDto["healthState"];
+}): string {
+  if (isDead) return "#BFBFBF";
+  if (healthState === "critical") return "#F5C6CB";
+  if (healthState === "ill") return "#FCD9B0";
+  if (healthState === "wilting") return "#FFE7A6";
+  if (isSeed) return "#FFE082";
+  return "#EAEDE8";
+}
+
+export { GoalIcon };

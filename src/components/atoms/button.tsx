@@ -3,7 +3,14 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/client/lib/cn";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "destructive"
+  | "outline"
+  | "outline-destructive"
+  | "warning";
 export type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -18,6 +25,13 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary: "bg-brand-100 text-brand-700 hover:bg-surface-muted border border-surface-muted",
   ghost: "bg-transparent text-brand-700 hover:bg-brand-100",
   destructive: "bg-health-critical text-white hover:bg-health-critical/90",
+  // Outlined variants used by the Goal detail-sheet's footer action row.
+  // White fill, coloured 1.5px border, coloured text + icon.
+  outline: "bg-surface-card text-brand-700 border-[1.5px] border-input-border hover:bg-brand-100",
+  "outline-destructive":
+    "bg-surface-card text-health-critical border-[1.5px] border-health-critical/40 hover:bg-health-critical/10",
+  // Warm-gold solid CTA, used for the "Mark goal as complete" trophy button.
+  warning: "bg-accent-warm text-white hover:bg-accent-warm/90 shadow-sm",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

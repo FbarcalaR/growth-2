@@ -1,81 +1,120 @@
 // @vitest-environment jsdom
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GoalEditor } from "../goal-editor";
+import { setupFetchMock } from "@/test/fetch-mock";
+import { lockedUser } from "@/test/fixtures/state";
+import { renderWithQuery } from "@/test/render";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/garden",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+}));
 
 afterEach(() => {
-  vi.clearAllMocks();
+  vi.unstubAllGlobals();
 });
 
-describe("<GoalEditor mode='create' />", () => {
-  it("disables save until title + area are picked", () => {
-    const onSubmit = vi.fn().mockResolvedValue(undefined);
-    const { getByRole, getByPlaceholderText } = render(
-      <GoalEditor mode="create" open onClose={() => undefined} onSubmit={onSubmit} />,
-    );
-    const save = getByRole("button", { name: /plant goal/i }) as HTMLButtonElement;
-    expect(save.disabled).toBe(true);
-    fireEvent.change(getByPlaceholderText(/run a 5k/i), { target: { value: "Run a 5K" } });
-    expect(save.disabled).toBe(true); // still no area
-    fireEvent.click(getByRole("radio", { name: /health/i }));
-    expect(save.disabled).toBe(false);
+async function mountCreate(onSubmit = vi.fn().mockResolvedValue(undefined)) {
+  const user = await lockedUser();
+  setupFetchMock({
+    "/api/me": user,
+    "/api/goals": { goals: [] },
+  });
+  const result = renderWithQuery(
+    <GoalEditor mode="create" open onClose={() => undefined} onSubmit={onSubmit} />,
+  );
+  return { ...result, onSubmit };
+}
+
+describe("<GoalEditor mode='create' /> two-step flow", () => {
+  it("Step 0 disables Next until a title is entered", async () => {
+    const { findByRole, getByPlaceholderText } = await mountCreate();
+    const next = (await findByRole("button", {
+      name: /next: choose your plant/i,
+    })) as HTMLButtonElement;
+    expect(next.disabled).toBe(true);
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "Run a 5K" },
+    });
+    expect(next.disabled).toBe(false);
   });
 
-  it("defaults the plant to the area's recommended kind, then lets the user override", () => {
-    const onSubmit = vi.fn().mockResolvedValue(undefined);
-    const { getByRole, queryByRole, getByPlaceholderText } = render(
-      <GoalEditor mode="create" open onClose={() => undefined} onSubmit={onSubmit} />,
-    );
-    fireEvent.change(getByPlaceholderText(/run a 5k/i), { target: { value: "Run a 5K" } });
-    // No plant picker visible until area is chosen.
-    expect(queryByRole("radiogroup", { name: /plant kind/i })).toBeNull();
-
-    fireEvent.click(getByRole("radio", { name: /health/i }));
-    // Plant picker appears, herb (health's default) is selected.
-    expect(getByRole("radio", { name: /^herb$/i }).getAttribute("aria-checked")).toBe("true");
-
-    // Overriding picks a different one.
-    fireEvent.click(getByRole("radio", { name: /^rose$/i }));
-    expect(getByRole("radio", { name: /^rose$/i }).getAttribute("aria-checked")).toBe("true");
+  it("Step 0 surfaces a slot counter on each area chip", async () => {
+    const { findAllByText } = await mountCreate();
+    // lockedUser's wheel allocates 5 priority points each to health / career /
+    // finances / relationships / personal — five chips show "0/5". The
+    // counter exists, that's what we care about here.
+    const counters = await findAllByText("0/5");
+    expect(counters.length).toBeGreaterThanOrEqual(5);
   });
 
-  it("submits the trimmed title + area + selected plant on save and closes", async () => {
+  it("advancing to Step 1 shows the plant grid pre-selected for the area", async () => {
+    const { findByRole, getByPlaceholderText } = await mountCreate();
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "Run a 5K" },
+    });
+    fireEvent.click(await findByRole("button", { name: /next: choose your plant/i }));
+
+    // We're on Step 1 now; the herb option is selected (health's default).
+    const herb = await findByRole("radio", { name: /^herb$/i });
+    expect(herb.getAttribute("aria-checked")).toBe("true");
+    // Submit button is the seed CTA.
+    await findByRole("button", { name: /add as seed/i });
+  });
+
+  it("submits area + plant on Add as seed and closes", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
-    const onClose = vi.fn();
-    const { getByRole, getByPlaceholderText } = render(
-      <GoalEditor mode="create" open onClose={onClose} onSubmit={onSubmit} />,
-    );
-    fireEvent.change(getByPlaceholderText(/run a 5k/i), { target: { value: "  Run a 5K  " } });
-    fireEvent.click(getByRole("radio", { name: /career/i }));
-    fireEvent.click(getByRole("button", { name: /plant goal/i }));
+    const { findByRole, getByPlaceholderText } = await mountCreate(onSubmit);
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "  Run a 5K  " },
+    });
+    fireEvent.click(await findByRole("button", { name: /next: choose your plant/i }));
+    fireEvent.click(await findByRole("radio", { name: /^rose$/i }));
+    fireEvent.click(await findByRole("button", { name: /add as seed/i }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit).toHaveBeenCalledWith({
       title: "Run a 5K",
-      area: "career",
-      plantType: "sunflower",
+      area: "health",
+      plantType: "rose",
     });
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("Back button on Step 1 returns to Step 0", async () => {
+    const { findByRole, getByPlaceholderText } = await mountCreate();
+    fireEvent.change(getByPlaceholderText(/what do you want to achieve/i), {
+      target: { value: "Run a 5K" },
+    });
+    fireEvent.click(await findByRole("button", { name: /next: choose your plant/i }));
+    fireEvent.click(await findByRole("button", { name: /^← back$/i }));
+    // We're on Step 0 again — the Next button is back.
+    await findByRole("button", { name: /next: choose your plant/i });
   });
 });
 
 describe("<GoalEditor mode='edit' />", () => {
-  it("prefills title + plant, hides the area picker, and submits without area", async () => {
+  it("opens directly on Step 1 with title prefilled and submits without area", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
-    const { getByDisplayValue, getByRole, queryByRole } = render(
+    const user = await lockedUser();
+    setupFetchMock({
+      "/api/me": user,
+      "/api/goals": { goals: [] },
+    });
+    const { findByRole, getByDisplayValue } = renderWithQuery(
       <GoalEditor
         mode="edit"
         open
-        onClose={() => undefined}
         initial={{ title: "Run a 5K", area: "health", plantType: "rose" }}
+        onClose={() => undefined}
         onSubmit={onSubmit}
       />,
     );
-    expect(getByDisplayValue("Run a 5K")).toBeTruthy();
-    expect(queryByRole("radiogroup", { name: /life area/i })).toBeNull();
-    expect(getByRole("radio", { name: /^rose$/i }).getAttribute("aria-checked")).toBe("true");
-
-    fireEvent.click(getByRole("button", { name: /save changes/i }));
+    getByDisplayValue("Run a 5K");
+    expect((await findByRole("radio", { name: /^rose$/i })).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    fireEvent.click(await findByRole("button", { name: /save changes/i }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(onSubmit).toHaveBeenCalledWith({ title: "Run a 5K", plantType: "rose" });
   });

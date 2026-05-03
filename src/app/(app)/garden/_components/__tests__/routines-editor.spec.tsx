@@ -4,9 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RoutinesEditor } from "../routines-editor";
 import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto, makeRoutineDto } from "@/test/fixtures/dto";
 import { lockedUser } from "@/test/fixtures/state";
 import { renderWithQuery } from "@/test/render";
-import type { GoalDto, RoutineDto } from "@/shared/schemas/goal";
+import type { RoutineDto } from "@/shared/schemas/goal";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/garden",
@@ -19,42 +20,28 @@ afterEach(() => {
 
 const goalId = "g1";
 
-function routine(overrides: Partial<RoutineDto> = {}): RoutineDto {
-  return {
-    id: "r1",
-    title: "Read 30 minutes",
-    completedToday: false,
-    streak: 4,
-    repeatDays: [true, true, true, true, true, true, true],
-    ...overrides,
-  };
-}
+const routine = (overrides: Partial<RoutineDto> = {}) =>
+  makeRoutineDto({ streak: 4, ...overrides });
 
-function makeGoal(overrides: Partial<GoalDto> = {}): GoalDto {
-  return {
+const makeGoal = (overrides: Parameters<typeof makeGoalDto>[0] = {}) =>
+  makeGoalDto({
     id: goalId,
     title: "Read 12 books",
     area: "personal",
     plantType: "mushroom",
     stage: 1,
-    plantRes: {},
     planted: true,
     tileCol: 0,
     tileRow: 4,
-    tasks: [],
-    routines: [],
-    health: 100,
-    healthState: "healthy",
     ...overrides,
-  };
-}
+  });
 
 describe("<RoutinesEditor />", () => {
-  it("renders the count, the streak label, and the routine title", () => {
+  it("renders the section header, the streak label, and the routine title", () => {
     const { getByText } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    getByText("Routines (1)");
+    getByText("Routines");
     getByText("Read 30 minutes");
     getByText(/4-day streak/);
   });
@@ -85,13 +72,13 @@ describe("<RoutinesEditor />", () => {
       <RoutinesEditor goalId={goalId} area="personal" routines={[]} />,
     );
     fireEvent.click(await findByRole("button", { name: /add routine/i }));
-    fireEvent.change(getByPlaceholderText(/new routine title/i), {
+    fireEvent.change(getByPlaceholderText(/daily routine/i), {
       target: { value: "Read 30 minutes" },
     });
     // Default state has all days selected; tap Tuesday off so we change the
     // day mask through the picker and assert it round-trips.
     fireEvent.click(await findByRole("checkbox", { name: /tuesday/i }));
-    fireEvent.click(await findByRole("button", { name: /^add$/i }));
+    fireEvent.click(await findByRole("button", { name: /^add routine$/i }));
 
     await waitFor(() => expect(fm.calls("POST", `/api/goals/${goalId}/routines`)).toHaveLength(1));
     expect(fm.calls("POST", `/api/goals/${goalId}/routines`)[0]!.body).toEqual({
@@ -107,10 +94,11 @@ describe("<RoutinesEditor />", () => {
       { goal: makeGoal(), user: await lockedUser() },
       "PATCH",
     );
-    const { findByLabelText, findByRole, getByDisplayValue } = renderWithQuery(
+    const { findByRole, getByDisplayValue } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Edit "Read 30 minutes"'));
+    // Each routine row has Done / Edit / Delete behind the swipeable row.
+    fireEvent.click(await findByRole("button", { name: /^edit$/i }));
     const input = getByDisplayValue("Read 30 minutes") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Read 1 hour" } });
     fireEvent.click(await findByRole("checkbox", { name: /sunday/i }));
@@ -132,10 +120,11 @@ describe("<RoutinesEditor />", () => {
       { goal: makeGoal(), user: await lockedUser() },
       "POST",
     );
-    const { findByLabelText, findByRole } = renderWithQuery(
+    const { findByRole } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Mark "Read 30 minutes" permanently complete'));
+    // The "Done" swipe action opens the graduate confirmation.
+    fireEvent.click(await findByRole("button", { name: /^done$/i }));
     fireEvent.click(await findByRole("button", { name: /graduate/i }));
     await waitFor(() =>
       expect(fm.calls("POST", `/api/goals/${goalId}/routines/r1/permanent`)).toHaveLength(1),
@@ -154,17 +143,17 @@ describe("<RoutinesEditor />", () => {
     getByText(/4-day streak kept/i);
   });
 
-  it("deletes a routine via the dedicated icon button", async () => {
+  it("deletes a routine via the swipe-revealed Delete action", async () => {
     const fm = setupFetchMock();
     fm.mock(`/api/goals/${goalId}/routines/r1`, {
       method: "DELETE",
       status: 200,
       body: makeGoal(),
     });
-    const { findByLabelText } = renderWithQuery(
+    const { findByRole } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Delete "Read 30 minutes"'));
+    fireEvent.click(await findByRole("button", { name: /^delete$/i }));
     await waitFor(() =>
       expect(fm.calls("DELETE", `/api/goals/${goalId}/routines/r1`)).toHaveLength(1),
     );

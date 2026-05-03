@@ -19,12 +19,12 @@ export default function GardenPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [openGoalId, setOpenGoalId] = useState<string | null>(null);
 
-  const { active, blooming } = useMemo(() => splitByBloom(goals.data ?? []), [goals.data]);
-  const all = goals.data ?? [];
-  const openGoal = openGoalId ? (all.find((g) => g.id === openGoalId) ?? null) : null;
+  const all = useMemo(() => goals.data ?? [], [goals.data]);
+  const { active, blooming } = useMemo(() => splitByBloom(all), [all]);
   const isEmpty = all.length === 0;
   const hasActive = active.length > 0;
   const hasBlooming = blooming.length > 0;
+  const openGoal = openGoalId ? (all.find((g) => g.id === openGoalId) ?? null) : null;
 
   if (goals.isPending) {
     return (

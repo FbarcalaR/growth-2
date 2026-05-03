@@ -4,7 +4,7 @@ import { Award, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { useCompleteRoutinePermanent, useDeleteRoutine, useUpdateRoutine } from "@/client/hooks";
-import { ConfirmDialog, RoutineRow } from "@/components/molecules";
+import { ConfirmDialog, RoutineRow, SwipeableRow, type SwipeAction } from "@/components/molecules";
 import type { Area } from "@/shared/areas";
 import type { RoutineDto } from "@/shared/schemas/goal";
 
@@ -18,10 +18,12 @@ type RoutineRowItemProps = {
 };
 
 /**
- * A single routine row. Switches between three modes:
- *   - graduated (permanently complete) → read-only with a kept-streak label
- *   - editing → inline title + day-picker form
- *   - default → checkbox toggle + graduate / edit / delete affordances
+ * One routine in the list.  Three modes:
+ *   - graduated → read-only `<GraduatedRoutineRow>` (no swipe)
+ *   - editing  → inline form
+ *   - default  → `<SwipeableRow>` whose body is `<RoutineRow>`. Swipe-left
+ *                reveals Done (graduate) / Edit / Delete; tapping the body
+ *                toggles `completedToday`.
  */
 export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
   const updateRoutine = useUpdateRoutine(goalId, routine.id);
@@ -38,43 +40,43 @@ export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
     return <RoutineEditForm goalId={goalId} routine={routine} onDone={() => setEditing(false)} />;
   }
 
+  const actions: SwipeAction[] = [
+    {
+      label: "Done",
+      icon: <Award size={16} aria-hidden />,
+      color: "#3A6647",
+      onClick: () => setConfirmGraduate(true),
+    },
+    {
+      label: "Edit",
+      icon: <Pencil size={16} aria-hidden />,
+      color: "#7A8A7A",
+      onClick: () => setEditing(true),
+    },
+    {
+      label: "Delete",
+      icon: <Trash2 size={16} aria-hidden />,
+      color: "#C9484E",
+      onClick: () => deleteRoutine.mutate(routine.id),
+    },
+  ];
+
   return (
     <>
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <RoutineRow
-            title={routine.title}
-            completedToday={routine.completedToday}
-            streak={routine.streak}
-            area={area}
-            onToggle={(next) => updateRoutine.mutate({ completedToday: next })}
-          />
-        </div>
-        <button
-          type="button"
-          aria-label={`Mark "${routine.title}" permanently complete`}
-          onClick={() => setConfirmGraduate(true)}
-          className="text-brand-muted hover:text-area-fun rounded-md p-1.5"
-        >
-          <Award size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
-          aria-label={`Edit "${routine.title}"`}
-          onClick={() => setEditing(true)}
-          className="text-brand-muted hover:text-brand-700 rounded-md p-1.5"
-        >
-          <Pencil size={14} aria-hidden />
-        </button>
-        <button
-          type="button"
-          aria-label={`Delete "${routine.title}"`}
-          onClick={() => deleteRoutine.mutate(routine.id)}
-          className="text-brand-muted hover:text-health-critical rounded-md p-1.5"
-        >
-          <Trash2 size={14} aria-hidden />
-        </button>
-      </div>
+      <SwipeableRow
+        actions={actions}
+        onPress={() => updateRoutine.mutate({ completedToday: !routine.completedToday })}
+      >
+        <RoutineRow
+          title={routine.title}
+          completedToday={routine.completedToday}
+          streak={routine.streak}
+          area={area}
+          // Swipeable wrapper owns the toggle on press.
+          onToggle={() => undefined}
+          className="rounded-md border-0"
+        />
+      </SwipeableRow>
       <ConfirmDialog
         open={confirmGraduate}
         title="Graduate this routine?"

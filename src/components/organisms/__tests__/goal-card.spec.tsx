@@ -1,39 +1,33 @@
 // @vitest-environment jsdom
-import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GoalCard } from "../goal-card";
-import type { GoalDto } from "@/shared/schemas/goal";
+import { setupFetchMock } from "@/test/fetch-mock";
+import { makeGoalDto } from "@/test/fixtures/dto";
+import { renderWithQuery } from "@/test/render";
 
-function makeGoal(overrides: Partial<GoalDto> = {}): GoalDto {
-  return {
-    id: "g1",
-    title: "Run a 5K",
-    area: "health",
-    plantType: "herb",
-    stage: 0,
-    plantRes: {},
-    planted: false,
-    tileCol: null,
-    tileRow: null,
-    tasks: [],
-    routines: [],
-    health: 100,
-    healthState: "healthy",
-    ...overrides,
-  };
-}
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/garden",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), back: vi.fn() }),
+}));
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("<GoalCard />", () => {
-  it("renders an unplanted goal as a Seed with no progress bar", () => {
-    const { getByText, queryByRole } = render(<GoalCard goal={makeGoal()} />);
+  it("shows the seed chip and no growth bar for unplanted goals", () => {
+    setupFetchMock();
+    const { getByText, queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
     getByText("Run a 5K");
-    getByText("Seed");
+    getByText(/seed/i);
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("renders a planted goal with stage label and a progress bar when items exist", () => {
-    const goal = makeGoal({
+  it("renders a stage chip + growth bar for planted goals (not yet bloomed)", () => {
+    setupFetchMock();
+    const goal = makeGoalDto({
       planted: true,
       stage: 2,
       tasks: [
@@ -41,31 +35,43 @@ describe("<GoalCard />", () => {
         { id: "t2", title: "b", completed: false, dueDate: null },
       ],
     });
-    const { getByText, getByRole } = render(<GoalCard goal={goal} />);
-    getByText("Seedling"); // stage 2 label
-    getByText("1/2");
+    const { getByText, getByRole, getAllByText } = renderWithQuery(<GoalCard goal={goal} />);
+    getByText("Seedling");
+    expect(getAllByText("1/2").length).toBeGreaterThanOrEqual(1);
     expect(getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50");
   });
 
-  it("shows the trophy and 'Trophy unlocked' line on completed goals", () => {
-    const { getByText, getByLabelText, queryByRole } = render(
-      <GoalCard goal={makeGoal({ completed: true, completedAt: 1, planted: true, stage: 4 })} />,
+  it("shows the dead banner instead of the growth bar when the plant is dead", () => {
+    setupFetchMock();
+    const { getByText, queryByRole } = renderWithQuery(
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1, healthState: "dead" })} />,
     );
-    getByText("Trophy unlocked");
-    getByLabelText("Completed");
-    // Completed goals don't surface the progress bar — the trophy is the punchline.
+    getByText(/withered/i);
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("shows the health badge for planted, non-completed goals", () => {
-    const { getByLabelText } = render(
-      <GoalCard goal={makeGoal({ planted: true, stage: 1, healthState: "wilting" })} />,
+  it("shows the fully-blooming banner at stage 4", () => {
+    setupFetchMock();
+    const { getByText, queryByRole } = renderWithQuery(
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 4 })} />,
     );
-    getByLabelText(/wilting/i);
+    getByText(/fully blooming/i);
+    expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("becomes interactive when given an onClick handler", () => {
-    const { getByRole } = render(<GoalCard goal={makeGoal()} onClick={() => undefined} />);
-    expect(getByRole("button")).toBeTruthy();
+  it("calls onClick when tapped (drawer-opening pattern)", () => {
+    setupFetchMock();
+    const onClick = vi.fn();
+    const { getByRole } = renderWithQuery(
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} onClick={onClick} />,
+    );
+    fireEvent.click(getByRole("button", { name: /run a 5k/i }));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders without an interactive role when no onClick is provided", () => {
+    setupFetchMock();
+    const { queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
+    expect(queryByRole("button")).toBeNull();
   });
 });
