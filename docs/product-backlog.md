@@ -572,6 +572,46 @@ A short focused review pass before opening Epic 8. Tidy-up is item 7.R.1.
 
 ---
 
+### 🔍 Epic 8 Review — between-epics gate (PR #33)
+
+A short focused review pass to close out Epic 8 + the seven-epic core. Tidy-up is item 8.R.1.
+
+- [x] 8.R.1 **Tidy up the code that landed Epic 8.** Walked the small surface this epic added: `app/error.tsx` (54 lines), `app/global-error.tsx` (67 lines), the `MutationCache` block in `query-provider.tsx` (+24 lines), the global reduced-motion catch-all in `globals.css` (+18 lines), and the README expansion. All four files read top-to-bottom; no duplication or inline hex; the global-error inline styles are intentional (the layout/Tailwind it'd normally inherit is the thing that crashed). No code changes worth landing now.
+  - Items considered and intentionally not fixed:
+    - **`humanizeError` helper** lives inline in `query-provider.tsx`. Only one call site today; promote to `@/client/api/api-error.ts` if a second surface (e.g. the `<EditNameDialog>`'s catch block) wants the same human-message mapping. Re-queue then.
+    - **Per-mutation `meta: { suppressErrorToast }` opt-out** — considered, then deferred. The current behaviour (every failed mutation pops a toast, including ones that also show inline errors like the login form / `<EditNameDialog>`) is slightly redundant but informative. Inline + toast is consistent feedback; the toast is transient. Add the opt-out the first time a user reports the redundancy as noisy.
+    - **`<Toaster>` swipe-to-dismiss + stacking limits** were called out as Epic 8 polish in the Story 2.0 description. Today's Toaster is a fixed-bottom stack with timed dismissal and a manual close button — the swipe interaction would need pointer-event handling similar to `<SwipeableRow>`. Re-queue if a user ever fires more than ~5 toasts in a row.
+- [x] 8.R.2 **Walked the user journey end-to-end** for Epic 8:
+  - Throw an exception inside any page component (e.g. `throw new Error("test")` at the top of `<TodayPage>`) → `<ErrorBoundary>` from `app/error.tsx` renders inside the `(app)` shell with the "🥀 Something wilted in the page" copy + Try-again CTA. The bottom nav still works because the segment boundary keeps the layout alive.
+  - Throw inside the root layout itself → `app/global-error.tsx` takes over with its self-contained `<html>` / `<body>` / inline styles. Same Try-again button.
+  - Trigger a 5xx mutation (the test container's API map can return `{ status: 500 }` for any path) → the `MutationCache.onError` fires, `humanizeError(ApiError)` → "The server hit an error — try again in a moment.", `toast.error(...)` pushes a toast with `role="alert"`. Per-mutation rollback (e.g. `use-today-toggles`) still runs first to repair the optimistic UI.
+  - Toggle the OS reduce-motion setting → the progress-bar width tween becomes instant; the swipe-row drag-snap, the bottom-nav active-tab `active:scale-95`, and every Tailwind `transition-colors` collapse to ~0ms; the `fly-resource` and `plant-grow` keyframes are already gated by `useReducedMotion()` and stay skipped.
+  - Verified via the existing 253 unit + integration tests; no browser-driven manual smoke (sandbox limitation noted in Epic 1's review still applies).
+- [x] 8.R.3 **Re-read each affected doc**.
+  - `README.md` — Tabs table + `test:unit` / `test:e2e` commands + `docs/prototype-design/screenshots/` reference all landed in PR #32. ✅
+  - `architecture.md` — no new endpoints or routes this epic.
+  - `coding-guidelines.md` — the "schema additions → walk hand-rolled fixtures alongside the shared `make*Dto` helpers" rule from the Epic 7 review is the only outstanding doc TODO; deferred to a future small chore PR since it's pure process and not blocking anything.
+  - `design-system.md` — no new tokens this epic. The global reduced-motion rule is documented inline in `globals.css`.
+  - `domain-model.md` — no new persistent types.
+  - `testing-strategy.md` — no convention shift.
+- [x] 8.R.4 **Re-read the backlog**. Sub-tasks ticked: 8.1, 8.2, 8.3, 8.4, 8.6, 8.7. Sub-task 8.5 (Lighthouse) deferred and struck-through with the parenthetical "Needs a browser environment; run on the Vercel preview when a real perf pass becomes priority". Nothing silently dropped.
+- [x] 8.R.5 **Structural sanity check**. Net new files: `app/error.tsx` (54), `app/global-error.tsx` (67). Modified: `globals.css` (+18 motion catch-all), `query-provider.tsx` (+24 MutationCache + humanizeError), `README.md` (+15 Tabs table + commands), `docs/product-backlog.md` (+ this review section). All under the 400-line trip wire. No file mixes concerns.
+- [x] 8.R.6 **Test sanity check**.
+  - **253 unit + integration specs** unchanged — Epic 8's surface is observability (error boundaries, toasts) and runtime config (the motion catch-all is a CSS-only change). The `<Toaster>` molecule already has its own spec (4 cases) covering render + dismiss; the `<MutationCache>` integration is exercised transitively by the existing mutation-error specs in `goal-detail-sheet.spec.tsx` (delete confirmation), `dead-plant-panel.spec.tsx` (drop / replant), and the today-toggle rollback tests. No new specs needed.
+  - Coverage by layer: route-segment boundaries don't really benefit from unit tests (Next.js triggers them, not the user); future work would be a Playwright spec that throws on a route and asserts the recovery copy renders. Re-queue if the boundary regresses.
+- [x] 8.R.7 **CI sanity check**: `check` + `e2e` green on PR #32 (`main` is at `1cd8ec5`). `pnpm format:check`, `pnpm lint`, `pnpm test:unit`, `pnpm build` all green locally on this branch. No flakes observed.
+- [x] 8.R.8 **Prototype fidelity check**. Polish epic — no new visual surfaces; the error boundaries + toast wiring + motion guard are functional plumbing the prototype doesn't exercise. The Tabs table in the README mirrors the prototype's `Bloomly.html` shell (four-tab bottom nav). No drift to call out.
+- [x] 8.R.9 **Improvements identified for Epic A / B / future**:
+  1. **Re-queued from earlier reviews**: `<AccentPill>` atom, `<StatCard>` molecule (now five+ surfaces share the warm-gold pill / icon-bold-value-label shape — Profile / Today / History / health-warning band / the new `<ErrorBoundary>` digest reference). Promote when the next surface lands.
+  2. **`humanizeError` helper** — promote to `@/client/api/api-error.ts` when a second call site wants it.
+  3. **Per-mutation `meta: { suppressErrorToast }` opt-out** — see 8.R.1 above. Add when the global toast becomes noisy in practice.
+  4. **Sentry / Datadog wiring** — `app/error.tsx`'s `console.error("[error-boundary]", error)` is the natural integration point. Land alongside Epic A (real persistence + a real prod target).
+  5. **Lighthouse on the Vercel preview** — capture as a recurring CI workflow step (`@lhci/cli` against the deployed preview URL) once Epic A provisions a stable target.
+  6. **Per-spec `error.tsx` boundaries** — Next.js supports nested error boundaries at every route segment. If `/garden`'s isometric SVG ever throws, the segment-level boundary at `/garden/error.tsx` could keep `/today` alive for the user. Defer until we see a real per-segment failure mode.
+- [x] 8.R.10 **Decision: Epic 8 is done. Core seven-epic build is closed out.** The product ships with onboarding (Epic 1), the daily loop (Epic 2), goal management (Epic 3), the garden (Epic 4), history calendar (Epic 5), profile (Epic 6), plant health (Epic 7), and polish (Epic 8). Improvements above are explicitly Epic A / B / future work. Ready to plan Epic A (Postgres persistence) when the in-memory layer becomes a real bottleneck.
+
+---
+
 ## Epic A — Persistence: Postgres + Prisma (replaces in-memory)
 
 Run when the in-memory layer becomes a real bottleneck (data loss on restart starts hurting). The point of repository abstraction is that this is a self-contained epic.
