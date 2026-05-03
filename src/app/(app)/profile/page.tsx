@@ -145,11 +145,8 @@ function EditNameDialog({ open, currentName, onClose, onSubmit }: EditNameDialog
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset the field every time the dialog re-opens so a previous edit doesn't
-  // bleed into the next one. Cheap to do because state lives only when open.
-  if (open && submitting === false && name !== currentName && name === "") {
-    setName(currentName);
-  }
+  // No reset effect needed: `<Modal>` returns null when `open` is false, so
+  // the form unmounts and remounts with `currentName` next time it opens.
 
   const trimmed = name.trim();
   const valid = trimmed.length >= 1 && trimmed.length <= 80;
