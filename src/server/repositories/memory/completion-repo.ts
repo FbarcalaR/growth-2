@@ -26,5 +26,9 @@ export function createInMemoryCompletionRepo(): CompletionRepo {
         .map(clone)
         .sort((a, b) => a.completedAt - b.completedAt);
     },
+
+    async deleteAllByUser(userId) {
+      byUser.delete(userId);
+    },
   };
 }

@@ -117,6 +117,16 @@ export function runRepositoryConformance(makeRepos: () => Repositories): void {
       await expect(goals.delete("u1", "g1")).rejects.toThrow();
     });
 
+    it("deleteAllByUser drops every goal owned by the user, leaves others", async () => {
+      const { goals } = makeRepos();
+      await goals.create(makeGoal("u1", "g1"));
+      await goals.create(makeGoal("u1", "g2"));
+      await goals.create(makeGoal("u2", "g3"));
+      await goals.deleteAllByUser("u1");
+      expect(await goals.listByUser("u1")).toEqual([]);
+      expect((await goals.listByUser("u2")).map((g) => g.id)).toEqual(["g3"]);
+    });
+
     it("returns clones — the caller can mutate without affecting the store", async () => {
       const { goals } = makeRepos();
       const goal = await goals.create(makeGoal("u1", "g1"));
@@ -272,6 +282,25 @@ export function runRepositoryConformance(makeRepos: () => Repositories): void {
       first!.title = "Mutated";
       const [reloaded] = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
       expect(reloaded?.title).toBe("Original");
+    });
+
+    it("deleteAllByUser drops every event owned by the user, leaves others", async () => {
+      const { completions } = makeRepos();
+      const base = {
+        goalId: "g1",
+        kind: "task" as const,
+        itemId: "t1",
+        title: "x",
+        completedDate: "2026-05-03",
+        completedAt: 100,
+      };
+      await completions.append({ id: "c1", userId: "u1", ...base });
+      await completions.append({ id: "c2", userId: "u1", ...base });
+      await completions.append({ id: "c3", userId: "u2", ...base });
+      await completions.deleteAllByUser("u1");
+      expect(await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31")).toEqual([]);
+      const u2 = await completions.listByUserBetween("u2", "2026-05-01", "2026-05-31");
+      expect(u2.map((e) => e.id)).toEqual(["c3"]);
     });
   });
 }

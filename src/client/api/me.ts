@@ -33,4 +33,6 @@ export const meApi = {
       method: "PATCH",
       body: LockPrioritiesRequestSchema.parse(input),
     }),
+
+  reset: () => apiFetch<UserDto>("/api/me/reset", UserDtoSchema, { method: "POST" }),
 };
