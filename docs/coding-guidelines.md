@@ -44,6 +44,21 @@ Cross-cutting helpers (`clock`, `errors`, generic utilities) stay flat at the ro
 
 Read [`docs/design-system.md`](./design-system.md) for the full token list. Encode tokens **once** in `src/app/globals.css` under Tailwind v4's `@theme` block — never in `tailwind.config.ts` (Tailwind v4 is CSS-first; the file doesn't exist).
 
+## Prototype fidelity (before writing UI code)
+
+Lesson learned the hard way during Epic 3 (PR #22 took five rounds of design feedback): **read the prototype before coding**, not after.
+
+For every user-visible story:
+
+1. **Find the matching prototype file first.** The bundle lives at [`docs/prototype-design/`](./prototype-design/). Each tab has its own `*-tab.jsx` (e.g. `today-tab.jsx`, `plans-tab.jsx`, `garden-tab.jsx`). Plus `shared.jsx` for things like `<PlantSprite>` and helpers.
+2. **Read end-to-end, not by-feature.** Skimming for one component misses the surrounding layout decisions (drawer vs inline, full-width vs side-by-side, swipe vs hover). Read the whole file or the whole tab section first.
+3. **Inventory the visuals before writing any code.** In your scratchpad list: layout shape (page vs sheet vs inline-expand), exact colour values per state, button styles per role, every explicit `width`/`height`/`borderRadius`/`fontSize`/`padding`, animations, gestures. The prototype's inline styles are the ground truth.
+4. **Prototype-faithful first, then deviate with a note.** Match the prototype 1:1 unless you have an explicit reason not to (a domain rule that doesn't exist client-side, an accessibility upgrade, a deferred feature). Document any deviation in the PR — silent shortcuts compound into "looks completely different" feedback.
+5. **Don't invent variants the prototype doesn't have.** If the prototype's Edit button is outlined-green and the Delete button is outlined-red, add `outline` and `outline-destructive` to the `<Button>` atom; don't hand-roll one-off styles. Tokens > component utilities > inline classes.
+6. **When unsure, ask before guessing.** Drawer-vs-inline, swipe-vs-hover, tab-bar IA — if the prototype isn't crystal clear, ask once rather than build, ship, and reverse three times.
+
+Reviewers should be able to read your PR description, glance at the prototype, and not have to point out colour mismatches or layout flips. If they're correcting fundamentals like "this should be a drawer" or "these buttons look completely different", the pre-work was skipped.
+
 ## React
 
 - Functional components only. No class components.
