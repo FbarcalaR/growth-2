@@ -40,7 +40,7 @@ export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="group flex items-center gap-1">
         <div className="flex-1">
           <RoutineRow
             title={routine.title}
@@ -54,7 +54,7 @@ export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
           type="button"
           aria-label={`Mark "${routine.title}" permanently complete`}
           onClick={() => setConfirmGraduate(true)}
-          className="text-brand-muted hover:text-area-fun rounded-md p-1.5"
+          className="text-brand-muted hover:text-area-fun rounded-md p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Award size={14} aria-hidden />
         </button>
@@ -62,7 +62,7 @@ export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
           type="button"
           aria-label={`Edit "${routine.title}"`}
           onClick={() => setEditing(true)}
-          className="text-brand-muted hover:text-brand-700 rounded-md p-1.5"
+          className="text-brand-muted hover:text-brand-700 rounded-md p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Pencil size={14} aria-hidden />
         </button>
@@ -70,7 +70,7 @@ export function RoutineRowItem({ goalId, area, routine }: RoutineRowItemProps) {
           type="button"
           aria-label={`Delete "${routine.title}"`}
           onClick={() => deleteRoutine.mutate(routine.id)}
-          className="text-brand-muted hover:text-health-critical rounded-md p-1.5"
+          className="text-brand-muted hover:text-health-critical rounded-md p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
         >
           <Trash2 size={14} aria-hidden />
         </button>

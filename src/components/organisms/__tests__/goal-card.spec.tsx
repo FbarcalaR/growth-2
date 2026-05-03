@@ -67,19 +67,50 @@ describe("<GoalCard />", () => {
     expect(queryByRole("progressbar")).toBeNull();
   });
 
-  it("calls onClick when tapped (drawer-opening pattern)", () => {
+  it("expands on header click and reveals Edit / Delete", () => {
     setupFetchMock();
-    const onClick = vi.fn();
-    const { getByRole } = renderWithQuery(
-      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} onClick={onClick} />,
+    const { getByRole, queryByRole } = renderWithQuery(
+      <GoalCard goal={makeGoalDto({ planted: true, stage: 1 })} />,
     );
+    expect(queryByRole("button", { name: /^edit goal$/i })).toBeNull();
     fireEvent.click(getByRole("button", { name: /run a 5k/i }));
-    expect(onClick).toHaveBeenCalledTimes(1);
+    getByRole("button", { name: /^edit goal$/i });
+    getByRole("button", { name: /^delete goal$/i });
   });
 
-  it("renders without an interactive role when no onClick is provided", () => {
+  it("surfaces 'Mark goal as complete' when every item is done", () => {
     setupFetchMock();
-    const { queryByRole } = renderWithQuery(<GoalCard goal={makeGoalDto()} />);
-    expect(queryByRole("button")).toBeNull();
+    const { getByRole } = renderWithQuery(
+      <GoalCard
+        goal={makeGoalDto({
+          planted: true,
+          stage: 2,
+          tasks: [
+            { id: "t1", title: "a", completed: true, dueDate: null },
+            { id: "t2", title: "b", completed: true, dueDate: null },
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(getByRole("button", { name: /run a 5k/i }));
+    getByRole("button", { name: /mark goal as complete/i });
+  });
+
+  it("hides 'Mark goal as complete' while items remain", () => {
+    setupFetchMock();
+    const { getByRole, queryByRole } = renderWithQuery(
+      <GoalCard
+        goal={makeGoalDto({
+          planted: true,
+          stage: 2,
+          tasks: [
+            { id: "t1", title: "a", completed: true, dueDate: null },
+            { id: "t2", title: "b", completed: false, dueDate: null },
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(getByRole("button", { name: /run a 5k/i }));
+    expect(queryByRole("button", { name: /mark goal as complete/i })).toBeNull();
   });
 });
