@@ -85,10 +85,12 @@ describe("<TasksEditor />", () => {
       { goal: makeGoalDto(), user: await lockedUser() },
       "PATCH",
     );
-    const { findByLabelText, findByRole, getByDisplayValue } = renderWithQuery(
+    const { findByRole, getByDisplayValue } = renderWithQuery(
       <TasksEditor goalId={goalId} area="health" tasks={[makeTaskDto()]} />,
     );
-    fireEvent.click(await findByLabelText('Edit "Buy shoes"'));
+    // The swipeable row exposes Edit / Delete behind it; the buttons are in
+    // the DOM by default (just hidden behind the row visually).
+    fireEvent.click(await findByRole("button", { name: /^edit$/i }));
     const input = getByDisplayValue("Buy shoes") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Buy running shoes" } });
     fireEvent.click(await findByRole("button", { name: /^save$/i }));
@@ -99,13 +101,13 @@ describe("<TasksEditor />", () => {
     });
   });
 
-  it("deletes a task via the dedicated icon button", async () => {
+  it("deletes a task via the swipe-revealed Delete action", async () => {
     const fm = setupFetchMock();
     fm.mock(`/api/goals/${goalId}/tasks/t1`, { method: "DELETE", status: 200, body: {} });
-    const { findByLabelText } = renderWithQuery(
+    const { findByRole } = renderWithQuery(
       <TasksEditor goalId={goalId} area="health" tasks={[makeTaskDto()]} />,
     );
-    fireEvent.click(await findByLabelText('Delete "Buy shoes"'));
+    fireEvent.click(await findByRole("button", { name: /^delete$/i }));
     await waitFor(() =>
       expect(fm.calls("DELETE", `/api/goals/${goalId}/tasks/t1`)).toHaveLength(1),
     );

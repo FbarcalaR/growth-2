@@ -94,10 +94,11 @@ describe("<RoutinesEditor />", () => {
       { goal: makeGoal(), user: await lockedUser() },
       "PATCH",
     );
-    const { findByLabelText, findByRole, getByDisplayValue } = renderWithQuery(
+    const { findByRole, getByDisplayValue } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Edit "Read 30 minutes"'));
+    // Each routine row has Done / Edit / Delete behind the swipeable row.
+    fireEvent.click(await findByRole("button", { name: /^edit$/i }));
     const input = getByDisplayValue("Read 30 minutes") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "Read 1 hour" } });
     fireEvent.click(await findByRole("checkbox", { name: /sunday/i }));
@@ -119,10 +120,11 @@ describe("<RoutinesEditor />", () => {
       { goal: makeGoal(), user: await lockedUser() },
       "POST",
     );
-    const { findByLabelText, findByRole } = renderWithQuery(
+    const { findByRole } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Mark "Read 30 minutes" permanently complete'));
+    // The "Done" swipe action opens the graduate confirmation.
+    fireEvent.click(await findByRole("button", { name: /^done$/i }));
     fireEvent.click(await findByRole("button", { name: /graduate/i }));
     await waitFor(() =>
       expect(fm.calls("POST", `/api/goals/${goalId}/routines/r1/permanent`)).toHaveLength(1),
@@ -141,17 +143,17 @@ describe("<RoutinesEditor />", () => {
     getByText(/4-day streak kept/i);
   });
 
-  it("deletes a routine via the dedicated icon button", async () => {
+  it("deletes a routine via the swipe-revealed Delete action", async () => {
     const fm = setupFetchMock();
     fm.mock(`/api/goals/${goalId}/routines/r1`, {
       method: "DELETE",
       status: 200,
       body: makeGoal(),
     });
-    const { findByLabelText } = renderWithQuery(
+    const { findByRole } = renderWithQuery(
       <RoutinesEditor goalId={goalId} area="personal" routines={[routine()]} />,
     );
-    fireEvent.click(await findByLabelText('Delete "Read 30 minutes"'));
+    fireEvent.click(await findByRole("button", { name: /^delete$/i }));
     await waitFor(() =>
       expect(fm.calls("DELETE", `/api/goals/${goalId}/routines/r1`)).toHaveLength(1),
     );
