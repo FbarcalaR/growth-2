@@ -7,22 +7,37 @@ goal earns a trophy in your garden.
 
 ## Stack
 
-Next.js (App Router) · TypeScript (strict) · Tailwind CSS v4 · React 19. Backend
-in the same repo via Route Handlers; in-memory repositories now, Postgres + Prisma
-planned. See [`docs/`](./docs/) for the full architecture.
+Next.js 16 (App Router) · TypeScript (strict) · Tailwind CSS v4 · React 19 ·
+TanStack Query. Backend in the same repo via Route Handlers; in-memory
+repositories now, Postgres + Prisma planned (Epic A). See [`docs/`](./docs/)
+for the full architecture.
+
+## Tabs
+
+| Tab | Route | What it does |
+|---|---|---|
+| Today | `/today` | Daily to-do list — toggle tasks/routines, plant grows on completion |
+| Garden | `/garden` | 8×6 isometric plot — plant goals on tilled tiles, place decorations on grass, view trophies + shop |
+| History | `/history` | Month calendar — per-day completion bubbles, streak summary, day-detail panel |
+| Profile | `/profile` | Display name + edit, total coins / streak / goals, reset all data |
 
 ## Run
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000
-pnpm typecheck    # tsc --noEmit
-pnpm lint         # eslint
-pnpm format       # prettier --write
-pnpm build        # production build
+pnpm dev            # http://localhost:3000
+pnpm typecheck      # tsc --noEmit
+pnpm lint           # eslint
+pnpm format         # prettier --write
+pnpm test:unit      # vitest run
+pnpm test:e2e       # playwright (requires `pnpm exec playwright install`)
+pnpm build          # production build
 ```
 
-Visit `/styleguide` to see every design token.
+Visit `/styleguide` to see every design token. Visual reference for every
+user-visible PR is the prototype bundle under
+[`docs/prototype-design/`](./docs/prototype-design/README.md) (the
+`screenshots/` subfolder shows each tab as designed).
 
 ## Docs
 

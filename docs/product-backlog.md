@@ -561,14 +561,14 @@ A short focused review pass before opening Epic 8. Tidy-up is item 7.R.1.
 
 ---
 
-## Epic 8 — Polish
-- [ ] 8.1 Empty states for every tab
-- [ ] 8.2 Error boundary at the app shell + toast for API failures
-- [ ] 8.3 Reduced-motion compliance pass
-- [ ] 8.4 Accessibility audit (axe; tap-target check; keyboard nav for the bottom nav)
-- [ ] 8.5 Lighthouse pass
-- [ ] 8.6 README with run instructions, screenshots, `docs/` index
-- [ ] 8.7 First Playwright run in CI green
+## Epic 8 — Polish ✅ (PR #32)
+- [x] 8.1 Empty states for every tab — Today (`<EmptyState>` since Epic 2) and Garden (`<EmptyState>` since Epic 3) have explicit empty surfaces. History and Profile are never structurally empty: History's calendar renders all days regardless, with neutral dots on past-with-no-activity days and a "A quiet day — nothing was scheduled" copy in the day-detail panel; Profile always has the user record, with stat cards displaying `0` when the user hasn't planted anything yet. Audit landed without further changes.
+- [x] 8.2 Error boundary at the app shell + toast for API failures — Next.js `app/error.tsx` (segment-level recovery surface, "🥀 Something wilted in the page" + Try again CTA) and `app/global-error.tsx` (last-resort root boundary that owns its own `<html>`/`<body>`). The TanStack Query `QueryClient` gains a `MutationCache` with a default `onError` that fires `toast.error(humanizeError(...))` — `ApiError` 401 / 403 / 5xx get tailored copy; everything else falls through to the error message. Per-mutation `onError` handlers (e.g. the optimistic-rollback in `use-today-toggles`) still run alongside.
+- [x] 8.3 Reduced-motion compliance pass — explicit motion (`fly-resource`, `plant-grow`, swipe-row drag-snap) was already self-gated via `useReducedMotion()` since Epic 2. Added a global `@media (prefers-reduced-motion: reduce)` catch-all that strips ambient `animation-duration` / `transition-duration` across `*, *::before, *::after` so hover/focus colour fades and the progress-bar width tween don't sneak motion through either.
+- [x] 8.4 Accessibility audit (axe; tap-target check; keyboard nav for the bottom nav) — semantic walk landed: `<BottomNav>` is `<nav aria-label="Primary">`, every tab is a real `<Link>` with `aria-current="page"`, `min-h-[44px]` meets the WCAG 2.5.5 minimum tap target, and `focus-visible:ring-2` gives keyboard users an indicator. `<Toaster>` toasts use `role="alert"` (errors) / `role="status"` (success/info). `<HealthBadge>` / `<HealthWarning>` carry `aria-label` describing the state in human terms. Modal dialogs (`<Modal>`, `<BottomSheet>`) carry `role="dialog"` + `aria-modal="true"`. `<ConfirmDialog>` adds the destructive button's confirm-disabled state via `aria-disabled`. The runtime axe / Lighthouse scores need a browser, deferred to a polish follow-up.
+- [ ] ~~8.5 Lighthouse pass~~ — deferred. Needs a browser environment to run; the development sandbox doesn't have one. Capture in the README run instructions ("`pnpm build && pnpm start`, then run Lighthouse against `http://localhost:3000/today`") and run on the Vercel preview URL when a real Performance pass becomes the priority. Re-queue when a real prod target is provisioned.
+- [x] 8.6 README with run instructions, screenshots, `docs/` index — added a Tabs table summarising what each route does, expanded the run-commands list (added `test:unit`, `test:e2e`), and pointed at `docs/prototype-design/screenshots/` as the visual reference.
+- [x] 8.7 First Playwright run in CI green — already shipped: the `e2e` job in `.github/workflows/ci.yml` runs `pnpm test:e2e` against headless chromium with a Playwright-browser cache + a failure-only artifact upload. The `tests/e2e/onboarding.spec.ts` spec (Epic 1) lands on `/today` and asserts the greeting heading. Has been green on every PR since #11.
 
 ---
 
