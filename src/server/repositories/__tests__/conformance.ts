@@ -176,4 +176,102 @@ export function runRepositoryConformance(makeRepos: () => Repositories): void {
       }
     });
   });
+
+  describe("CompletionRepo", () => {
+    it("appends events and returns them within a date range", async () => {
+      const { completions } = makeRepos();
+      await completions.append({
+        id: "c1",
+        userId: "u1",
+        goalId: "g1",
+        kind: "task",
+        itemId: "t1",
+        title: "Read 30m",
+        completedDate: "2026-05-03",
+        completedAt: 100,
+      });
+      await completions.append({
+        id: "c2",
+        userId: "u1",
+        goalId: "g1",
+        kind: "routine",
+        itemId: "r1",
+        title: "Stretch",
+        completedDate: "2026-05-04",
+        completedAt: 200,
+      });
+      const may = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
+      expect(may.map((e) => e.id)).toEqual(["c1", "c2"]);
+    });
+
+    it("excludes events outside the range and across users", async () => {
+      const { completions } = makeRepos();
+      await completions.append({
+        id: "c1",
+        userId: "u1",
+        goalId: "g1",
+        kind: "task",
+        itemId: "t1",
+        title: "Old",
+        completedDate: "2026-04-30",
+        completedAt: 50,
+      });
+      await completions.append({
+        id: "c2",
+        userId: "u2",
+        goalId: "g2",
+        kind: "task",
+        itemId: "t2",
+        title: "Other user",
+        completedDate: "2026-05-15",
+        completedAt: 60,
+      });
+      const may = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
+      expect(may).toEqual([]);
+    });
+
+    it("orders events by completedAt", async () => {
+      const { completions } = makeRepos();
+      await completions.append({
+        id: "later",
+        userId: "u1",
+        goalId: "g1",
+        kind: "task",
+        itemId: "t1",
+        title: "Later",
+        completedDate: "2026-05-03",
+        completedAt: 200,
+      });
+      await completions.append({
+        id: "earlier",
+        userId: "u1",
+        goalId: "g1",
+        kind: "task",
+        itemId: "t2",
+        title: "Earlier",
+        completedDate: "2026-05-03",
+        completedAt: 100,
+      });
+      const events = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
+      expect(events.map((e) => e.id)).toEqual(["earlier", "later"]);
+    });
+
+    it("returns clones — caller mutations don't affect the store", async () => {
+      const { completions } = makeRepos();
+      await completions.append({
+        id: "c1",
+        userId: "u1",
+        goalId: "g1",
+        kind: "task",
+        itemId: "t1",
+        title: "Original",
+        completedDate: "2026-05-03",
+        completedAt: 100,
+      });
+      const [first] = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
+      first!.title = "Mutated";
+      const [reloaded] = await completions.listByUserBetween("u1", "2026-05-01", "2026-05-31");
+      expect(reloaded?.title).toBe("Original");
+    });
+  });
 }

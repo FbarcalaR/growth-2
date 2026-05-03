@@ -24,6 +24,7 @@ export {
   useUpdateTask,
 } from "./use-goals";
 export { useGarden, usePlaceDeco, usePlantOnTile, useUnplaceDeco } from "./use-garden";
+export { useHistory } from "./use-history";
 export { useBuyDeco, useShop } from "./use-shop";
 export { useToday } from "./use-today";
 export { useToggleTodayTask, useToggleTodayRoutine } from "./use-today-toggles";

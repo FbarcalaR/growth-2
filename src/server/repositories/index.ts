@@ -1,3 +1,4 @@
+import type { CompletionRepo } from "./completion-repo";
 import type { GardenRepo } from "./garden-repo";
 import type { GoalRepo } from "./goal-repo";
 import type { ShopRepo } from "./shop-repo";
@@ -13,6 +14,7 @@ export type Repositories = {
   goals: GoalRepo;
   gardens: GardenRepo;
   shop: ShopRepo;
+  completions: CompletionRepo;
 };
 
-export type { GardenRepo, GoalRepo, ShopRepo, UserRepo };
+export type { CompletionRepo, GardenRepo, GoalRepo, ShopRepo, UserRepo };
