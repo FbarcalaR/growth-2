@@ -180,3 +180,21 @@ body {
     animation: none;
   }
 }
+
+/* Story 8.3 — global reduced-motion catch-all. Strips animation + transition
+   durations across the whole app for users who've asked the OS to reduce
+   motion. Surfaces with explicit motion logic (the fly-resource sprite, the
+   plant-grow keyframe, the swipe-row drag-snap) already self-gate via the
+   `useReducedMotion()` hook; this rule makes sure ambient hover/focus
+   transitions (button colour fades, card hover borders, progress-bar width
+   tweens) don't sneak motion in either. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
