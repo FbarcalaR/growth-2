@@ -612,16 +612,16 @@ A short focused review pass to close out Epic 8 + the seven-epic core. Tidy-up i
 
 ---
 
-## Epic A — Persistence: Postgres + Prisma (replaces in-memory)
+## Epic A — Persistence: Postgres + Prisma (replaces in-memory) ✅ (PR #34)
 
-Run when the in-memory layer becomes a real bottleneck (data loss on restart starts hurting). The point of repository abstraction is that this is a self-contained epic.
+The point of the repository abstraction was that this would be self-contained — no domain or service code changed in this epic.
 
-- [ ] A.1 Add `prisma/schema.prisma` modeling `User`, `Goal`, `Task`, `Routine`, `GardenTile`, `OwnedDeco`, `Trophy`, with `userId` foreign keys and `(userId, tileCol, tileRow)` uniqueness
-- [ ] A.2 Implement Prisma-backed repos under `src/server/repositories/prisma/` against the same interfaces
-- [ ] A.3 Run interface conformance tests against the Prisma impl
-- [ ] A.4 Switch `container.ts` binding behind an env flag; rollback by flipping it back
-- [ ] A.5 Provision Postgres (Neon for dev/preview, decide hosted prod target)
-- [ ] A.6 First migration + seed scripts
+- [x] A.1 Added `prisma/schema.prisma` modeling `User`, `Goal`, `Task`, `Routine`, `GardenTile`, `OwnedDeco`, `Trophy`, `Completion`, with `userId` foreign keys and `(userId, tileCol, tileRow)` uniqueness on `GardenTile`. Snake_case in Postgres (`@@map` / `@map`); camelCase on the Prisma side. JSONB for `wheelOfLife` / `plantRes` / `repeatDays` so we don't have to grow the schema every time a list changes.
+- [x] A.2 Implemented Prisma-backed repos under `src/server/repositories/prisma/` against the same interfaces. Garden state denormalises across three tables (`garden_tiles` + `owned_decos` + `trophies`) on disk while keeping the in-memory `garden.owned` contract for callers — `loadGarden(userId)` recombines them. Goal `update` uses a "drop children + recreate with positions" approach inside a transaction; the per-goal task/routine count is small (≤ ~20) so the diff cost is fine and the code stays simple.
+- [x] A.3 Conformance suite runs against the Prisma impl when `RUN_PRISMA_TESTS=1` + `DATABASE_URL` are set (skipped in CI by default). Same 23 cases the in-memory impl passes; truncates all tables in `beforeEach` for case isolation.
+- [x] A.4 `container.ts` switches via the `GROWTH_REPO` env var (`memory` default, `prisma` opt-in). Lazy-required so `@prisma/client` doesn't enter the bundle when memory is selected.
+- [x] A.5 Postgres provisioned by user: Vercel-Neon integration sets `DATABASE_URL` automatically.
+- [x] A.6 `prisma/seed.ts` re-creates a tiny demo state (Ada + 2 goals + tasks + routines). Migration via `pnpm db:migrate` (dev) / `pnpm db:deploy` (CI / prod). `postinstall` runs `prisma generate` so the client stays in sync with the schema on every install.
 
 ---
 
