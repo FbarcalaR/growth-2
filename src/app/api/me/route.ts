@@ -6,7 +6,11 @@ import { withErrorMapping } from "@/server/http/error-mapper";
 import { parseBody } from "@/server/http/validate";
 import { userToDto } from "@/server/services/dtos";
 import { getServices } from "@/server/services";
-import { CreateSessionRequestSchema, type UserDto } from "@/shared/schemas/user";
+import {
+  CreateSessionRequestSchema,
+  UpdateUserRequestSchema,
+  type UserDto,
+} from "@/shared/schemas/user";
 
 export const GET = withErrorMapping(async () => {
   const user = await requireUser();
@@ -19,6 +23,13 @@ export const POST = withErrorMapping(async (req: Request) => {
   const user = await services.users.findOrCreateByName(body.name);
   await setDevSessionUserId(user.id);
   return NextResponse.json<UserDto>(userToDto(user), { status: 201 });
+});
+
+export const PATCH = withErrorMapping(async (req: Request) => {
+  const user = await requireUser();
+  const body = await parseBody(req, UpdateUserRequestSchema);
+  const updated = await getServices().users.updateName(user, body.name);
+  return NextResponse.json<UserDto>(userToDto(updated));
 });
 
 export const DELETE = withErrorMapping(async () => {

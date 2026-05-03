@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DELETE, GET, POST } from "@/app/api/me/route";
+import { DELETE, GET, PATCH, POST } from "@/app/api/me/route";
 import { PATCH as PATCH_PRIORITIES } from "@/app/api/me/priorities/route";
 
 import { freshTestContext, jsonRequest, signOut } from "../helpers/test-context";
@@ -51,6 +51,30 @@ describe("/api/me", () => {
     await signIn("Ada");
     signOut();
     const res = await GET();
+    expect(res.status).toBe(401);
+  });
+
+  it("PATCH renames the signed-in user", async () => {
+    await signIn("Ada");
+    const res = await PATCH(jsonRequest("PATCH", { name: "Ada L." }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.name).toBe("Ada L.");
+
+    // GET reflects the new name on the next read.
+    const me = await GET();
+    expect((await me.json()).name).toBe("Ada L.");
+  });
+
+  it("PATCH trims whitespace and rejects empty names with 422", async () => {
+    await signIn("Ada");
+    const blank = await PATCH(jsonRequest("PATCH", { name: "   " }));
+    expect(blank.status).toBe(422);
+    expect((await blank.json()).code).toBe("INVALID_INPUT");
+  });
+
+  it("PATCH requires a session", async () => {
+    const res = await PATCH(jsonRequest("PATCH", { name: "Solo" }));
     expect(res.status).toBe(401);
   });
 });

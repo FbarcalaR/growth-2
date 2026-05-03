@@ -417,8 +417,8 @@ Stories 4.1 + 4.2 ship in **PR #23** (the foundation + the planting flow). Stori
 ---
 
 ## Epic 6 — Profile tab
-- [ ] 6.1.1 Display name, total coins earned, current streak
-- [ ] 6.1.2 Edit name
+- [x] 6.1.1 Display name, total coins earned, current streak (PR #26)
+- [x] 6.1.2 Edit name (PR #26)
 - [ ] 6.2.1 Toggle resource animations
 - [ ] 6.2.2 Accent color picker (CSS var)
 - [ ] 6.3.1 Reset all data with double confirmation (`POST /api/me/reset`)

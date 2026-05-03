@@ -25,6 +25,7 @@ type SessionState = {
 export function useSession(): SessionState & {
   login: (name: string) => Promise<UserDto>;
   logout: () => Promise<void>;
+  updateName: (name: string) => Promise<UserDto>;
   lockPriorities: (values: WheelOfLifeDto) => Promise<UserDto>;
 } {
   const qc = useQueryClient();
@@ -63,12 +64,18 @@ export function useSession(): SessionState & {
     onSuccess: (user) => qc.setQueryData(queryKeys.me(), user),
   });
 
+  const renameMutation = useMutation({
+    mutationFn: (name: string) => meApi.updateName({ name }),
+    onSuccess: (user) => qc.setQueryData(queryKeys.me(), user),
+  });
+
   return {
     user: query.data ?? null,
     isLoading: query.isPending,
     prioritiesLocked: query.data?.prioritiesLocked ?? false,
     login: (name: string) => loginMutation.mutateAsync(name),
     logout: () => logoutMutation.mutateAsync(),
+    updateName: (name: string) => renameMutation.mutateAsync(name),
     lockPriorities: (values: WheelOfLifeDto) => lockMutation.mutateAsync(values),
   };
 }
