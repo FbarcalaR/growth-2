@@ -9,4 +9,5 @@ export const queryKeys = {
   garden: () => ["garden"] as const,
   shop: () => ["shop"] as const,
   today: () => ["today"] as const,
+  history: (month: string) => ["history", month] as const,
 };
