@@ -8,6 +8,9 @@ import { useGoals, useSession } from "@/client/hooks";
 import { Avatar, Button, Input, Modal } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 
+import { DataPanel } from "./_components/data-panel";
+import { SettingsPanel } from "./_components/settings-panel";
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, updateName, logout } = useSession();
@@ -72,6 +75,10 @@ export default function ProfilePage() {
           tone="brand"
         />
       </div>
+
+      <SettingsPanel />
+
+      <DataPanel />
 
       <Button
         variant="outline-destructive"
