@@ -24,6 +24,7 @@ export function makeGoalDto(overrides: Partial<GoalDto> = {}): GoalDto {
     routines: [],
     health: 100,
     healthState: "healthy",
+    overdueCount: 0,
     ...overrides,
   };
 }
@@ -61,6 +62,7 @@ export function makeTodayGroup(
     goalStage: goal.stage,
     goalHealth: goal.health,
     goalHealthState: goal.healthState,
+    goalOverdueCount: goal.overdueCount,
     tasks: items.tasks ?? goal.tasks,
     routines: items.routines ?? goal.routines,
   };

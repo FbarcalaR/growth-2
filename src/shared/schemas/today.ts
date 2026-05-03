@@ -24,6 +24,8 @@ export const TodayGroupDtoSchema = z.object({
   goalStage: StageSchema,
   goalHealth: z.number().min(0).max(100),
   goalHealthState: z.enum(HEALTH_STATES),
+  /** Server-derived count of overdue tasks at read-time. */
+  goalOverdueCount: z.number().int().min(0),
   tasks: z.array(TaskDtoSchema),
   routines: z.array(RoutineDtoSchema),
 });

@@ -3,6 +3,7 @@ export { AreaPicker } from "./area-picker";
 export { ConfirmDialog } from "./confirm-dialog";
 export { ALL_DAYS, DayPicker, NO_DAYS, type RepeatDays } from "./day-picker";
 export { HealthBadge } from "./health-badge";
+export { HealthWarning } from "./health-warning";
 export { PageHeader } from "./page-header";
 export { PlantPicker } from "./plant-picker";
 export { ResourceMeter } from "./resource-meter";

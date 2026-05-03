@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { addDaysISO, frozenClock, toISODate } from "../clock";
-import { getGoalHealthState, getHealth, getHealthState, getOverdueCount } from "../health";
+import {
+  countOverdueTasks,
+  getGoalHealthState,
+  getHealth,
+  getHealthState,
+  getOverdueCount,
+} from "../health";
 
 import { makeGoal } from "./fixtures";
 
@@ -127,5 +133,36 @@ describe("getGoalHealthState (clock-injected end-to-end)", () => {
       ],
     });
     expect(getGoalHealthState(goal, clock.now())).toBe("dead");
+  });
+});
+
+describe("countOverdueTasks", () => {
+  it("returns the integer count, ignoring routine lapses + the long-overdue weight bump", () => {
+    const goal = makeGoal({
+      tasks: [
+        { id: "t1", title: "x", completed: false, dueDate: addDaysISO(TODAY, -1) }, // counts: 1
+        { id: "t2", title: "x", completed: false, dueDate: addDaysISO(TODAY, -10) }, // counts: 1 (not 2)
+        { id: "t3", title: "x", completed: true, dueDate: addDaysISO(TODAY, -3) }, // skipped
+        { id: "t4", title: "x", completed: false, dueDate: TODAY }, // skipped
+        { id: "t5", title: "x", completed: false, dueDate: null }, // skipped
+      ],
+      routines: [
+        // Lapsed routine — would add 0.5 to the *weight*, but the count
+        // only looks at tasks.
+        {
+          id: "r1",
+          title: "x",
+          completedToday: false,
+          streak: 0,
+          repeatDays: [true, true, true, true, true, true, true],
+        },
+      ],
+    });
+    expect(countOverdueTasks(goal, NOW)).toBe(2);
+  });
+
+  it("returns 0 when nothing is overdue", () => {
+    const goal = makeGoal({ tasks: [] });
+    expect(countOverdueTasks(goal, NOW)).toBe(0);
   });
 });

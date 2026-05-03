@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { PlantSprite } from "@/components/atoms";
 import { cn } from "@/client/lib/cn";
+import type { HealthState } from "@/shared/health";
 import type { PlantId, Stage } from "@/shared/plants";
 
 type GoalPlantProps = {
   plantId: PlantId;
   stage: Stage;
+  /** Tints the sprite (Story 7.2.1). Defaults to "healthy". */
+  healthState?: HealthState;
   size?: number;
 };
 
@@ -20,7 +23,7 @@ type GoalPlantProps = {
  * animation, so reduced-motion users get the instant state change without
  * the bounce.
  */
-export function GoalPlant({ plantId, stage, size = 36 }: GoalPlantProps) {
+export function GoalPlant({ plantId, stage, healthState = "healthy", size = 36 }: GoalPlantProps) {
   const prev = useRef(stage);
   const [growing, setGrowing] = useState(false);
 
@@ -40,7 +43,7 @@ export function GoalPlant({ plantId, stage, size = 36 }: GoalPlantProps) {
       data-growing={growing ? "true" : undefined}
       className={cn("inline-flex items-center justify-center", growing && "plant-grow")}
     >
-      <PlantSprite plantId={plantId} stage={stage} size={size} />
+      <PlantSprite plantId={plantId} stage={stage} healthState={healthState} size={size} />
     </span>
   );
 }

@@ -509,13 +509,13 @@ A short focused review pass before opening Epic 7. Tidy-up is item 6.R.1.
 
 ---
 
-## Epic 7 — Plant health system
-- [ ] 7.1.1 `getOverdueCount`, `getHealth`, `getHealthState` (already drafted in 0.5)
-- [ ] 7.1.2 Long-overdue (>7d) doubled; missed routines half-weight
-- [ ] 7.1.3 Server returns health alongside goals (never persisted)
-- [ ] 7.2.1 Plant sprite swaps per state
-- [ ] 7.2.2 Health badge on `GoalCard`
-- [ ] 7.2.3 Today copy nags appropriately
+## Epic 7 — Plant health system ✅ (PR #30)
+- [x] 7.1.1 `getOverdueCount`, `getHealth`, `getHealthState` — drafted in Story 0.5; final shape carried into Epic 7 with the new `countOverdueTasks` companion (raw integer count for UI copy).
+- [x] 7.1.2 Long-overdue (>7d) doubled; missed routines half-weight — drafted in Story 0.5 (in `getOverdueCount`).
+- [x] 7.1.3 Server returns health alongside goals (never persisted) — `goalToDto` and `todayGroupToDto` now expose `health`, `healthState`, and `overdueCount`.
+- [x] 7.2.1 Plant sprite swaps per state — `<PlantSprite>` already filters per state (Story 0.5); `<GoalPlant>` (Today) now threads `healthState` through so the Today header sprite tints too.
+- [x] 7.2.2 Health badge on `GoalCard` — new `<HealthWarning>` molecule renders on the card body when the goal is wilting / ill / critical (border tint was already there).
+- [x] 7.2.3 Today copy nags appropriately — same `<HealthWarning>` molecule on the Today `<GoalGroup>` header.
 
 ---
 

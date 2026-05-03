@@ -64,6 +64,9 @@ export const GoalDtoSchema = z.object({
   trophyId: z.string().optional(),
   health: z.number().min(0).max(100),
   healthState: HealthStateSchema,
+  /** Server-derived count of overdue tasks at read-time. Drives the
+   *  "X overdue · {nag}" band on `<GoalCard>` / `<GoalGroup>`. Never persisted. */
+  overdueCount: z.number().int().min(0),
 });
 
 export type GoalDto = z.infer<typeof GoalDtoSchema>;

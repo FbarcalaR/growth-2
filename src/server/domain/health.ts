@@ -6,13 +6,17 @@ import type { Goal, ISODate } from "./goal/types";
 const LONG_OVERDUE_DAYS = 7;
 
 /**
- * Count the "overdue weight" of a goal:
+ * Count the *weight* of a goal's overdue work — the input to `getHealth`.
  *  - Each incomplete task with a due date in the past contributes 1.
  *  - Tasks more than 7 days overdue count double (the tight slope from the
  *    domain doc).
  *  - Routines whose streak is 0 and which have at least one repeat day this
  *    week add 0.5 — they're slipping but less catastrophically than a
  *    long-overdue task.
+ *
+ * Note: this returns a *weighted* number (a single 8-day-late task is `2`).
+ * For the user-facing "X overdue" copy use `countOverdueTasks(goal, now)`,
+ * which returns the integer count of overdue tasks only.
  */
 export function getOverdueCount(goal: Goal, now: Date): number {
   const today: ISODate = toISODate(now);
@@ -64,4 +68,21 @@ export function getHealthState(health: number): HealthState {
 /** Convenience: combine overdue count → health → state for a goal. */
 export function getGoalHealthState(goal: Goal, now: Date): HealthState {
   return getHealthState(getHealth(getOverdueCount(goal, now)));
+}
+
+/**
+ * Plain integer count of overdue *tasks* on a goal. Used by the UI for the
+ * "X overdue" nag copy on `<GoalCard>` / `<GoalGroup>`. Routines and
+ * long-overdue weighting are not factored in — that's `getOverdueCount`'s job.
+ */
+export function countOverdueTasks(goal: Goal, now: Date): number {
+  const today: ISODate = toISODate(now);
+  let count = 0;
+  for (const task of goal.tasks) {
+    if (task.completed) continue;
+    if (!task.dueDate) continue;
+    if (task.dueDate >= today) continue;
+    count += 1;
+  }
+  return count;
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useToggleTodayRoutine, useToggleTodayTask } from "@/client/hooks";
-import { TaskRow, RoutineRow } from "@/components/molecules";
+import { HealthWarning, TaskRow, RoutineRow } from "@/components/molecules";
 import type { TodayGroupDto } from "@/shared/schemas/today";
 
 import { FlyingResource } from "./flying-resource";
@@ -25,6 +25,11 @@ export function GoalGroup({ group }: { group: TodayGroupDto }) {
       return next;
     });
 
+  const isUnhealthy =
+    group.goalHealthState === "wilting" ||
+    group.goalHealthState === "ill" ||
+    group.goalHealthState === "critical";
+
   return (
     <li className="bg-surface-card border-surface-muted rounded-lg border-[1.5px] p-3">
       <div className="mb-2 flex items-center gap-2">
@@ -34,12 +39,22 @@ export function GoalGroup({ group }: { group: TodayGroupDto }) {
             background: `color-mix(in srgb, var(--color-area-${group.goalArea}) 13%, transparent)`,
           }}
         >
-          <GoalPlant plantId={group.goalPlantType} stage={group.goalStage} size={32} />
+          <GoalPlant
+            plantId={group.goalPlantType}
+            stage={group.goalStage}
+            healthState={group.goalHealthState}
+            size={32}
+          />
         </span>
         <span className="text-ink-strong flex-1 truncate text-sm leading-tight font-bold">
           {group.goalTitle}
         </span>
       </div>
+      {isUnhealthy && (
+        <div className="mb-2">
+          <HealthWarning state={group.goalHealthState} overdueCount={group.goalOverdueCount} />
+        </div>
+      )}
       <ul className="flex flex-col gap-2">
         {group.tasks.map((task) => (
           <li key={task.id} className="relative">
