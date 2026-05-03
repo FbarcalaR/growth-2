@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useToggleTodayRoutine, useToggleTodayTask } from "@/client/hooks";
 import { HealthWarning, TaskRow, RoutineRow } from "@/components/molecules";
+import { isUnhealthyState } from "@/shared/health";
 import type { TodayGroupDto } from "@/shared/schemas/today";
 
 import { FlyingResource } from "./flying-resource";
@@ -25,10 +26,7 @@ export function GoalGroup({ group }: { group: TodayGroupDto }) {
       return next;
     });
 
-  const isUnhealthy =
-    group.goalHealthState === "wilting" ||
-    group.goalHealthState === "ill" ||
-    group.goalHealthState === "critical";
+  const isUnhealthy = isUnhealthyState(group.goalHealthState);
 
   return (
     <li className="bg-surface-card border-surface-muted rounded-lg border-[1.5px] p-3">

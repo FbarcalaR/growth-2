@@ -519,6 +519,48 @@ A short focused review pass before opening Epic 7. Tidy-up is item 6.R.1.
 
 ---
 
+### 🔍 Epic 7 Review — between-epics gate (PR #31)
+
+A short focused review pass before opening Epic 8. Tidy-up is item 7.R.1.
+
+- [x] 7.R.1 **Tidy up the code that landed Epic 7.** Walked every file Epic 7 added or substantially modified. Most of the surface (`getOverdueCount`, `getHealth`, `getHealthState`, `<PlantSprite>` filters, the `health-{state}{,-bg}` token group) had landed in Story 0.5 / Epic 4 already and has been exercised in production for several epics. Found one duplication worth fixing now.
+  - [x] 7.R.1.a **Extract `isUnhealthyState(state)` predicate to `shared/health.ts`.** Both `<GoalCard>` and `<GoalGroup>` had an inline `state === "wilting" || state === "ill" || state === "critical"` check before rendering `<HealthWarning>`. One helper, one call site each, no future drift if the health state list ever grows.
+  - Items considered and intentionally not fixed:
+    - Inline hex in `goal-card`'s `cardBorderColor` (`#BFBFBF` / `#F5C6CB` / `#FCD9B0` / `#FFE7A6`). These are *border* tints (lighter than the existing `health-{state}-bg` body backgrounds); deriving via `color-mix(in srgb, var(--color-health-{state}) 35%, white)` would replace 4 hex literals with 4 `color-mix` strings. Not a clear win — re-queue if/when a fifth tinted border surfaces and the `--color-health-{state}-border` group earns its place. Tracked in 7.R.9.
+    - `<GoalCard>` still shows the "💀 Dead" chip via `<GoalStatusChips>` while the body shows the dead-plant banner and the border greys out — three independent surfaces, same state. Each one is read in a different scan path (chip = at-a-glance status, banner = "what next" prompt, border = card-level decoration) so the redundancy is intentional.
+    - Schema-fixture parity. The new `overdueCount` / `goalOverdueCount` fields broke the today-page spec's hand-rolled mock responses; fixed in PR #30 follow-up (`75bdabb`). The other specs already use `makeGoalDto` / `makeTodayGroup` and were unaffected. Worth noting in the canonical Between-epic review checklist as "schema additions → walk hand-rolled fixtures alongside the shared `make*Dto` helpers" so it doesn't bite again.
+- [x] 7.R.2 **Walked the user journey end-to-end** for Epic 7:
+  - Create a goal → add a task with a due date *yesterday* → don't complete it → `/garden` card now shows the wilting-yellow band (`1 overdue · A task is overdue — catch up to perk it back up`) below the title chips, and the card border tints `#FFE7A6`. Open `/today` → matching group header shows the same band. The plant sprite tints (saturate 0.65, hue-rotate -8deg) per the existing HEALTH_FILTERS map.
+  - Add another overdue task (now 2) → state escalates to `ill`. The band copy switches to `2 overdue · Multiple tasks overdue — your plant is struggling` (warm-orange tint).
+  - Make a task 8+ days late → it counts double in the *weight* (so 1 long-overdue task = `wilting` state) but the *count* shown in the band remains the literal task count (1 overdue). Both `getOverdueCount` (weight) and `countOverdueTasks` (display count) are exercised.
+  - Push past 4 weight → state becomes `dead` → `<HealthWarning>` returns `null` and the existing dead-plant banner / panel takes over (Replant / Drop on the goal-detail sheet). Confirmed via `getOverdueCount → 4` test in `health.spec.ts` plus the existing `<DeadPlantPanel>` flow.
+  - Verified via the existing 252 unit + integration tests; no browser-driven manual smoke (sandbox limitation noted in Epic 1's review still applies).
+- [x] 7.R.3 **Re-read each affected doc**.
+  - `design-system.md` — `health-{state}{,-bg}` token group already documented in Story 0.5; no update needed.
+  - `coding-guidelines.md` — adding the "schema additions → walk hand-rolled fixtures" rule from 7.R.1 is a future-friendly tweak; deferred to Epic 8 since it's a process note rather than a code change.
+  - `architecture.md` — no new endpoints this epic; the existing `/api/goals` and `/api/today` routes pick up the new `overdueCount` field via their existing DTO mappers.
+  - `domain-model.md` — the `countOverdueTasks` companion (raw integer for UI copy, distinct from the weighted `getOverdueCount` for health math) is documented inline in `domain/health.ts`. The full canonical model didn't change.
+  - `testing-strategy.md` — no convention shift.
+- [x] 7.R.4 **Re-read the backlog**. All 6 Epic-7 sub-tasks (7.1.1, 7.1.2, 7.1.3, 7.2.1, 7.2.2, 7.2.3) are ticked. Notable: 7.1.1, 7.1.2, 7.2.1 were drafted in Story 0.5 and only needed surfacing on the new tabs; 7.1.3 needed `overdueCount` to be added to the DTOs to keep the UI from re-deriving it. Nothing silently dropped.
+- [x] 7.R.5 **Structural sanity check**. Net new files: `components/molecules/health-warning.tsx` (51 lines), `components/molecules/__tests__/health-warning.spec.tsx` (38 lines). Modified: `shared/health.ts` (+ `isUnhealthyState`), `domain/health.ts` (+ `countOverdueTasks`), `services/dtos/{goal,today}.ts` (+ `overdueCount` / `goalOverdueCount`), `shared/schemas/{goal,today}.ts` (matching), `today/_components/{goal-group,goal-plant}.tsx` (+ wiring), `organisms/goal-card/index.tsx` (+ wiring), `test/fixtures/dto.ts` (+ defaults). All under the 400-line trip wire. No file mixes concerns.
+- [x] 7.R.6 **Test sanity check**.
+  - **252 unit + integration specs** (was 245 at end of Epic 6; +7 this epic). New cases: `<HealthWarning>` (5 — wilting copy, ill no-prefix, healthy-null, dead-null, aria-label), `countOverdueTasks` (2 — integer-only count, empty case).
+  - Coverage by layer: shared predicate, domain rule, DTO mapper (transitively via `today.spec.ts` and `goals.spec.ts`), molecule rendering, organism wiring (goal-card transitively in `goal-card.spec.tsx`). No gap.
+- [x] 7.R.7 **CI sanity check**: `check` + `e2e` green on PR #30 (latest `main`: `be9489e`). The PR-#30 follow-up (`75bdabb`) caught a Zod-validation regression in the today-page spec the moment the schema gained `goalOverdueCount`; everything stayed green after that fix. `pnpm format:check`, `pnpm lint`, `pnpm test:unit`, `pnpm build` all green locally on this branch.
+- [x] 7.R.8 **Prototype fidelity check**. Compared `/garden` cards + `/today` group headers against `docs/prototype-design/plans-tab.jsx`'s health-warning block (lines 540–567):
+  - Inline band with icon + colored copy + overdue count — matches.
+  - Tinted card border (lighter than the band background) — matches via the existing `cardBorderColor` map.
+  - Plant sprite filters per health state — matches via `<PlantSprite>`'s HEALTH_FILTERS (Story 0.5).
+  - Drift: the prototype's per-state warning has a `border: 1px solid {color}33` (alpha hex) and we use `border-{state}/25` (Tailwind alpha). Same visual intent, slightly different opacity; visually indistinguishable on the preview.
+- [x] 7.R.9 **Improvements identified for Epic 8 / A**:
+  1. **Re-queued from Epic 4+5 + Epic 6 reviews**: `<AccentPill>` atom and `<StatCard>` molecule. Profile (Story 6.1) + Today greeting + History `<MonthSummary>` + the new health-warning band are all variations of the same "icon + colored value + label" shape. The fifth surface might be Epic 8's empty-state cards. Promote then.
+  2. **`--color-health-{state}-border` token group** — see 7.R.1 above. Re-queue once a fifth border-tinted surface (probably Epic 8's plant-care cards) lands.
+  3. **`<HealthWarning>` could swallow the wrapper margin** — both call sites wrap it in `<div className="mb-2">` / `flex flex-col gap-2`. A `spacing="card" | "compact"` prop on the molecule would pull that decision into one place. Defer until a third surface adopts it.
+  4. **Today's `<GoalPlant>` `data-health-state` attribute** — `<PlantSprite>` already exposes one but `<GoalPlant>` wraps it in a `<span>` that doesn't. If a future test wants to assert "this plant is wilting" without drilling into the SVG, exposing the attr on the wrapper would be the cheapest fix.
+- [x] 7.R.10 **Decision: Epic 7 is done.** Plant health surfaces honestly on `/garden` and `/today`, server-derived from goal state on every read, never persisted. Improvements above are explicitly Epic 8 / A work. Ready to open Epic 8 (Polish).
+
+---
+
 ## Epic 8 — Polish
 - [ ] 8.1 Empty states for every tab
 - [ ] 8.2 Error boundary at the app shell + toast for API failures
