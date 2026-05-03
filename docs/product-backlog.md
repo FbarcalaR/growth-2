@@ -467,6 +467,48 @@ A single combined review pass for Epics 4 and 5 — both shipped without their c
 
 ---
 
+### 🔍 Epic 6 Review — between-epics gate (PR #29)
+
+A short focused review pass before opening Epic 7. Tidy-up is item 6.R.1.
+
+- [x] 6.R.1 **Tidy up the code that landed Epic 6.** Walked every file Epic 6 added or substantially modified looking for the issues in the canonical checklist. Found one worth fixing now; everything else was already addressed by the within-PR feedback (the design trim that dropped Settings + Export/Import in PR #28).
+  - [x] 6.R.1.a **Removed dead reset-on-reopen guard in `<EditNameDialog>`.** The block `if (open && submitting === false && name !== currentName && name === "") setName(currentName);` is unreachable in practice — `<Modal>` returns `null` when `open` is false, so the form unmounts and remounts with `currentName` next time it opens. Replaced with a one-line comment that names the unmount-remount lifecycle so a future reader doesn't add it back.
+  - Items considered and intentionally not fixed:
+    - **`<StatCard>` promotion to a molecule** (queued from 4+5.R.9.2) — Profile's three-card stat strip and History's `<MonthSummary>` are visually distinct enough (icon-above-value vs. icon-inline-with-value, no `sub` vs. always-`sub`, brand/warm tones vs. brand/success/critical tones) that a single molecule would carry both layouts behind a `layout` prop. The right shape will be clearer once Epic 7 (plant health) adds a fourth surface (a "today's resources" strip per the prototype's `<StatCard>` reuse). Re-queued for the Epic 7 review.
+    - **`<AccentPill>` atom** (queued from 4+5.R.9.1) — same reasoning. Five surfaces share the warm-gold pill class string; promoting now while Epic 6 only added one more (the streak pill on `/profile`) doesn't pay back the indirection. Re-queued for Epic 7.
+    - **`profile/page.tsx` is 197 lines** (was 42 before Epic 6) and embeds three local components: `<StatCard>`, `<EditNameDialog>`, `formatJoined`. Under the 400-line trip wire and reads top-to-bottom; splitting `<EditNameDialog>` to its own file would scatter the form's validation rules and the `useUpdateName` mutation it sits next to. Leave.
+- [x] 6.R.2 **Walked the user journey end-to-end** for Epic 6:
+  - `/profile` → header card shows the user's avatar + bold name + "Signed in since {month year}" + outlined **Edit** pill. Tap **Edit** → modal opens with the current name pre-filled → blank submit is rejected by the schema (422 INVALID_INPUT surfaced as an inline error) → typing a new name + Save → modal closes + header re-renders with the new name + the `["me"]` cache is updated optimistically.
+  - Stat strip: Coins earned (warm-gold), Day streak (warm-gold), Goals (brand-green) — all read live from `user.totalCoinsEarned`, `user.streak`, and `useGoals().data?.length`.
+  - Reset: tap **Reset all data** → `<ConfirmDialog>` with the double-confirm "type RESET" gate → confirm runs `POST /api/me/reset` → goals + garden + completions wiped, wallet/streak/wheel zeroed, `prioritiesLocked: false`. Next render the priorities modal pops up via the app shell because the user is back to a fresh-start state. Verified via the API specs in `me-data.spec.ts` (3 cases) and the shell layout's existing modal logic.
+  - Sign out: tap **Sign out** → `meApi.signOut()` clears the dev-session cookie → `useSession()` flips to `user: null` → app shell redirects to `/login`.
+- [x] 6.R.3 **Re-read each affected doc**.
+  - `architecture.md` — authed-route list still four; `/api/me/reset` is the only new endpoint Epic 6 shipped (`/api/me/export` and `/api/me/import` were reverted in the within-PR design trim). ✅
+  - `coding-guidelines.md` — no convention shift; the React 18 `useSyncExternalStore` snapshot-caching pitfall is now folklore in this PR's commit history (`fix(profile): cache useAppPrefs snapshot to avoid React getSnapshot loop` on PR #28). Worth noting in the canonical Between-epic review checklist if it bites again. Skipped for now since the offending hook was reverted in the trim.
+  - `design-system.md` — no new tokens this epic; the `progress-*` and `accent-warm-*` groups documented in the Epic 4+5 review are still accurate.
+  - `domain-model.md` — no new persistent types. The reset rule (zero wallet/streak/wheel + `prioritiesLocked: false`, keep id + name) is documented inline in `users.resetAll`.
+  - `testing-strategy.md` — no convention shift.
+- [x] 6.R.4 **Re-read the backlog**. Sub-tasks ticked: 6.1.1, 6.1.2, 6.3.1. Sub-tasks dropped on PR-#28 design trim and struck-through with a parenthetical: 6.2.1, 6.2.2, 6.3.2, 6.3.3. The dropped surfaces aren't dead code — Settings + Export/Import were removed completely from the codebase (component + hook + service + route + schema + tests) so the backlog matches what's on disk. If a real settings need surfaces later, those rows are easy to un-strike.
+- [x] 6.R.5 **Structural sanity check**. Net new files: `app/(app)/profile/_components/reset-action.tsx` (64 lines), `client/hooks/use-me-data.ts` (28), `app/api/me/reset/route.ts` (13), `server/__tests__/api/me-data.spec.ts` (76). Modified: `profile/page.tsx` (now 197 lines, was 42), `client/api/me.ts` (+ `updateName`, `reset`), `client/hooks/use-session.ts` (+ `updateName`), `server/services/user-service.ts` (+ `updateName`, `resetAll` — now 58 lines, was 30), `repositories/{goal,completion}-repo.ts` (+ `deleteAllByUser`), `repositories/memory/{goal,completion}-repo.ts` (+ impl), `repositories/__tests__/conformance.ts` (+2 cases), `components/molecules/confirm-dialog.tsx` (+ `confirmDisabled` + `children` slots). All under the 400-line trip wire. No file mixes concerns.
+- [x] 6.R.6 **Test sanity check**.
+  - **245 unit + integration specs** (was 242 at end of Epic 4+5; +3 net for Epic 6 — was a brief +13 before the design trim reverted 10 of them).
+  - New / modified suites: `me.spec.ts` +3 (rename happy path / 422 / 401 from Story 6.1), `me-data.spec.ts` +3 (reset 401, reset zeros wallet+wheel+goals+completions), conformance +2 (`goals.deleteAllByUser`, `completions.deleteAllByUser`).
+  - Coverage by layer: server (route 401/200, service zeroing, repo conformance), API (rename + reset round-trip), client cache (mutation invalidates `me`/`goals`/`garden`/`today`/`history`), UI (covered transitively through the existing `goal-detail-sheet` / `today` page specs that drive the same hooks). No gap.
+- [x] 6.R.7 **CI sanity check**: `check` + `e2e` green on PRs #26 / #27 / #28 (latest commits on `main` after Epic 6). `pnpm format:check`, `pnpm lint`, `pnpm test:unit`, `pnpm build` all green locally on this branch. No flakes observed.
+- [x] 6.R.8 **Prototype fidelity check**. Compared `/profile` against `docs/prototype-design/profile-tab.jsx`:
+  - Header card with avatar + name + Edit affordance — matches (the prototype hero gradient is deferred to Epic 8 polish; the white card reads cleaner against the rest of the app's surfaces).
+  - Stat strip (Streak, Coins, Goals) — matches the prototype's three-card row shape, simplified from the prototype's six cards (Tasks Done / Plants / Decorations are deferred — covered partially by the History tab's calendar already).
+  - Reset action with two-step confirmation — matches the prototype's `🔄 Reset Progress` row + `⚠️ Reset Everything?` modal, plus an extra "type RESET" gate the prototype doesn't have (added on the design-feedback round; cheap blast-radius reducer).
+  - Drift: the prototype's Settings list (Notifications / Dark Mode / Export Data) and the Achievements grid are intentionally not shipped (Settings dropped on PR #28 design trim; Achievements deferred — it's a downstream surface of the Trophies on `/garden`). Called out in the dropped sub-tasks above.
+- [x] 6.R.9 **Improvements identified for Epic 7 / 8**:
+  1. **Re-queued from Epic 4+5 review**: `<AccentPill>` atom and `<StatCard>` molecule. The fourth surface that lands in Epic 7 (a per-goal health resources strip per the prototype's `health-tab.jsx`) makes the right shape clear; promote then.
+  2. **`<EditNameDialog>` as `<EditTextDialog>`** — the same modal shape (current value pre-filled + trimmed validation + 422-aware error + Save/Cancel) will be needed when Epic 7 / 8 surface "edit task title" on a swipe row and "rename a routine". One molecule, multiple call sites.
+  3. **`useResetData` test coverage** — the mutation isn't currently exercised through the React-Query layer; the API spec covers the route and the service end-to-end but a small client-side spec would catch a future regression where invalidation breaks. Defer until the first user-visible bug shows up.
+  4. **Server-side ETag on `/api/me`** — every navigation refetches the user record (TanStack Query's `staleTime: 60_000` softens it but doesn't avoid the round-trip on a long-idle tab). When persistence lands (Epic A) the right place to add `If-None-Match` is the `requireUser()` helper. Track in Epic A.
+- [x] 6.R.10 **Decision: Epic 6 is done.** Profile tab ships display + rename + reset + sign-out. The dropped sub-tasks (Settings + Export/Import) are recorded as such in the backlog with a struck-through note explaining the design trim — easy to un-strike if the product need re-emerges. Improvements above are Epic 7 / 8 / A work. Ready to open Epic 7 (Plant health system).
+
+---
+
 ## Epic 7 — Plant health system
 - [ ] 7.1.1 `getOverdueCount`, `getHealth`, `getHealthState` (already drafted in 0.5)
 - [ ] 7.1.2 Long-overdue (>7d) doubled; missed routines half-weight
