@@ -11,7 +11,8 @@ import { type Stage } from "@/shared/plants";
 
 import { GoalEditor } from "./goal-editor";
 import { GoalIcon } from "./goal-card/goal-icon";
-import { DeadPlantBanner, FullyBloomingBanner, GoalGrowthBar } from "./goal-card/goal-growth-bar";
+import { DeadPlantPanel } from "./goal-card/dead-plant-panel";
+import { FullyBloomingBanner, GoalGrowthBar } from "./goal-card/goal-growth-bar";
 import { GoalStatusChips } from "./goal-card/goal-status-chips";
 
 type GoalDetailSheetProps = {
@@ -107,9 +108,7 @@ export function GoalDetailSheet({
           )}
 
           {!isSeed && isDead && (
-            <div className="mt-3">
-              <DeadPlantBanner />
-            </div>
+            <DeadPlantPanel goalId={goal.id} goalTitle={goal.title} onDeleted={onClose} />
           )}
           {!isSeed && !isDead && isFullyGrown && (
             <div className="mt-3">

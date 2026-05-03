@@ -27,15 +27,15 @@ describe("/api/shop", () => {
   it("POST /api/shop/buy debits coins and returns the updated user", async () => {
     const me = await signIn("Ada");
     await giveCoins(me.id, 100);
-    const res = await BUY(jsonRequest("POST", { itemId: "rock" })); // costs 8
+    const res = await BUY(jsonRequest("POST", { itemId: "stone_path" })); // costs 25
     expect(res.status).toBe(200);
     const { user } = await res.json();
-    expect(user.shopCoins).toBe(92);
+    expect(user.shopCoins).toBe(75);
   });
 
   it("rejects insufficient coins with 402", async () => {
     await signIn("Ada");
-    const res = await BUY(jsonRequest("POST", { itemId: "rainbow" })); // costs 100, user has 0
+    const res = await BUY(jsonRequest("POST", { itemId: "pagoda" })); // costs 420, user has 0
     expect(res.status).toBe(402);
     expect((await res.json()).code).toBe("INSUFFICIENT_COINS");
   });
@@ -43,8 +43,8 @@ describe("/api/shop", () => {
   it("rejects duplicate purchase with 409", async () => {
     const me = await signIn("Ada");
     await giveCoins(me.id, 100);
-    await BUY(jsonRequest("POST", { itemId: "rock" }));
-    const res = await BUY(jsonRequest("POST", { itemId: "rock" }));
+    await BUY(jsonRequest("POST", { itemId: "stone_path" }));
+    const res = await BUY(jsonRequest("POST", { itemId: "stone_path" }));
     expect(res.status).toBe(409);
     expect((await res.json()).code).toBe("DECO_ALREADY_OWNED");
   });
