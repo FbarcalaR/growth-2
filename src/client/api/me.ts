@@ -1,9 +1,11 @@
 import {
   CreateSessionRequestSchema,
   LockPrioritiesRequestSchema,
+  UpdateUserRequestSchema,
   UserDtoSchema,
   type CreateSessionRequest,
   type LockPrioritiesRequest,
+  type UpdateUserRequest,
   type UserDto,
 } from "@/shared/schemas/user";
 
@@ -19,6 +21,12 @@ export const meApi = {
     }),
 
   signOut: () => apiFetchVoid("/api/me", { method: "DELETE" }),
+
+  updateName: (input: UpdateUserRequest) =>
+    apiFetch<UserDto>("/api/me", UserDtoSchema, {
+      method: "PATCH",
+      body: UpdateUserRequestSchema.parse(input),
+    }),
 
   lockPriorities: (input: LockPrioritiesRequest) =>
     apiFetch<UserDto>("/api/me/priorities", UserDtoSchema, {

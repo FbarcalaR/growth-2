@@ -26,5 +26,10 @@ export function createUserService({ clock, repos }: AppContainer) {
       const next = lockPriorities(user, wheel);
       return repos.users.update(next);
     },
+
+    /** Rename the signed-in user. Trim + max-length is enforced at the schema layer. */
+    async updateName(user: User, name: string): Promise<User> {
+      return repos.users.update({ ...user, name });
+    },
   };
 }
