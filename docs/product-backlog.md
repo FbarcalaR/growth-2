@@ -408,11 +408,11 @@ Stories 4.1 + 4.2 ship in **PR #23** (the foundation + the planting flow). Stori
 
 ---
 
-## Epic 5 — History tab
-- [ ] 5.1.1 `GET /api/history?month=YYYY-MM` returns completion counts per day
-- [ ] 5.1.2 Month view; dot density per day
-- [ ] 5.1.3 Tap a day → list of completions
-- [ ] 5.1.4 Streak summary at top
+## Epic 5 — History tab ✅ (PR #25)
+- [x] 5.1.1 `GET /api/history?month=YYYY-MM` returns completion counts per day
+- [x] 5.1.2 Month view; dot density per day
+- [x] 5.1.3 Tap a day → list of completions
+- [x] 5.1.4 Streak summary at top
 
 ---
 
