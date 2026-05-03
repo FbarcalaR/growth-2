@@ -38,7 +38,15 @@ export const ACCENT_OPTIONS: ReadonlyArray<{ label: string; hex: string | null }
 
 const listeners = new Set<() => void>();
 
-function readStorage(): AppPrefs {
+/**
+ * Cached snapshot — `useSyncExternalStore` requires `getSnapshot` to return
+ * a stable reference for the same underlying state. Without this cache,
+ * each call returns a freshly-allocated object, React detects "the result
+ * of getSnapshot should be cached" and re-renders forever.
+ */
+let cachedSnapshot: AppPrefs | undefined;
+
+function readStorageRaw(): AppPrefs {
   if (typeof window === "undefined") return DEFAULT_PREFS;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -51,6 +59,11 @@ function readStorage(): AppPrefs {
   } catch {
     return DEFAULT_PREFS;
   }
+}
+
+function getSnapshot(): AppPrefs {
+  if (!cachedSnapshot) cachedSnapshot = readStorageRaw();
+  return cachedSnapshot;
 }
 
 function writeStorage(next: AppPrefs): void {
@@ -77,7 +90,7 @@ function subscribe(callback: () => void): () => void {
 
 /** Read the current preferences (reactive — re-renders when `update` is called). */
 export function useAppPrefs(): AppPrefs {
-  return useSyncExternalStore(subscribe, readStorage, getServerSnapshot);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 /**
@@ -85,9 +98,10 @@ export function useAppPrefs(): AppPrefs {
  * notify subscribers. Stays a plain function so call sites don't need a hook.
  */
 export function updateAppPrefs(patch: Partial<AppPrefs>): void {
-  const current = readStorage();
+  const current = getSnapshot();
   const next: AppPrefs = { ...current, ...patch };
   writeStorage(next);
+  cachedSnapshot = next;
   if (patch.accent !== undefined) applyAccent(next.accent);
   for (const cb of listeners) cb();
 }
@@ -98,5 +112,5 @@ export function updateAppPrefs(patch: Partial<AppPrefs>): void {
  * may show the default before the effect runs — acceptable for this surface.)
  */
 export function hydrateAccentOnMount(): void {
-  applyAccent(readStorage().accent);
+  applyAccent(getSnapshot().accent);
 }
