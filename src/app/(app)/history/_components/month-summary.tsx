@@ -33,7 +33,7 @@ type Tone = "brand" | "success" | "critical";
 
 const TONE_VALUE: Record<Tone, string> = {
   brand: "text-brand-700",
-  success: "text-[#43A047]",
+  success: "text-success-strong",
   critical: "text-health-critical",
 };
 
