@@ -1,14 +1,19 @@
-import { getGoalHealthState, getHealth, getOverdueCount } from "../../domain/health";
+import {
+  countOverdueTasks,
+  getGoalHealthState,
+  getHealth,
+  getOverdueCount,
+} from "../../domain/health";
 import type { Goal } from "../../domain/goal/types";
 import type { GoalDto } from "@/shared/schemas/goal";
 
 /**
  * Domain `Goal` → wire `GoalDto`. Drops `userId` (the wire is already
- * user-scoped via the session) and adds derived `health` + `healthState`,
- * which are computed at read time and never persisted.
+ * user-scoped via the session) and adds derived `health` + `healthState` +
+ * `overdueCount`, all computed at read time and never persisted.
  */
 export function goalToDto(goal: Goal, now: Date): GoalDto {
-  const overdue = getOverdueCount(goal, now);
+  const overdueWeight = getOverdueCount(goal, now);
   return {
     id: goal.id,
     title: goal.title,
@@ -27,7 +32,8 @@ export function goalToDto(goal: Goal, now: Date): GoalDto {
     completed: goal.completed,
     completedAt: goal.completedAt,
     trophyId: goal.trophyId,
-    health: getHealth(overdue),
+    health: getHealth(overdueWeight),
     healthState: getGoalHealthState(goal, now),
+    overdueCount: countOverdueTasks(goal, now),
   };
 }
