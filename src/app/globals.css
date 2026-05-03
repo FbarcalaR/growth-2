@@ -83,6 +83,17 @@
   --color-accent-warm-bg: #fff8e1;
   --color-accent-warm-border: #ffe0b2;
 
+  /* Progress / history palette — used by the History tab's day bubble + day
+     detail panel for "perfect / partial / missed / planned" states. The
+     "missed" tone reuses the existing `health-critical*` tokens (same red),
+     so this group only adds the success + planned hues the prototype paints
+     in `history-tab.jsx`. */
+  --color-success-strong: #43a047;
+  --color-success-soft: #a5d6a7;
+  --color-success-bg: #e8f5e9;
+  --color-info: #1976d2;
+  --color-info-soft: #90caf9;
+
   /* Radii */
   --radius-sm: 8px;
   --radius-md: 12px;

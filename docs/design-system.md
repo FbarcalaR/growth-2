@@ -41,6 +41,18 @@ A three-token group for the warm-accent palette used on the coin pill, the strea
 | `accent-warm-bg` | `#FFF8E1` | Pill / badge background |
 | `accent-warm-border` | `#FFE0B2` | Pill / badge border |
 
+## Progress / history palette
+
+Used by the History tab's day bubble + day detail panel. The "missed" tone reuses the existing `health-critical*` tokens (same red), so this group only carries the success + planned hues. Reach for these when a future surface shows past-day rollups, "perfect" badges, or upcoming-day chips.
+
+| Token | Value | Use |
+|---|---|---|
+| `success-strong` | `#43A047` | Stat-card value for "Perfect days" |
+| `success-soft` | `#A5D6A7` | "Done" bullet bg, partial-arc ring |
+| `success-bg` | `#E8F5E9` | Today bubble bg, partial-arc track |
+| `info` | `#1976D2` | "Planned" / upcoming foreground |
+| `info-soft` | `#90CAF9` | "Planned" bullet bg |
+
 ## Brand greens
 
 | Token | Value | Use |

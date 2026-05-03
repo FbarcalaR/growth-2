@@ -52,7 +52,7 @@ export function DayDetailPanel({ day, todayIso }: DayDetailPanelProps) {
           {isToday ? "Today" : isFuture ? "Upcoming" : "Past"}
         </p>
         <p className="text-ink-strong text-[17px] leading-tight font-extrabold">{dateLabel}</p>
-        <p className="mt-1 text-[12px] font-semibold text-[#3A6647]">{summary}</p>
+        <p className="text-brand-700 mt-1 text-[12px] font-semibold">{summary}</p>
       </header>
 
       {isFuture ? (
@@ -80,15 +80,15 @@ export function DayDetailPanel({ day, todayIso }: DayDetailPanelProps) {
 type Tone = "done" | "missed" | "planned";
 
 const TONE_TITLE: Record<Tone, string> = {
-  done: "text-[#3A6647]",
+  done: "text-brand-700",
   missed: "text-health-critical",
-  planned: "text-[#1976D2]",
+  planned: "text-info",
 };
 
 const TONE_BULLET: Record<Tone, string> = {
-  done: "bg-[#A5D6A7] text-white",
-  missed: "bg-[#F0BFC2] text-health-critical",
-  planned: "bg-[#90CAF9] text-[#1976D2]",
+  done: "bg-success-soft text-white",
+  missed: "bg-health-critical-bg text-health-critical",
+  planned: "bg-info-soft text-info",
 };
 
 function DetailSection({

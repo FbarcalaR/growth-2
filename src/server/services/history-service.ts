@@ -95,7 +95,12 @@ export function createHistoryService({ clock, repos }: AppContainer) {
       }
 
       const monthPct = scheduledThisMonth === 0 ? 0 : completedThisMonth / scheduledThisMonth;
-      const currentStreak = computeCurrentStreak(today, goalsById, repos.completions, user.id);
+      const currentStreak = await computeCurrentStreak(
+        today,
+        goalsById,
+        repos.completions,
+        user.id,
+      );
 
       return {
         month: monthIso,
@@ -106,7 +111,7 @@ export function createHistoryService({ clock, repos }: AppContainer) {
           monthPct,
           completedThisMonth,
           scheduledThisMonth,
-          currentStreak: await currentStreak,
+          currentStreak,
         },
       };
     },
@@ -119,7 +124,6 @@ function buildDay(
   goalsById: Map<string, Goal>,
   events: Completion[],
 ): HistoryDay {
-  const isPast = iso < today;
   const isFuture = iso > today;
   const dow = mondayFirstWeekday(iso);
 
@@ -198,11 +202,6 @@ function buildDay(
     else missed.push(item);
   }
 
-  // Past goal-completion events shouldn't pollute "missed" — they're already in
-  // `completed`. Goal-completion events have `kind === "goal"` and aren't part
-  // of the scheduled walk, so nothing to filter here.
-  void isPast;
-
   return { date: iso, completed, missed, planned };
 }
 
@@ -216,12 +215,25 @@ async function computeCurrentStreak(
   // it had >0 scheduled items and every one of them was completed. Stop on
   // the first non-perfect day. Cap at 90 days so a user with no scheduled
   // history doesn't trigger an unbounded scan.
+  //
+  // Fetch the whole 90-day window once and partition events by date in
+  // memory — keeps this O(1) round-trips against the repo regardless of
+  // streak length.
   const MAX = 90;
+  const from = addDaysISO(today, -MAX);
+  const to = addDaysISO(today, -1);
+  const events = await repo.listByUserBetween(userId, from, to);
+  const eventsByDate = new Map<ISODate, Completion[]>();
+  for (const event of events) {
+    const list = eventsByDate.get(event.completedDate);
+    if (list) list.push(event);
+    else eventsByDate.set(event.completedDate, [event]);
+  }
+
   let streak = 0;
-  let cursor = addDaysISO(today, -1);
+  let cursor = to;
   for (let i = 0; i < MAX; i += 1) {
-    const dayEvents = await repo.listByUserBetween(userId, cursor, cursor);
-    const day = buildDay(cursor, today, goalsById, dayEvents);
+    const day = buildDay(cursor, today, goalsById, eventsByDate.get(cursor) ?? []);
     const scheduled = day.completed.length + day.missed.length;
     if (scheduled === 0) break;
     if (day.completed.length !== scheduled) break;
