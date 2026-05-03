@@ -59,5 +59,9 @@ export function createInMemoryGoalRepo(): GoalRepo {
       if (!bucket || !bucket.has(goalId)) throw new DomainError("GOAL_NOT_FOUND");
       bucket.delete(goalId);
     },
+
+    async deleteAllByUser(userId) {
+      byUser.delete(userId);
+    },
   };
 }

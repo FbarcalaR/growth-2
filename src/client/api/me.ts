@@ -1,3 +1,4 @@
+import { ExportPayloadSchema, type ExportPayload } from "@/shared/schemas/export";
 import {
   CreateSessionRequestSchema,
   LockPrioritiesRequestSchema,
@@ -32,5 +33,16 @@ export const meApi = {
     apiFetch<UserDto>("/api/me/priorities", UserDtoSchema, {
       method: "PATCH",
       body: LockPrioritiesRequestSchema.parse(input),
+    }),
+
+  reset: () => apiFetch<UserDto>("/api/me/reset", UserDtoSchema, { method: "POST" }),
+
+  exportState: (signal?: AbortSignal) =>
+    apiFetch<ExportPayload>("/api/me/export", ExportPayloadSchema, { signal }),
+
+  importState: (payload: ExportPayload) =>
+    apiFetch<UserDto>("/api/me/import", UserDtoSchema, {
+      method: "POST",
+      body: ExportPayloadSchema.parse(payload),
     }),
 };

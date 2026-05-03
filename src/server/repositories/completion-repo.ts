@@ -15,4 +15,6 @@ export type CompletionRepo = {
    * (both inclusive). The History tab queries one calendar month at a time.
    */
   listByUserBetween(userId: UserId, from: ISODate, to: ISODate): Promise<Completion[]>;
+  /** Drop every event owned by `userId`. Used by the reset / import flows. */
+  deleteAllByUser(userId: UserId): Promise<void>;
 };
