@@ -39,6 +39,32 @@ user-visible PR is the prototype bundle under
 [`docs/prototype-design/`](./docs/prototype-design/README.md) (the
 `screenshots/` subfolder shows each tab as designed).
 
+## Persistence
+
+The repo selection lives behind the `GROWTH_REPO` env var:
+
+- **`memory`** (default) — in-memory store. Wipes on every server restart.
+  Suitable for local dev, the test suite, and the dev sandbox.
+- **`prisma`** — Postgres via Prisma 6 (Epic A). Reads `DATABASE_URL` from
+  the same env. Use in Vercel preview / production. Vercel's Neon
+  integration sets `DATABASE_URL` automatically.
+
+```bash
+# Local Prisma flow (assumes a Postgres on DATABASE_URL):
+pnpm db:generate    # regenerate the client (also runs on install)
+pnpm db:migrate     # `prisma migrate dev` — create + apply a migration
+pnpm db:deploy      # `prisma migrate deploy` — apply pending migrations in CI/prod
+pnpm db:seed        # seed a demo "Ada" user with two goals
+
+# Run the conformance suite against Postgres:
+RUN_PRISMA_TESTS=1 DATABASE_URL=... pnpm test:unit
+```
+
+For **Vercel deploys** with the Neon integration: set the project's
+**Build Command** to `pnpm vercel-build`. That runs `prisma migrate deploy`
+against the Vercel-injected `DATABASE_URL` before `next build`, so every
+deploy applies any pending migrations atomically.
+
 ## Docs
 
 | Doc | What it covers |

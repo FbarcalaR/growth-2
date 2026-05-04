@@ -1,0 +1,169 @@
+// Prisma schema for the Growth app (Epic A: Postgres persistence).
+//
+// One Prisma model per persistent domain entity. The DTO ↔ domain split is
+// preserved: Prisma owns persistence; `services/` owns the read/write contract;
+// `domain/` owns the rules. Repo impls under `repositories/prisma/` translate
+// between Prisma rows and domain types so neither layer needs to know about
+// the other.
+//
+// Naming: snake_case in the database (`@@map`/`@map`) so a future ORM swap or
+// raw-SQL bypass doesn't have to rename columns. PascalCase model names so
+// generated TypeScript reads naturally on the client side of the boundary.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+//
+// The current dev session resolves to a single user; Auth.js (Epic B) will
+// take over the create-or-find behaviour but the row shape stays the same.
+// `wheelOfLife` is a JSONB column so we don't have to grow the schema every
+// time the seven-area list changes.
+model User {
+  id               String  @id
+  name             String  @unique
+  createdAt        BigInt  @map("created_at")
+  shopCoins        Int     @default(0) @map("shop_coins")
+  totalCoinsEarned Int     @default(0) @map("total_coins_earned")
+  streak           Int     @default(0)
+  wheelOfLife      Json    @default("{}") @map("wheel_of_life")
+  prioritiesLocked Boolean @default(false) @map("priorities_locked")
+
+  goals       Goal[]
+  gardenTiles GardenTile[]
+  ownedDecos  OwnedDeco[]
+  trophies    Trophy[]
+  completions Completion[]
+
+  @@map("users")
+}
+
+// ─── Goal + nested Tasks / Routines ─────────────────────────────────────────
+//
+// Tasks and Routines belong to a goal (1:N) and are loaded eagerly when the
+// repo reads a goal — the domain `Goal` type carries them inline. Cascade-
+// delete on the FK so dropping a goal cleans up its children automatically.
+model Goal {
+  id          String   @id
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  area        String
+  plantType   String   @map("plant_type")
+  stage       Int      @default(0)
+  plantRes    Json     @default("{}") @map("plant_res")
+  planted     Boolean  @default(false)
+  tileCol     Int?     @map("tile_col")
+  tileRow     Int?     @map("tile_row")
+  completed   Boolean? @default(false)
+  completedAt BigInt?  @map("completed_at")
+  trophyId    String?  @map("trophy_id")
+
+  tasks    Task[]
+  routines Routine[]
+  trophy   Trophy?
+
+  @@unique([userId, tileCol, tileRow], name: "userId_tileCol_tileRow")
+  @@index([userId])
+  @@map("goals")
+}
+
+model Task {
+  id        String  @id
+  goalId    String  @map("goal_id")
+  goal      Goal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  title     String
+  completed Boolean @default(false)
+  dueDate   String? @map("due_date")
+  position  Int
+
+  @@index([goalId])
+  @@map("tasks")
+}
+
+model Routine {
+  id                   String   @id
+  goalId               String   @map("goal_id")
+  goal                 Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  title                String
+  completedToday       Boolean  @default(false) @map("completed_today")
+  streak               Int      @default(0)
+  // Mon..Sun stored as a JSON array of 7 booleans.
+  repeatDays           Json     @map("repeat_days")
+  permanentlyCompleted Boolean? @default(false) @map("permanently_completed")
+  position             Int
+
+  @@index([goalId])
+  @@map("routines")
+}
+
+// ─── Garden tiles + owned decos ─────────────────────────────────────────────
+//
+// `GardenTile` represents either a planted-goal anchor (`kind: "plant"`) or a
+// placed decoration (`kind: "deco"`). Empty cells just don't have a row.
+// `(userId, tileCol, tileRow)` uniqueness keeps the 8×6 grid honest.
+//
+// Trophies + decoration purchases are split into their own tables (the
+// in-memory impl smushed them into one `garden.owned` array; we keep the same
+// public DTO but normalise underneath).
+model GardenTile {
+  userId  String  @map("user_id")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tileCol Int     @map("tile_col")
+  tileRow Int     @map("tile_row")
+  kind    String // "plant" | "deco"
+  goalId  String? @map("goal_id")
+  decoId  String? @map("deco_id")
+
+  @@id([userId, tileCol, tileRow])
+  @@map("garden_tiles")
+}
+
+model OwnedDeco {
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decoId String @map("deco_id")
+
+  @@id([userId, decoId])
+  @@map("owned_decos")
+}
+
+model Trophy {
+  // `trophy_${goalId}` — the same shape the in-memory impl mints. Stored as
+  // its own row instead of mixed into the deco list so a future "trophy gallery"
+  // surface (Story 4.4) can join Goal directly.
+  id     String @id
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId String @unique @map("goal_id")
+  goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("trophies")
+}
+
+// ─── Completion event log ───────────────────────────────────────────────────
+//
+// Append-only. Story 5.1 added this so the History tab can render an honest
+// per-day rollup; Story 5.1 also pinned the title at insertion-time so a
+// later goal/task delete doesn't erase the entry.
+model Completion {
+  id            String  @id
+  userId        String  @map("user_id")
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalId        String  @map("goal_id")
+  kind          String // "task" | "routine" | "goal"
+  itemId        String? @map("item_id")
+  title         String
+  completedDate String  @map("completed_date") // YYYY-MM-DD
+  completedAt   BigInt  @map("completed_at")
+
+  @@index([userId, completedDate])
+  @@map("completions")
+}
