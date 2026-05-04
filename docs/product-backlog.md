@@ -625,6 +625,46 @@ The point of the repository abstraction was that this would be self-contained �
 
 ---
 
+### 🔍 Epic A Review — between-epics gate (PR #35)
+
+A short focused review pass before opening Epic B (Auth.js). Tidy-up is item A.R.1.
+
+- [x] A.R.1 **Tidy up the code that landed Epic A.** Walked the surface this epic added: `prisma/schema.prisma` (170 lines), the five files under `src/server/repositories/prisma/` (longest is `garden-repo.ts` at 124, then `goal-repo.ts` at 145, then the `client.ts` singleton at 23), `prisma/migrations/0_init/migration.sql` (153 generated lines), `prisma/seed.ts` (110 lines), the conformance spec (66 lines), and the container + README + `.env.example` plumbing. Largely green-field — no existing service or domain code changed. Found one note worth landing now.
+  - [x] A.R.1.a **Document Postgres null-uniqueness on `Goal.@@unique`.** Postgres treats `(userId, NULL, NULL)` rows as distinct under a unique index, so multiple unplanted goals coexist without violating `userId_tileCol_tileRow`. Once a goal is planted the (col, row) pair becomes non-null and the constraint enforces "one goal per tile" — the same invariant the in-memory `placeDeco` rule defends. Added an inline comment on the model so a future schema reader doesn't trip on it.
+  - Items considered and intentionally not fixed:
+    - **`Goal.completed: Boolean? @default(false)`** is technically redundant (nullable + default-false reads the same as non-null default-false). Kept the nullability because the domain `Goal.completed?: boolean` is `undefined`-or-`true` in practice and the migration is already deployed; flipping it now would need a column-NOT-NULL migration with no real benefit.
+    - **`garden-repo.update` deletes + recreates trophy rows on every garden write.** At typical N (0–10 trophies per user) the cost is negligible. If a future surface (the prototype's "trophy gallery") grows the count, switch to a diff-based update.
+    - **`prisma/seed.ts` lives outside `src/`** so the global `tsconfig.json` doesn't typecheck it. That's intentional — Prisma seed scripts traditionally live in `prisma/` next to the schema; a separate `tsconfig.seed.json` would add noise. The `pnpm db:seed` script runs it via `tsx` which doesn't need the project tsconfig.
+    - **`require("../prisma")` lazy load in the conformance spec** — necessary to keep `@prisma/client` out of the test runner's import graph when the env flag is off (the generated client doesn't exist in CI without a real `DATABASE_URL`). The eslint-disable comment explains why.
+- [x] A.R.2 **Walked the user journey end-to-end** for Epic A:
+  - Local `memory` path (default): `pnpm dev` → `/login` → name "Ada" → priorities → `/today`. Refresh → goals empty (in-memory wiped on restart). This is the intended dev experience.
+  - Local `prisma` path (with a Postgres on `DATABASE_URL`): `GROWTH_REPO=prisma pnpm dev` → same flow → refresh → goals persist. `pnpm db:seed` against the same DB lights up the tab with the demo Ada user.
+  - Vercel preview path (after `Build Command: pnpm vercel-build` + `GROWTH_REPO=prisma` env): preview deploys. First deploy applies `0_init` via `prisma migrate deploy`; subsequent deploys skip it. Browser interactions persist across page refresh and even across redeploys (data survives in Neon).
+  - Prisma conformance suite: ran the 23 cases against a local Postgres locally — all pass. Same fixtures + same assertions the in-memory impl satisfies; the abstraction holds.
+- [x] A.R.3 **Re-read each affected doc**.
+  - `README.md` — `Persistence` section documents the `GROWTH_REPO` switch + the Vercel `Build Command` setting + the local Prisma flow. ✅
+  - `architecture.md` — should grow a paragraph noting that the persistence layer can swap between `memory` and `prisma` per env. Deferred to a small chore PR; the README + the schema-level comments cover the in-PR audience.
+  - `coding-guidelines.md` — no convention shift. The "schema additions → walk hand-rolled fixtures alongside `make*Dto`" rule from the Epic 7 review is still outstanding; defer to the same chore PR.
+  - `domain-model.md` — no domain changes; the persistent shape didn't shift.
+  - `testing-strategy.md` — note that the Prisma conformance suite is opt-in (`RUN_PRISMA_TESTS=1`). Worth a one-line addition; defer to the same chore PR.
+- [x] A.R.4 **Re-read the backlog**. All 6 Epic-A sub-tasks (A.1–A.6) are ticked. Notable additions captured during implementation: the `vercel-build` script (chains `prisma migrate deploy` + `next build`), the `postinstall` hook for `prisma generate`, the `Trophy` model split out from `OwnedDeco` (the in-memory impl mixed them in `garden.owned`; the schema normalises so a future "trophy gallery" surface can join Goal directly), and the `Completion` model carried over from Epic 5. Nothing silently dropped.
+- [x] A.R.5 **Structural sanity check**. New folders: `prisma/` (schema + migrations + seed), `src/server/repositories/prisma/` (5 files: `client.ts` + one impl per repo + `index.ts`). Largest files: `prisma/schema.prisma` (170), `goal-repo.ts` (145), `garden-repo.ts` (124), `migration.sql` (153 — generated). All under the 400-line trip wire. The `src/server/repositories/{memory,prisma}/` symmetry mirrors the conformance contract — easy to grok the swap.
+- [x] A.R.6 **Test sanity check**.
+  - **253 unit + integration specs** unchanged + **23 Prisma conformance cases** added (skipped in CI, opt-in locally). The conformance suite is the source of truth for "the Prisma impl behaves identically to the in-memory one"; running it against either factory produces the same result.
+  - Coverage by layer: Prisma adds repository-layer parity. Service / route / UI layers don't need new tests — they're agnostic to the impl behind the interface (which is the whole point of Story 0.6's abstraction).
+- [x] A.R.7 **CI sanity check**: `check` + `e2e` green on PR #34 (`main` is at the merge commit). `pnpm format:check`, `pnpm lint`, `pnpm test:unit`, `pnpm build` all green locally on this branch. The Vercel preview deploy applied `0_init` cleanly — confirmed by visiting `/login` on the preview URL and signing in.
+- [x] A.R.8 **Prototype fidelity check**. Persistence is plumbing — no visual surfaces touched. The user-visible behaviour matches the in-memory path exactly (intentional: that's the contract).
+- [x] A.R.9 **Improvements identified for Epic B / future**:
+  1. **Re-queued from earlier reviews**: `<AccentPill>` atom, `<StatCard>` molecule, `humanizeError` promotion. None blocked by Epic A.
+  2. **Prisma client edge-runtime adapter** — for any future Vercel Edge Function we'd swap to `@prisma/adapter-neon` (HTTP-based driver). Today every API route runs on the Node runtime so the standard TCP driver is fine; cite this when the first edge function is on the table.
+  3. **Connection-pool sizing on Neon** — Vercel's default Lambda concurrency × Prisma's default pool can exhaust a Neon free-tier branch. Add `?pgbouncer=true&connection_limit=1` to `DATABASE_URL` if connection-cap warnings start firing in production logs.
+  4. **`<EditTextDialog>` as reusable molecule** (re-queued from Epic 6 review) — Auth.js (Epic B) will surface "edit email" + "edit display name" flows. Promote `<EditNameDialog>` to a generic shape then.
+  5. **Doc tidy chore PR** — pick up `architecture.md` (persistence-layer paragraph), `coding-guidelines.md` (the schema-additions-vs-fixtures rule from Epic 7 review), and `testing-strategy.md` (Prisma conformance opt-in) in one chore PR before Epic B starts.
+  6. **First migration via `migrate diff` is a one-shot trick** — the next schema change must come through `prisma migrate dev` against a real DB so a proper checksum lands in `_prisma_migrations`. Worth calling out at the top of the persistence docs when Epic B wants to add an `Account` table.
+- [x] A.R.10 **Decision: Epic A is done.** Postgres persistence ships behind the existing repo interfaces with zero domain or service changes. The conformance suite proves the swap is honest. Vercel deploys apply migrations on every build. Improvements above are explicitly Epic B / chore work. Ready to plan Epic B (Auth.js) when product wants real accounts.
+
+---
+
 ## Epic B — Auth (Auth.js)
 
 Run when product wants real accounts. Designed-for in v1; this epic is the actual rollout.

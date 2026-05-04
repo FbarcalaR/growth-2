@@ -69,6 +69,11 @@ model Goal {
   routines Routine[]
   trophy   Trophy?
 
+  // Postgres treats two `(userId, NULL, NULL)` rows as distinct under a
+  // unique index, so multiple unplanted goals coexist without collision.
+  // Once a goal is planted, the (col, row) pair becomes non-null and the
+  // constraint enforces "one goal per tile" — the in-memory invariant
+  // ported into the schema.
   @@unique([userId, tileCol, tileRow], name: "userId_tileCol_tileRow")
   @@index([userId])
   @@map("goals")
