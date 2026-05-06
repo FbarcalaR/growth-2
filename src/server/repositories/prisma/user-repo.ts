@@ -43,7 +43,10 @@ export function createPrismaUserRepo(): UserRepo {
     },
 
     async findByName(name) {
-      const row = await prisma.user.findUnique({ where: { name } });
+      // `name` is no longer @unique (Auth.js makes `email` the identity
+      // anchor instead). `findFirst` returns the oldest match — fine for the
+      // dev-stub flow, which only matters in non-production.
+      const row = await prisma.user.findFirst({ where: { name } });
       return row ? rowToUser(row) : null;
     },
 

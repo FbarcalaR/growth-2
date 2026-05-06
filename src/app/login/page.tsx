@@ -1,73 +1,25 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 
-import { ApiError } from "@/client/api";
-import { useSession } from "@/client/hooks";
-import { Button, Input, Spinner } from "@/components/atoms";
+import { Button, Spinner } from "@/components/atoms";
 import { GardenIllustration, WelcomeLogo } from "@/components/illustrations";
-import { CreateSessionRequestSchema, type CreateSessionRequest } from "@/shared/schemas/user";
-
-type Step = "welcome" | "name";
 
 const WELCOME_GRADIENT =
   "linear-gradient(160deg, var(--color-welcome-from) 0%, var(--color-welcome-via) 60%, var(--color-welcome-to) 100%)";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login } = useSession();
-  const [step, setStep] = useState<Step>("welcome");
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<CreateSessionRequest>({
-    resolver: zodResolver(CreateSessionRequestSchema),
-    defaultValues: { name: "" },
-    mode: "onSubmit",
-  });
-
-  // Subscribe specifically to `name`; the field-level watch is the cheapest form.
-  // React Compiler can't memoize through `watch`, but this component is small
-  // enough that the trade-off doesn't matter.
-  const watchedName = (form.watch("name") ?? "").trim(); // eslint-disable-line react-hooks/incompatible-library
-  const firstName = watchedName.split(/\s+/)[0] ?? "";
-
-  const advanceFromWelcome = () => {
-    setStep("name");
-  };
-
-  const submitName = form.handleSubmit(async (values) => {
-    setServerError(null);
-    try {
-      await login(values.name);
-      router.replace("/today");
-    } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "Something went wrong";
-      setServerError(message);
-    }
-  });
-
-  const isWelcome = step === "welcome";
-  const tagline = isWelcome
-    ? "Grow your best life, one task at a time."
-    : "What should we call you?";
-  const submitting = form.formState.isSubmitting;
-  const buttonLabel = isWelcome
-    ? "Start Growing →"
-    : submitting
-      ? "Signing you in…"
-      : firstName
-        ? `Let's go, ${firstName}! 🌱`
-        : "Continue →";
-
-  const fieldError = form.formState.errors.name?.message ?? serverError;
+  async function handleGoogleSignIn() {
+    setSubmitting(true);
+    // Auth.js redirects to Google's consent screen, then back to
+    // `/api/auth/callback/google`, then to `/today` (our default redirect).
+    await signIn("google", { callbackUrl: "/today" });
+    // If `signIn` returns (only happens on error), restore the button.
+    setSubmitting(false);
+  }
 
   return (
     <main
@@ -79,64 +31,60 @@ export default function LoginPage() {
           <WelcomeLogo />
         </div>
         <h1 className="text-ink-strong text-3xl font-extrabold tracking-tight">Growth</h1>
-        <p className="text-ink-soft mt-1.5 mb-7 text-sm">{tagline}</p>
+        <p className="text-ink-soft mt-1.5 mb-7 text-sm">
+          Grow your best life, one task at a time.
+        </p>
 
         <div className="flex justify-center">
           <GardenIllustration />
         </div>
 
-        <form
-          className="mt-7 space-y-3"
-          onSubmit={(event) => {
-            if (isWelcome) {
-              event.preventDefault();
-              advanceFromWelcome();
-              return;
-            }
-            void submitName(event);
-          }}
+        <Button
+          type="button"
+          size="lg"
+          className="mt-7 w-full"
+          disabled={submitting}
+          onClick={() => void handleGoogleSignIn()}
+          leadingIcon={<GoogleGlyph />}
         >
-          {!isWelcome && (
-            <div className="text-left">
-              <label htmlFor="name" className="sr-only">
-                Your name
-              </label>
-              <Input
-                id="name"
-                {...form.register("name")}
-                placeholder="Your name…"
-                invalid={!!fieldError}
-                autoComplete="given-name"
-                autoFocus
-                disabled={submitting}
-                onChange={(e) => {
-                  if (serverError) setServerError(null);
-                  form.register("name").onChange(e);
-                }}
-              />
-              {fieldError && (
-                <p role="alert" className="text-health-critical mt-1 text-xs font-semibold">
-                  {fieldError}
-                </p>
-              )}
-            </div>
+          {submitting ? (
+            <span className="inline-flex items-center gap-2">
+              <Spinner size="sm" /> Connecting to Google…
+            </span>
+          ) : (
+            "Continue with Google"
           )}
-
-          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-            {submitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Spinner size="sm" /> Signing you in…
-              </span>
-            ) : (
-              buttonLabel
-            )}
-          </Button>
-        </form>
+        </Button>
 
         <p className="text-ink-faint mt-5 text-xs">
-          No account needed · Your data stays on this device
+          We only ask for your name and email so your goals can sync across devices.
         </p>
       </div>
     </main>
+  );
+}
+
+/** Inline G-glyph so we don't ship the lucide variant or pull a separate icon
+ *  package. Standard Google "G" SVG with the four-color path. */
+function GoogleGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden>
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.4 4 9.8 8.3 6.3 14.7z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.2 0 9.9-2 13.5-5.2l-6.2-5.3C29.3 35.5 26.8 36 24 36c-5.3 0-9.7-3.4-11.3-8l-6.5 5C9.6 39.6 16.2 44 24 44z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.5l6.2 5.3C40.2 36 44 30.5 44 24c0-1.2-.1-2.4-.4-3.5z"
+      />
+    </svg>
   );
 }

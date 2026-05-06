@@ -665,16 +665,18 @@ A short focused review pass before opening Epic B (Auth.js). Tidy-up is item A.R
 
 ---
 
-## Epic B — Auth (Auth.js)
+## Epic B — Auth (Auth.js) ✅ (PR #36)
 
-Run when product wants real accounts. Designed-for in v1; this epic is the actual rollout.
+Reordered on PR-#36 design feedback: Google OAuth before email magic-link. The original B.1 ("start: email magic link") would have needed a transactional email provider (Resend / SMTP) for the verification round-trip — heavier setup for a worse first-launch UX. Google OAuth ships the same auth contract with one button.
 
-- [ ] B.1 Install `next-auth` (latest), configure providers (start: email magic link)
-- [ ] B.2 Prisma adapter on the same DB
-- [ ] B.3 Replace `requireUser` dev stub with the Auth.js session subject
-- [ ] B.4 Login UI swaps from "type a name" to "enter your email"
-- [ ] B.5 Migrate dev-stub users (or wipe — TBD by product)
-- [ ] B.6 OAuth providers (Google, Apple) as a follow-up
+- [x] B.1 Install `next-auth@beta` (Auth.js v5), configure the Google provider with `allowDangerousEmailAccountLinking: true` (safe with Google because it always verifies emails).
+- [x] B.2 `@auth/prisma-adapter` against the same Neon DB. Schema gains the standard `Account`, `Session`, `VerificationToken` tables + `email` (unique) / `emailVerified` / `image` columns on `User`. Migration `1_auth` generated via `prisma migrate diff --from-schema-datamodel` (state-based; no DB connection needed).
+- [x] B.3 `requireUser()` reads the Auth.js JWT session in production and falls back to the dev-stub cookie when `NODE_ENV !== "production"` so the unit suites don't have to mock OAuth.
+- [x] B.4 Login UI swapped from "type a name" → "Continue with Google" single-button flow. The two-step welcome flow + name entry are gone.
+- [x] B.5 **Wipe** chosen for the dev-stub user migration — the existing `users` rows were demo seeds. The unique-name constraint dropping doesn't lose any production data because there isn't any.
+- [ ] ~~B.6 OAuth providers (Google, Apple) as a follow-up~~ — reframed: Google ships in this PR, Apple deferred until product asks. The provider list is a one-line addition to `src/auth.ts` whenever it lands.
+
+Auth.js's standard `session: { strategy: "jwt" }` runs stateless — no DB hit per request. The `Session` table is unused but kept in the migration so a future flip to DB sessions doesn't need a schema change. Email magic-link / Credentials with passwords also remain a one-PR addition: `VerificationToken` already lives in the schema and `EmailProvider` / `Credentials` plug into the same `src/auth.ts` array.
 
 ---
 

@@ -65,6 +65,39 @@ For **Vercel deploys** with the Neon integration: set the project's
 against the Vercel-injected `DATABASE_URL` before `next build`, so every
 deploy applies any pending migrations atomically.
 
+## Auth
+
+Epic B switched the dev-stub "type a name" flow to **Google OAuth via
+Auth.js** (NextAuth v5). In production the `/login` page shows a single
+"Continue with Google" button; the OAuth round-trip lands the user on
+`/today`. In test / non-production environments the dev-stub cookie path
+still works so the unit suites don't have to mock OAuth.
+
+Required env vars (Production + Preview):
+
+```bash
+AUTH_SECRET="<openssl rand -base64 32>"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+```
+
+Google Cloud setup:
+
+1. Create a project at `console.cloud.google.com`.
+2. **APIs & Services → OAuth consent screen** — External, fill in the
+   minimum required fields.
+3. **APIs & Services → Credentials → Create OAuth client ID** — "Web
+   application".
+4. Authorized redirect URIs:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://<your-vercel-domain>/api/auth/callback/google`
+5. Copy the Client ID + Secret into the env vars above.
+
+Sessions are JWT (stateless — no DB hit per request). The Prisma
+`Account` / `Session` / `VerificationToken` tables ship with the
+`1_auth` migration so a future flip to DB sessions, magic-link, or
+Credentials provider doesn't need a schema change.
+
 ## Docs
 
 | Doc | What it covers |

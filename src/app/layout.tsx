@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 
 import { QueryProvider } from "@/client/providers/query-provider";
 import { Toaster } from "@/components/atoms";
@@ -22,10 +23,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <QueryProvider>
-          {children}
-          <Toaster />
-        </QueryProvider>
+        <SessionProvider>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </SessionProvider>
       </body>
     </html>
   );
