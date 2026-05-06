@@ -3,6 +3,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Auth.js's `signIn` / `signOut` redirect the browser; in JSDOM that's a no-op.
+// Stub them so the hook tests can verify they're called without booting Auth.
+const signInMock = vi.fn().mockResolvedValue(undefined);
+const signOutMock = vi.fn().mockResolvedValue(undefined);
+vi.mock("next-auth/react", () => ({
+  signIn: (...args: unknown[]) => signInMock(...args),
+  signOut: (...args: unknown[]) => signOutMock(...args),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 import { useSession } from "../use-session";
 
 type FetchSpy = ReturnType<typeof vi.fn>;
@@ -48,6 +58,8 @@ let fetchSpy: FetchSpy;
 beforeEach(() => {
   fetchSpy = vi.fn();
   vi.stubGlobal("fetch", fetchSpy);
+  signInMock.mockClear();
+  signOutMock.mockClear();
 });
 
 afterEach(() => {
@@ -75,35 +87,26 @@ describe("useSession", () => {
     expect(result.current.prioritiesLocked).toBe(false);
   });
 
-  it("login() POSTs to /api/me and writes the user into the cache", async () => {
-    // Initial GET 401 → no user; then POST 201 with the new user.
-    fetchSpy
-      .mockResolvedValueOnce(
-        jsonResponse(401, { code: "UNAUTHORIZED", message: "Sign in required" }),
-      )
-      .mockResolvedValueOnce(jsonResponse(201, validUser));
-
+  it("signInWithGoogle() invokes Auth.js's signIn with the google provider", async () => {
+    fetchSpy.mockResolvedValueOnce(
+      jsonResponse(401, { code: "UNAUTHORIZED", message: "Sign in required" }),
+    );
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useSession(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(() => result.current.login("Ada"));
-    await waitFor(() => expect(result.current.user?.name).toBe("Ada"));
-
-    const calls = fetchSpy.mock.calls.map((c) => c[1]?.method ?? "GET");
-    expect(calls).toEqual(["GET", "POST"]);
+    await act(() => result.current.signInWithGoogle());
+    expect(signInMock).toHaveBeenCalledWith("google", { callbackUrl: "/today" });
   });
 
-  it("logout() DELETEs /api/me and clears the cached user", async () => {
-    fetchSpy
-      .mockResolvedValueOnce(jsonResponse(200, validUser))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }));
-
-    const { Wrapper } = makeWrapper();
+  it("logout() clears the cache and calls Auth.js signOut", async () => {
+    fetchSpy.mockResolvedValueOnce(jsonResponse(200, validUser));
+    const { Wrapper, client } = makeWrapper();
     const { result } = renderHook(() => useSession(), { wrapper: Wrapper });
     await waitFor(() => expect(result.current.user?.id).toBe("u1"));
 
     await act(() => result.current.logout());
-    await waitFor(() => expect(result.current.user).toBeNull());
+    expect(client.getQueryData(["me"])).toBeNull();
+    expect(signOutMock).toHaveBeenCalledWith({ callbackUrl: "/login" });
   });
 });

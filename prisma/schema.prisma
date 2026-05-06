@@ -21,20 +21,27 @@ datasource db {
 
 // ─── User ────────────────────────────────────────────────────────────────────
 //
-// The current dev session resolves to a single user; Auth.js (Epic B) will
-// take over the create-or-find behaviour but the row shape stays the same.
+// Authenticated via Auth.js (Epic B). The `email` column is the identity
+// anchor — every OAuth provider (Google for now) returns one. `name` is no
+// longer unique because two users can legitimately share a display name.
 // `wheelOfLife` is a JSONB column so we don't have to grow the schema every
 // time the seven-area list changes.
 model User {
-  id               String  @id
-  name             String  @unique
-  createdAt        BigInt  @map("created_at")
-  shopCoins        Int     @default(0) @map("shop_coins")
-  totalCoinsEarned Int     @default(0) @map("total_coins_earned")
-  streak           Int     @default(0)
-  wheelOfLife      Json    @default("{}") @map("wheel_of_life")
-  prioritiesLocked Boolean @default(false) @map("priorities_locked")
+  id               String    @id
+  // Auth.js standard columns (in addition to our app columns below).
+  email            String?   @unique
+  emailVerified    DateTime? @map("email_verified")
+  image            String?
+  name             String
+  createdAt        BigInt    @map("created_at")
+  shopCoins        Int       @default(0) @map("shop_coins")
+  totalCoinsEarned Int       @default(0) @map("total_coins_earned")
+  streak           Int       @default(0)
+  wheelOfLife      Json      @default("{}") @map("wheel_of_life")
+  prioritiesLocked Boolean   @default(false) @map("priorities_locked")
 
+  accounts    Account[]
+  sessions    Session[]
   goals       Goal[]
   gardenTiles GardenTile[]
   ownedDecos  OwnedDeco[]
@@ -42,6 +49,50 @@ model User {
   completions Completion[]
 
   @@map("users")
+}
+
+// ─── Auth.js standard tables ────────────────────────────────────────────────
+//
+// One `Account` row per OAuth provider linked to a user (Google for now;
+// Apple / GitHub later). `Session` is unused while we run JWT sessions, but
+// the schema-level table keeps us free to flip to DB sessions without a new
+// migration. `VerificationToken` powers email magic-links — also unused
+// today, kept for a future Credentials/email path.
+model Account {
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @id @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
 }
 
 // ─── Goal + nested Tasks / Routines ─────────────────────────────────────────

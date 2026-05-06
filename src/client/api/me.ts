@@ -1,26 +1,22 @@
 import {
-  CreateSessionRequestSchema,
   LockPrioritiesRequestSchema,
   UpdateUserRequestSchema,
   UserDtoSchema,
-  type CreateSessionRequest,
   type LockPrioritiesRequest,
   type UpdateUserRequest,
   type UserDto,
 } from "@/shared/schemas/user";
 
-import { apiFetch, apiFetchVoid } from "./client";
+import { apiFetch } from "./client";
 
+/**
+ * Client-side accessors for `/api/me`. Sign-in / sign-out went away in
+ * Epic B — those flows now live on Auth.js (`signIn("google")` /
+ * `signOut()`). This module only carries the post-auth domain mutations:
+ * fetch the user, rename, lock priorities, reset all data.
+ */
 export const meApi = {
   get: (signal?: AbortSignal) => apiFetch<UserDto>("/api/me", UserDtoSchema, { signal }),
-
-  createSession: (input: CreateSessionRequest) =>
-    apiFetch<UserDto>("/api/me", UserDtoSchema, {
-      method: "POST",
-      body: CreateSessionRequestSchema.parse(input),
-    }),
-
-  signOut: () => apiFetchVoid("/api/me", { method: "DELETE" }),
 
   updateName: (input: UpdateUserRequest) =>
     apiFetch<UserDto>("/api/me", UserDtoSchema, {
