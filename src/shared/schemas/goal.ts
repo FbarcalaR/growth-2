@@ -39,6 +39,10 @@ export const RoutineDtoSchema = z.object({
     z.boolean(),
   ]),
   permanentlyCompleted: z.boolean().optional(),
+  /** Unix-ms creation timestamp. The History tab gates per-day rollups on
+   *  it so a routine doesn't retroactively claim past weekdays. Defaults
+   *  to `0` for legacy rows that predate the field. */
+  createdAt: z.number().int().min(0),
 });
 
 export type RoutineDto = z.infer<typeof RoutineDtoSchema>;

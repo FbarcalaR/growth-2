@@ -40,6 +40,7 @@ export function makeRoutineDto(overrides: Partial<RoutineDto> = {}): RoutineDto 
     completedToday: false,
     streak: 0,
     repeatDays: [true, true, true, true, true, true, true],
+    createdAt: 0,
     ...overrides,
   };
 }

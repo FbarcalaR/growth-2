@@ -26,6 +26,12 @@ export type Routine = {
   /** Mon..Sun. */
   repeatDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean];
   permanentlyCompleted?: boolean;
+  /** Unix-ms creation timestamp. The History tab uses it to gate the
+   *  per-day rollup so a routine only appears on days at or after it
+   *  existed (otherwise a routine created today would retroactively make
+   *  every past matching weekday look "missed"). Legacy rows default to
+   *  `0` (epoch) so existing routines keep behaving as before. */
+  createdAt: number;
 };
 
 export type Goal = {

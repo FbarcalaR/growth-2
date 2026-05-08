@@ -154,6 +154,11 @@ model Routine {
   repeatDays           Json     @map("repeat_days")
   permanentlyCompleted Boolean? @default(false) @map("permanently_completed")
   position             Int
+  // Unix-ms timestamp the routine was created. Powers the History tab's
+  // per-day gating so a brand-new routine doesn't retroactively claim every
+  // past matching weekday as "missed". Default `0` (epoch) so any rows that
+  // existed before this column was added behave as if they always existed.
+  createdAt            BigInt   @default(0) @map("created_at")
 
   @@index([goalId])
   @@map("routines")

@@ -210,6 +210,7 @@ export function createGoalService({ clock, repos }: AppContainer) {
           completedToday: false,
           streak: 0,
           repeatDays: input.repeatDays,
+          createdAt: clock.now().getTime(),
         },
       ];
       return repos.goals.update({ ...goal, routines });

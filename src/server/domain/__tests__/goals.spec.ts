@@ -73,6 +73,7 @@ describe("applyRoutineCompletion", () => {
     title: "stretch",
     completedToday: false,
     streak: 5,
+    createdAt: 0,
     repeatDays: [true, true, true, true, true, true, true] as [
       boolean,
       boolean,
@@ -114,6 +115,7 @@ describe("completeRoutinePermanently", () => {
           completedToday: false,
           streak: 3,
           repeatDays: [true, true, true, true, true, true, true],
+          createdAt: 0,
         },
       ],
     });

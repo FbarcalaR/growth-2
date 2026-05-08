@@ -66,6 +66,7 @@ describe("getOverdueCount", () => {
           completedToday: false,
           streak: 0,
           repeatDays: [true, true, true, true, true, true, true],
+          createdAt: 0,
         },
       ],
     });
@@ -81,6 +82,7 @@ describe("getOverdueCount", () => {
           completedToday: true,
           streak: 5,
           repeatDays: [true, true, true, true, true, true, true],
+          createdAt: 0,
         },
       ],
     });
@@ -155,6 +157,7 @@ describe("countOverdueTasks", () => {
           completedToday: false,
           streak: 0,
           repeatDays: [true, true, true, true, true, true, true],
+          createdAt: 0,
         },
       ],
     });
