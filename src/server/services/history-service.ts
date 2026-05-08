@@ -171,6 +171,11 @@ function buildDay(
     }
     for (const r of goal.routines) {
       if (!r.repeatDays[dow]) continue;
+      // Don't claim past weekdays the routine couldn't have been done on —
+      // a routine created today shouldn't retroactively make every past
+      // matching weekday look "missed". Legacy rows have `createdAt: 0`
+      // so they pass this gate unconditionally (existing behaviour).
+      if (r.createdAt > 0 && iso < toISODate(new Date(r.createdAt))) continue;
       const item: HistoryItem = {
         kind: "routine",
         itemId: r.id,

@@ -34,6 +34,7 @@ function rowToRoutine(row: PrismaRoutine): Routine {
     streak: row.streak,
     repeatDays: row.repeatDays as Routine["repeatDays"],
     ...(row.permanentlyCompleted ? { permanentlyCompleted: true } : {}),
+    createdAt: Number(row.createdAt),
   };
 }
 
@@ -84,6 +85,7 @@ export function createPrismaGoalRepo(): GoalRepo {
               streak: r.streak,
               repeatDays: r.repeatDays,
               permanentlyCompleted: r.permanentlyCompleted ?? false,
+              createdAt: BigInt(r.createdAt),
               position: i,
             })),
           },
@@ -165,6 +167,7 @@ export function createPrismaGoalRepo(): GoalRepo {
               streak: r.streak,
               repeatDays: r.repeatDays,
               permanentlyCompleted: r.permanentlyCompleted ?? false,
+              createdAt: BigInt(r.createdAt),
               position: i,
             })),
           });

@@ -5,6 +5,7 @@ import { POST as CREATE_GOAL } from "@/app/api/goals/route";
 import { POST as CREATE_TASK } from "@/app/api/goals/[id]/tasks/route";
 import { PATCH as PATCH_TASK } from "@/app/api/goals/[id]/tasks/[taskId]/route";
 import { POST as COMPLETE_GOAL } from "@/app/api/goals/[id]/complete/route";
+import { POST as CREATE_ROUTINE } from "@/app/api/goals/[id]/routines/route";
 import { toISODate } from "@/server/domain/clock";
 
 import { ctx, freshTestContext, getRequest, jsonRequest } from "../helpers/test-context";
@@ -134,5 +135,33 @@ describe("GET /api/history", () => {
       title: "Run a 5K",
       goalId: goal.id,
     });
+  });
+
+  it("does not retroactively mark past days as missed for a routine created today", async () => {
+    // Regression for the bug where a brand-new routine made every past
+    // matching weekday look "missed" — the History tab pulled them in
+    // without checking `routine.createdAt`.
+    await signIn("Ada");
+    const goal = await createGoal("Run a 5K");
+    await CREATE_ROUTINE(
+      jsonRequest("POST", {
+        title: "Daily stretch",
+        repeatDays: [true, true, true, true, true, true, true],
+      }),
+      ctx({ id: goal.id }),
+    );
+
+    const res = await GET_HISTORY(getRequest({ month: currentMonth() }));
+    const body = await res.json();
+    const today = toISODate(new Date());
+
+    // Every past day in the month should have zero missed routines —
+    // the routine didn't exist then. Today + future are not asserted
+    // because the gating only matters for past dates.
+    const pastDays = body.days.filter((d: { date: string }) => d.date < today);
+    for (const day of pastDays) {
+      const missedRoutines = day.missed.filter((m: { kind: string }) => m.kind === "routine");
+      expect(missedRoutines).toEqual([]);
+    }
   });
 });
