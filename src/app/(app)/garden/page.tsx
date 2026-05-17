@@ -1,9 +1,17 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { useCreateGoal, useGarden, useGoals, usePlaceDeco, usePlantOnTile } from "@/client/hooks";
+import {
+  useAreaSlots,
+  useCreateGoal,
+  useGarden,
+  useGoals,
+  usePlaceDeco,
+  usePlantOnTile,
+  useSession,
+} from "@/client/hooks";
 import { Button, Spinner } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 import {
@@ -14,6 +22,7 @@ import {
   GoalEditor,
   PlantNowSheet,
   TrophiesSheet,
+  WheelCard,
 } from "@/components/organisms";
 import type { DecoId } from "@/components/organisms";
 import type { GoalDto } from "@/shared/schemas/goal";
@@ -22,9 +31,13 @@ import { EmptyState } from "./_components/empty-state";
 import { RoutinesEditor } from "./_components/routines-editor";
 import { TasksEditor } from "./_components/tasks-editor";
 
+type TopView = "garden" | "wheel";
+
 export default function GardenPage() {
+  const { user } = useSession();
   const goals = useGoals();
   const garden = useGarden();
+  const slots = useAreaSlots();
   const createGoal = useCreateGoal();
   const plantOnTile = usePlantOnTile();
   const placeDeco = usePlaceDeco();
@@ -35,6 +48,7 @@ export default function GardenPage() {
   const [shopOpen, setShopOpen] = useState(false);
   const [placingGoalId, setPlacingGoalId] = useState<string | null>(null);
   const [placingDeco, setPlacingDeco] = useState<DecoId | null>(null);
+  const [topView, setTopView] = useState<TopView>("garden");
 
   const all = useMemo(() => goals.data ?? [], [goals.data]);
   const { active, blooming } = useMemo(() => splitByBloom(all), [all]);
@@ -93,18 +107,30 @@ export default function GardenPage() {
   return (
     <section className="flex flex-col gap-3 px-5 pt-5 pb-10">
       {garden.data && (
-        <GardenCard
-          goals={all}
-          garden={garden.data}
-          placingGoalId={placingGoalId}
-          placingDeco={placingDeco}
-          onTilePlantClick={(goalId) => setOpenGoalId(goalId)}
-          onTileTap={handleTileTap}
-          selectedGoalId={openGoalId}
-          onCancelPlacing={placingGoalId || placingDeco ? cancelPlacing : undefined}
-          onTrophiesClick={() => setTrophiesOpen(true)}
-          onShopClick={() => setShopOpen(true)}
-        />
+        <div className="relative">
+          {topView === "garden" ? (
+            <GardenCard
+              goals={all}
+              garden={garden.data}
+              placingGoalId={placingGoalId}
+              placingDeco={placingDeco}
+              onTilePlantClick={(goalId) => setOpenGoalId(goalId)}
+              onTileTap={handleTileTap}
+              selectedGoalId={openGoalId}
+              onCancelPlacing={placingGoalId || placingDeco ? cancelPlacing : undefined}
+              onTrophiesClick={() => setTrophiesOpen(true)}
+              onShopClick={() => setShopOpen(true)}
+            />
+          ) : (
+            user && <WheelCard values={user.wheelOfLife} slots={slots} />
+          )}
+
+          <TopViewSwitcher
+            view={topView}
+            otherLabel={topView === "garden" ? "Wheel of life" : "My Garden"}
+            onToggle={() => setTopView(topView === "garden" ? "wheel" : "garden")}
+          />
+        </div>
       )}
 
       <PageHeader
@@ -198,6 +224,49 @@ export default function GardenPage() {
         </GoalDetailSheet>
       )}
     </section>
+  );
+}
+
+/**
+ * Side-by-side toggle that flips the top card between the isometric garden
+ * and the wheel-of-life radar. Two views means prev/next collapse to the
+ * same action — we keep both buttons so the affordance reads as a carousel
+ * regardless of which view is active.
+ */
+function TopViewSwitcher({
+  view,
+  otherLabel,
+  onToggle,
+}: {
+  view: TopView;
+  otherLabel: string;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-1"
+      aria-hidden={false}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={`Show ${otherLabel}`}
+        className="bg-surface-card text-brand-700 hover:bg-surface-muted border-surface-muted pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] shadow-sm"
+      >
+        <ChevronLeft size={16} aria-hidden />
+      </button>
+      <span className="sr-only" aria-live="polite">
+        Showing {view === "garden" ? "My Garden" : "Wheel of life"}
+      </span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={`Show ${otherLabel}`}
+        className="bg-surface-card text-brand-700 hover:bg-surface-muted border-surface-muted pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] shadow-sm"
+      >
+        <ChevronRight size={16} aria-hidden />
+      </button>
+    </div>
   );
 }
 

@@ -1,6 +1,14 @@
 export { BottomNav } from "./bottom-nav";
 export type { DecoId } from "./garden";
-export { DecoShopSheet, GardenCard, IsometricGarden, PlantNowSheet, TrophiesSheet } from "./garden";
+export {
+  DecoShopSheet,
+  GardenCard,
+  IsometricGarden,
+  PlantNowSheet,
+  TrophiesSheet,
+  WheelCard,
+  WheelChart,
+} from "./garden";
 export { GoalCard, GoalIcon } from "./goal-card";
 export { GoalDetailSheet } from "./goal-detail-sheet";
 export { GoalEditor } from "./goal-editor";
