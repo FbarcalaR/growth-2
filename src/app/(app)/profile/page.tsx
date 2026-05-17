@@ -9,6 +9,7 @@ import { Avatar, Button, Input, Modal } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 
 import { ResetAction } from "./_components/reset-action";
+import { VersionPanel } from "./_components/version-panel";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -74,6 +75,8 @@ export default function ProfilePage() {
           tone="brand"
         />
       </div>
+
+      <VersionPanel />
 
       <div className="mt-2 flex flex-col gap-2">
         <ResetAction />
