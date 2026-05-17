@@ -1,11 +1,32 @@
+import { toISODate } from "../../domain/clock";
 import {
   countOverdueTasks,
   getGoalHealthState,
   getHealth,
   getOverdueCount,
 } from "../../domain/health";
-import type { Goal } from "../../domain/goal/types";
-import type { GoalDto } from "@/shared/schemas/goal";
+import type { Goal, Routine } from "../../domain/goal/types";
+import type { GoalDto, RoutineDto } from "@/shared/schemas/goal";
+
+/**
+ * Domain `Routine` → wire `RoutineDto`. The wire keeps the historical
+ * `completedToday: boolean` field; we derive it from `lastCompletedOn`
+ * against the current date so a routine completed Monday automatically
+ * appears uncompleted on Tuesday without any background job. Graduated
+ * routines (`permanentlyCompleted: true`) are forced `completedToday:
+ * true` because they're "done forever".
+ */
+function routineToDto(r: Routine, today: string): RoutineDto {
+  return {
+    id: r.id,
+    title: r.title,
+    completedToday: Boolean(r.permanentlyCompleted) || r.lastCompletedOn === today,
+    streak: r.streak,
+    repeatDays: [...r.repeatDays] as RoutineDto["repeatDays"],
+    ...(r.permanentlyCompleted ? { permanentlyCompleted: true } : {}),
+    createdAt: r.createdAt,
+  };
+}
 
 /**
  * Domain `Goal` → wire `GoalDto`. Drops `userId` (the wire is already
@@ -14,6 +35,7 @@ import type { GoalDto } from "@/shared/schemas/goal";
  */
 export function goalToDto(goal: Goal, now: Date): GoalDto {
   const overdueWeight = getOverdueCount(goal, now);
+  const today = toISODate(now);
   return {
     id: goal.id,
     title: goal.title,
@@ -25,10 +47,7 @@ export function goalToDto(goal: Goal, now: Date): GoalDto {
     tileCol: goal.tileCol,
     tileRow: goal.tileRow,
     tasks: goal.tasks.map((t) => ({ ...t })),
-    routines: goal.routines.map((r) => ({
-      ...r,
-      repeatDays: [...r.repeatDays] as GoalDto["routines"][number]["repeatDays"],
-    })),
+    routines: goal.routines.map((r) => routineToDto(r, today)),
     completed: goal.completed,
     completedAt: goal.completedAt,
     trophyId: goal.trophyId,
@@ -37,3 +56,5 @@ export function goalToDto(goal: Goal, now: Date): GoalDto {
     overdueCount: countOverdueTasks(goal, now),
   };
 }
+
+export { routineToDto };

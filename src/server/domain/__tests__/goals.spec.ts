@@ -68,10 +68,13 @@ describe("applyTaskCompletion", () => {
 });
 
 describe("applyRoutineCompletion", () => {
+  const TODAY = "2026-05-10";
+  const YESTERDAY = "2026-05-09";
+
   const baseRoutine = {
     id: "r1",
     title: "stretch",
-    completedToday: false,
+    lastCompletedOn: null,
     streak: 5,
     createdAt: 0,
     repeatDays: [true, true, true, true, true, true, true] as [
@@ -87,8 +90,8 @@ describe("applyRoutineCompletion", () => {
 
   it("awards coins + primary AND secondary resources, bumps streak on completing", () => {
     const goal = makeGoal({ area: "health", plantType: "herb", routines: [baseRoutine] });
-    const { goal: next, reward } = applyRoutineCompletion(goal, "r1");
-    expect(next.routines[0]?.completedToday).toBe(true);
+    const { goal: next, reward } = applyRoutineCompletion(goal, "r1", TODAY);
+    expect(next.routines[0]?.lastCompletedOn).toBe(TODAY);
     expect(next.routines[0]?.streak).toBe(6);
     expect(reward.resources).toEqual({ water: 2, nutrients: 2 });
   });
@@ -97,31 +100,45 @@ describe("applyRoutineCompletion", () => {
     const goal = makeGoal({
       area: "health",
       plantType: "herb",
-      routines: [{ ...baseRoutine, completedToday: true, streak: 0 }],
+      routines: [{ ...baseRoutine, lastCompletedOn: TODAY, streak: 0 }],
     });
-    const { goal: next } = applyRoutineCompletion(goal, "r1");
-    expect(next.routines[0]?.completedToday).toBe(false);
+    const { goal: next } = applyRoutineCompletion(goal, "r1", TODAY);
+    expect(next.routines[0]?.lastCompletedOn).toBeNull();
     expect(next.routines[0]?.streak).toBe(0);
+  });
+
+  it("treats a routine completed yesterday as not-done-today (the day rolls over)", () => {
+    // Regression: `completedToday: boolean` was sticky across days; the new
+    // `lastCompletedOn` derivation makes today's toggle behave as if the
+    // routine hadn't been touched yet.
+    const goal = makeGoal({
+      area: "health",
+      plantType: "herb",
+      routines: [{ ...baseRoutine, lastCompletedOn: YESTERDAY, streak: 5 }],
+    });
+    const { goal: next } = applyRoutineCompletion(goal, "r1", TODAY);
+    expect(next.routines[0]?.lastCompletedOn).toBe(TODAY);
+    expect(next.routines[0]?.streak).toBe(6);
   });
 });
 
 describe("completeRoutinePermanently", () => {
-  it("flips permanentlyCompleted+completedToday and pays the bonus", () => {
+  it("flips permanentlyCompleted, stamps lastCompletedOn, and pays the bonus", () => {
     const goal = makeGoal({
       routines: [
         {
           id: "r1",
           title: "stretch",
-          completedToday: false,
+          lastCompletedOn: null,
           streak: 3,
           repeatDays: [true, true, true, true, true, true, true],
           createdAt: 0,
         },
       ],
     });
-    const { goal: next, reward } = completeRoutinePermanently(goal, "r1");
+    const { goal: next, reward } = completeRoutinePermanently(goal, "r1", "2026-05-10");
     expect(next.routines[0]?.permanentlyCompleted).toBe(true);
-    expect(next.routines[0]?.completedToday).toBe(true);
+    expect(next.routines[0]?.lastCompletedOn).toBe("2026-05-10");
     expect(reward.coins).toBe(5);
   });
 });

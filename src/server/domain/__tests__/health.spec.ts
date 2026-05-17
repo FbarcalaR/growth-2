@@ -63,7 +63,7 @@ describe("getOverdueCount", () => {
         {
           id: "r1",
           title: "stretch",
-          completedToday: false,
+          lastCompletedOn: null,
           streak: 0,
           repeatDays: [true, true, true, true, true, true, true],
           createdAt: 0,
@@ -79,7 +79,7 @@ describe("getOverdueCount", () => {
         {
           id: "r1",
           title: "stretch",
-          completedToday: true,
+          lastCompletedOn: "2026-05-01",
           streak: 5,
           repeatDays: [true, true, true, true, true, true, true],
           createdAt: 0,
@@ -154,7 +154,7 @@ describe("countOverdueTasks", () => {
         {
           id: "r1",
           title: "x",
-          completedToday: false,
+          lastCompletedOn: null,
           streak: 0,
           repeatDays: [true, true, true, true, true, true, true],
           createdAt: 0,
