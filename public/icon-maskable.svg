@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed maskable icon. The OS may crop to a circle / squircle /
+       rounded square; we keep the leaf safely inside the inner 80% zone
+       (Android's "safe area" guidance for adaptive icons). -->
+  <rect width="512" height="512" fill="#3a6647" />
+  <g transform="translate(96 96) scale(6.15)">
+    <path
+      d="M26,40 C26,40 14,30 14,20 C14,14 20,10 26,16 C32,10 38,14 38,20 C38,30 26,40 26,40Z"
+      fill="#66bb6a"
+    />
+    <path
+      d="M26,40 C26,40 20,30 22,20 C23,15 26,16 26,16 C26,16 29,15 30,20 C32,30 26,40 26,40Z"
+      fill="#A5D6A7"
+    />
+    <line x1="26" y1="40" x2="26" y2="44" stroke="#A5D6A7" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>
