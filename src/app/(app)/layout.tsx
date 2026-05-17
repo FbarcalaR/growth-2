@@ -4,12 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { useSession } from "@/client/hooks";
-import {
-  BottomNav,
-  InstallPrompt,
-  SetPrioritiesModal,
-  UpdateAvailableBanner,
-} from "@/components/organisms";
+import { BottomNav, InstallPrompt, SetPrioritiesModal } from "@/components/organisms";
 
 import { AppShellSkeleton } from "./_loading-skeleton";
 
@@ -43,10 +38,6 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
       {/* PWA install nudge — only appears after sign-in so first-time
           visitors aren't pestered before they've seen the product. */}
       <InstallPrompt />
-      {/* Polls `/api/version` and surfaces a refresh CTA when a new
-          deployment ships. Suppresses itself in local dev (no Vercel
-          commit SHA, so the value is stable). */}
-      <UpdateAvailableBanner />
     </div>
   );
 }

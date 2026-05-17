@@ -24,7 +24,6 @@ export {
   useUpdateTask,
 } from "./use-goals";
 export { useGarden, usePlaceDeco, usePlantOnTile, useUnplaceDeco } from "./use-garden";
-export { useDeploymentVersion } from "./use-deployment-version";
 export { useHistory } from "./use-history";
 export { useResetData } from "./use-me-data";
 export { useBuyDeco, useShop } from "./use-shop";
