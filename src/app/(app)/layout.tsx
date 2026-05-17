@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { useSession } from "@/client/hooks";
-import { BottomNav, SetPrioritiesModal } from "@/components/organisms";
+import { BottomNav, InstallPrompt, SetPrioritiesModal } from "@/components/organisms";
 
 import { AppShellSkeleton } from "./_loading-skeleton";
 
@@ -35,6 +35,9 @@ export default function AppShellLayout({ children }: { children: ReactNode }) {
           locked their wheel yet. It's `dismissable={false}` so the user can't
           escape onboarding without committing. */}
       <SetPrioritiesModal open={!prioritiesLocked} initial={user.wheelOfLife} />
+      {/* PWA install nudge — only appears after sign-in so first-time
+          visitors aren't pestered before they've seen the product. */}
+      <InstallPrompt />
     </div>
   );
 }

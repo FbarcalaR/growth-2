@@ -4,5 +4,6 @@ export { DecoShopSheet, GardenCard, IsometricGarden, PlantNowSheet, TrophiesShee
 export { GoalCard, GoalIcon } from "./goal-card";
 export { GoalDetailSheet } from "./goal-detail-sheet";
 export { GoalEditor } from "./goal-editor";
+export { InstallPrompt } from "./install-prompt";
 export { SetPrioritiesModal } from "./set-priorities-modal";
 export { WHEEL_BUDGET, WheelOfLife } from "./wheel-of-life";
