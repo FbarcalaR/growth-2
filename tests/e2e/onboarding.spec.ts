@@ -18,13 +18,14 @@ import { expect, test } from "@playwright/test";
  * backend doesn't carry state across tests.
  */
 test.describe("first-run onboarding", () => {
-  test("sign in via dev-stub → set priorities → land on /today", async ({ page, request }) => {
+  test("sign in via dev-stub → set priorities → land on /today", async ({ page }) => {
     const name = `Reviewer ${crypto.randomUUID().slice(0, 8)}`;
 
-    // 1. Mint a dev session by posting to /api/me. The route is still
-    //    wired (it powered the original "type a name" flow); under the
-    //    dev-stub it both creates the user and sets the session cookie.
-    const signInRes = await request.post("/api/me", { data: { name } });
+    // 1. Mint a dev session by posting to /api/me. Use the *page's* request
+    //    context, not the top-level `request` fixture — the latter has its
+    //    own cookie jar and the Set-Cookie response wouldn't reach the
+    //    browser navigation below.
+    const signInRes = await page.request.post("/api/me", { data: { name } });
     expect(signInRes.status()).toBe(201);
 
     // 2. Visit /today. The (app) shell sees the dev-stub session, so we
