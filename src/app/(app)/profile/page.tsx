@@ -8,6 +8,7 @@ import { useGoals, useSession } from "@/client/hooks";
 import { Avatar, Button, Input, Modal } from "@/components/atoms";
 import { PageHeader } from "@/components/molecules";
 
+import { InstallPanel } from "./_components/install-panel";
 import { ResetAction } from "./_components/reset-action";
 import { VersionPanel } from "./_components/version-panel";
 
@@ -77,6 +78,7 @@ export default function ProfilePage() {
       </div>
 
       <VersionPanel />
+      <InstallPanel />
 
       <div className="mt-2 flex flex-col gap-2">
         <ResetAction />
