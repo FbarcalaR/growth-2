@@ -106,4 +106,24 @@ describe("/garden", () => {
       plantType: "herb",
     });
   });
+
+  it("flips the top card to the wheel-of-life when the carousel arrow is tapped", async () => {
+    const { user, goals, garden } = await seededGoals([{ title: "Run a 5K", area: "health" }]);
+    setupFetchMock({
+      "/api/me": user,
+      "/api/goals": { goals },
+      "/api/garden": garden,
+    });
+    const { container, findByText, findAllByRole } = renderWithQuery(<GardenPage />);
+    await findByText(/[0-9]+ plants? · [0-9]+ decorations?/i);
+
+    const toWheel = await findAllByRole("button", { name: /show wheel of life/i });
+    fireEvent.click(toWheel[0]!);
+    await findByText(/priorities vs\. what you actually have/i);
+    expect(container.querySelector("svg[viewBox='0 0 260 260']")).not.toBeNull();
+
+    const toGarden = await findAllByRole("button", { name: /show my garden/i });
+    fireEvent.click(toGarden[0]!);
+    await findByText(/[0-9]+ plants? · [0-9]+ decorations?/i);
+  });
 });
