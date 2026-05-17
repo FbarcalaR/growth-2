@@ -6,4 +6,5 @@ export { GoalDetailSheet } from "./goal-detail-sheet";
 export { GoalEditor } from "./goal-editor";
 export { InstallPrompt } from "./install-prompt";
 export { SetPrioritiesModal } from "./set-priorities-modal";
+export { UpdateAvailableBanner } from "./update-available-banner";
 export { WHEEL_BUDGET, WheelOfLife } from "./wheel-of-life";
