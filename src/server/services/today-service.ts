@@ -42,7 +42,7 @@ export function createTodayService({ clock, repos }: AppContainer) {
         if (goal.completed) continue;
 
         const tasks = goal.tasks.filter((t) => isTaskVisibleToday(t, today));
-        const routines = goal.routines.filter((r) => isRoutineVisibleToday(r, dowMonFirst));
+        const routines = goal.routines.filter((r) => isRoutineVisibleToday(r, today, dowMonFirst));
 
         if (tasks.length === 0 && routines.length === 0) continue;
         groups.push({ goal, tasks, routines });
@@ -59,9 +59,9 @@ function isTaskVisibleToday(task: Task, today: ISODate): boolean {
   return task.dueDate <= today; // due today or overdue
 }
 
-function isRoutineVisibleToday(routine: Routine, dowMonFirst: number): boolean {
+function isRoutineVisibleToday(routine: Routine, today: ISODate, dowMonFirst: number): boolean {
   if (routine.permanentlyCompleted) return false;
-  if (routine.completedToday) return true;
+  if (routine.lastCompletedOn === today) return true;
   return Boolean(routine.repeatDays[dowMonFirst]);
 }
 

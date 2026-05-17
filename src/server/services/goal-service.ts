@@ -207,7 +207,7 @@ export function createGoalService({ clock, repos }: AppContainer) {
         {
           id: newId("routine"),
           title: input.title,
-          completedToday: false,
+          lastCompletedOn: null,
           streak: 0,
           repeatDays: input.repeatDays,
           createdAt: clock.now().getTime(),
@@ -231,11 +231,11 @@ export function createGoalService({ clock, repos }: AppContainer) {
       const routine = goal.routines.find((r) => r.id === routineId);
       if (!routine) throw new DomainError("ROUTINE_NOT_FOUND");
 
-      if (
-        changes.completedToday !== undefined &&
-        changes.completedToday !== routine.completedToday
-      ) {
-        const result = applyRoutineCompletion(goal, routineId);
+      const today = toISODate(clock.now());
+      const wasCompletedToday = routine.lastCompletedOn === today;
+
+      if (changes.completedToday !== undefined && changes.completedToday !== wasCompletedToday) {
+        const result = applyRoutineCompletion(goal, routineId, today);
         const persisted = await repos.goals.update(result.goal);
         const persistedUser = await applyReward(user, result.reward);
         if (changes.completedToday === true) {
@@ -277,7 +277,8 @@ export function createGoalService({ clock, repos }: AppContainer) {
     ): Promise<{ goal: Goal; user: User }> {
       const goal = await loadGoal(user.id, goalId);
       const routine = goal.routines.find((r) => r.id === routineId);
-      const result = completeRoutinePermanently(goal, routineId);
+      const today = toISODate(clock.now());
+      const result = completeRoutinePermanently(goal, routineId, today);
       const persisted = await repos.goals.update(result.goal);
       const persistedUser = await applyReward(user, result.reward);
       if (routine) {

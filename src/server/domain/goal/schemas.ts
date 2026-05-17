@@ -18,7 +18,9 @@ export const TaskSchema = z.object({
 export const RoutineSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
-  completedToday: z.boolean(),
+  // ISO date of the last completion; `null` if never completed. The wire
+  // `completedToday: boolean` is derived from `lastCompletedOn === today`.
+  lastCompletedOn: ISODateSchema.nullable(),
   streak: z.number().int().min(0),
   repeatDays: z.tuple([
     z.boolean(),
@@ -30,6 +32,7 @@ export const RoutineSchema = z.object({
     z.boolean(),
   ]),
   permanentlyCompleted: z.boolean().optional(),
+  createdAt: z.number().int().min(0),
 });
 
 export const GoalSchema = z.object({

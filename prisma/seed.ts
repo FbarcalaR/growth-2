@@ -66,7 +66,7 @@ async function main(): Promise<void> {
                 {
                   id: "routine_seed_run",
                   title: "Run twice a week",
-                  completedToday: false,
+                  lastCompletedOn: null,
                   streak: 1,
                   repeatDays: [true, false, true, false, true, false, false],
                   position: 0,
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
                 {
                   id: "routine_seed_read",
                   title: "Read 30 minutes",
-                  completedToday: false,
+                  lastCompletedOn: null,
                   streak: 0,
                   repeatDays: [true, true, true, true, true, true, true],
                   position: 0,

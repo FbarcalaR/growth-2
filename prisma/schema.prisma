@@ -148,7 +148,12 @@ model Routine {
   goalId               String   @map("goal_id")
   goal                 Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   title                String
-  completedToday       Boolean  @default(false) @map("completed_today")
+  // ISO date (YYYY-MM-DD) the routine was last marked complete, or NULL if
+  // it's never been. The wire `completedToday: boolean` is derived from
+  // `lastCompletedOn === today` so a routine completed Monday automatically
+  // appears uncompleted on Tuesday — no cron / background reset needed.
+  // Replaces the old `completed_today` boolean, which couldn't roll over.
+  lastCompletedOn      String?  @map("last_completed_on")
   streak               Int      @default(0)
   // Mon..Sun stored as a JSON array of 7 booleans.
   repeatDays           Json     @map("repeat_days")

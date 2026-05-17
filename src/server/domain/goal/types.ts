@@ -21,7 +21,13 @@ export type Task = {
 export type Routine = {
   id: RoutineId;
   title: string;
-  completedToday: boolean;
+  /**
+   * Day the routine was last marked complete (local-zone YYYY-MM-DD), or
+   * `null` if it's never been completed. The wire `completedToday` boolean
+   * is derived from this against the current date — that's how "completes
+   * for the day" rolls over at midnight without a cron.
+   */
+  lastCompletedOn: ISODate | null;
   streak: number;
   /** Mon..Sun. */
   repeatDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean];

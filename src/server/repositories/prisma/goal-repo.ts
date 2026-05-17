@@ -30,7 +30,7 @@ function rowToRoutine(row: PrismaRoutine): Routine {
   return {
     id: row.id,
     title: row.title,
-    completedToday: row.completedToday,
+    lastCompletedOn: row.lastCompletedOn,
     streak: row.streak,
     repeatDays: row.repeatDays as Routine["repeatDays"],
     ...(row.permanentlyCompleted ? { permanentlyCompleted: true } : {}),
@@ -81,7 +81,7 @@ export function createPrismaGoalRepo(): GoalRepo {
             create: goal.routines.map((r, i) => ({
               id: r.id,
               title: r.title,
-              completedToday: r.completedToday,
+              lastCompletedOn: r.lastCompletedOn,
               streak: r.streak,
               repeatDays: r.repeatDays,
               permanentlyCompleted: r.permanentlyCompleted ?? false,
@@ -163,7 +163,7 @@ export function createPrismaGoalRepo(): GoalRepo {
               id: r.id,
               goalId: goal.id,
               title: r.title,
-              completedToday: r.completedToday,
+              lastCompletedOn: r.lastCompletedOn,
               streak: r.streak,
               repeatDays: r.repeatDays,
               permanentlyCompleted: r.permanentlyCompleted ?? false,
